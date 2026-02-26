@@ -87,20 +87,20 @@ export function Sidebar({ className = '', collapsed = false, onToggle, onMobileC
         </ul>
       </nav>
 
-      {/* Footer */}
+      {/* Footer - User profile */}
       {!collapsed && (
-        <div className="p-4">
-          <div className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-indigo-500/20 rounded-lg p-3.5">
-            <div className="flex items-start gap-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Lightbulb className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold text-white mb-0.5">AI Insights</p>
-                <p className="text-[10px] text-gray-400 leading-snug">
-                  Get personalized productivity tips
-                </p>
-              </div>
+        <div className="p-4 border-t border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[11px] font-semibold text-white">
+              U
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-white truncate">
+                User Name
+              </p>
+              <p className="text-[11px] text-gray-500 truncate">
+                user@example.com
+              </p>
             </div>
           </div>
         </div>

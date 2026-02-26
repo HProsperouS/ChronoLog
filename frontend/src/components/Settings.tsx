@@ -13,16 +13,13 @@ export function Settings() {
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
       <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div>
             <h1 className="text-xl font-semibold text-white">Settings & Privacy</h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Control your tracking preferences
             </p>
           </div>
-          <button className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
-            Save Changes
-          </button>
         </div>
       </div>
 

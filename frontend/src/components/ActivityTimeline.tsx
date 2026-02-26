@@ -171,7 +171,7 @@ export function ActivityTimeline() {
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           {categories.map((category) => (
             <button
               key={category}
@@ -185,6 +185,33 @@ export function ActivityTimeline() {
               {category}
             </button>
           ))}
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
+          <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-1">Activities</p>
+            <p className="text-xl font-semibold text-white">{filteredActivities.length}</p>
+          </div>
+          <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-1">Total Time</p>
+            <p className="text-xl font-semibold text-white">
+              {formatDuration(filteredActivities.reduce((sum, a) => sum + a.duration, 0))}
+            </p>
+          </div>
+          <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-1">Avg Session</p>
+            <p className="text-xl font-semibold text-white">
+              {filteredActivities.length > 0
+                ? formatDuration(
+                    Math.round(
+                      filteredActivities.reduce((sum, a) => sum + a.duration, 0) /
+                        filteredActivities.length
+                    )
+                  )
+                : '0m'}
+            </p>
+          </div>
         </div>
 
         {/* Timeline */}
@@ -262,32 +289,6 @@ export function ActivityTimeline() {
           )}
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-4">
-          <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Activities</p>
-            <p className="text-xl font-semibold text-white">{filteredActivities.length}</p>
-          </div>
-          <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Total Time</p>
-            <p className="text-xl font-semibold text-white">
-              {formatDuration(filteredActivities.reduce((sum, a) => sum + a.duration, 0))}
-            </p>
-          </div>
-          <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Avg Session</p>
-            <p className="text-xl font-semibold text-white">
-              {filteredActivities.length > 0
-                ? formatDuration(
-                    Math.round(
-                      filteredActivities.reduce((sum, a) => sum + a.duration, 0) /
-                        filteredActivities.length
-                    )
-                  )
-                : '0m'}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

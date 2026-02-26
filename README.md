@@ -115,28 +115,31 @@ activity.
 
 ------------------------------------------------------------------------
 
-## Installation - Draft
+## Frontend Development
 
 ### 1. Clone the repository
 
 ``` bash
-git clone https://github.com/your-username/chronolog.git
-cd chronolog
+git clone https://github.com/HProsperouS/ChronoLog.git
+cd ChronoLog
 ```
 
-### 2. Install dependencies
+### 2. Install frontend dependencies
 
 ``` bash
+cd frontend
 npm install
 ```
 
-### 3. Run development mode
+### 3. Run the frontend in dev mode
 
 ``` bash
 npm run dev
 ```
 
-### 4. Build application
+The app will be available at `http://localhost:3000` (or the next free port if 3000 is taken).
+
+### 4. Build frontend for production
 
 ``` bash
 npm run build

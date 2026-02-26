@@ -24,7 +24,7 @@ export function Settings() {
       </div>
 
       {/* Main Content */}
-      <div className="p-4 sm:p-6 max-w-4xl">
+      <div className="p-4 sm:p-6">
         {/* Privacy Alert */}
         <div className="bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/20 rounded-xl p-5 mb-6">
           <div className="flex gap-3">

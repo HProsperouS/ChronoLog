@@ -60,8 +60,8 @@ export function ActivityTimeline() {
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
-      <div className="border-b border-white/5 px-8 py-5">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-white">Activity Timeline</h1>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -82,7 +82,7 @@ export function ActivityTimeline() {
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Productivity Timeline Bar */}
         <div className="bg-[#13131a] border border-white/5 rounded-xl p-5 mb-5">
           <div className="flex items-center justify-between mb-3">
@@ -171,7 +171,7 @@ export function ActivityTimeline() {
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center gap-2 mb-5">
+        <div className="flex flex-wrap items-center gap-2 mb-5">
           {categories.map((category) => (
             <button
               key={category}
@@ -263,7 +263,7 @@ export function ActivityTimeline() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-4">
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-4">
             <p className="text-xs text-gray-500 mb-1">Activities</p>
             <p className="text-xl font-semibold text-white">{filteredActivities.length}</p>

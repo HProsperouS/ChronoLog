@@ -36,8 +36,8 @@ export function Categories() {
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
-      <div className="border-b border-white/5 px-8 py-5">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-white">Category Rules</h1>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -55,9 +55,9 @@ export function Categories() {
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Category Overview */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {categories.slice(0, 6).map((category) => {
             const count = rules.filter(r => r.category === category).length;
             return (

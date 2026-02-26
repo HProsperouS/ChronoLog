@@ -12,8 +12,8 @@ export function Settings() {
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
-      <div className="border-b border-white/5 px-8 py-5">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-white">Settings & Privacy</h1>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -27,7 +27,7 @@ export function Settings() {
       </div>
 
       {/* Main Content */}
-      <div className="p-6 max-w-4xl">
+      <div className="p-4 sm:p-6 max-w-4xl">
         {/* Privacy Alert */}
         <div className="bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/20 rounded-xl p-5 mb-6">
           <div className="flex gap-3">

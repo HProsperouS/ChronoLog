@@ -9,7 +9,7 @@
 
 ------------------------------------------------------------------------
 
-## 📌 Overview
+## Overview
 
 ChronoLog is a desktop-based productivity tool designed to help students
 understand where their time actually goes.
@@ -24,7 +24,7 @@ disruption.
 
 ------------------------------------------------------------------------
 
-## 🎯 Problem
+## Problem
 
 From our user research with digitally intensive university students:
 
@@ -39,7 +39,7 @@ visibility.
 
 ------------------------------------------------------------------------
 
-## 💡 Solution
+## Solution
 
 ChronoLog is a passive, context-aware desktop tracker that:
 
@@ -48,35 +48,30 @@ ChronoLog is a passive, context-aware desktop tracker that:
 -   Provides visualized timelines
 -   Offers behavioral insights
 -   Stores data locally for privacy
-
-No manual timers.\
-No billing dashboards.\
-Just clarity.
-
 ------------------------------------------------------------------------
 
-## 🚀 Key Features
+## Key Features
 
-### 📊 Contextual Tracker
+### Contextual Tracker
 
 Track how your screen time is distributed across applications and
 categories.
 
-### 🔄 Context Switching Analysis
+### Context Switching Analysis
 
 Visualize attention fragmentation and switching density.
 
-### 🧠 Behavioral Insights
+### Behavioral Insights
 
 AI-assisted feedback on productivity awareness and patterns.
 
-### 🎛 Customization
+### Customization
 
 -   Select what to track
 -   Define custom categories
 -   Control auto-categorization
 
-### 🔒 Privacy-First Design
+### Privacy-First Design
 
 -   Local data storage
 -   No external APIs
@@ -85,7 +80,7 @@ AI-assisted feedback on productivity awareness and patterns.
 
 ------------------------------------------------------------------------
 
-## 🏗 Architecture
+## Architecture
 
 ### Platform
 
@@ -108,7 +103,7 @@ activity.
 
 ------------------------------------------------------------------------
 
-## 🛠 Tech Stack
+## Tech Stack
 
 **Frontend** - React / Electron - TailwindCSS - Chart.js
 
@@ -120,25 +115,7 @@ activity.
 
 ------------------------------------------------------------------------
 
-## 📂 Project Structure
-
-    ChronoLog/
-    │
-    ├── src/
-    │   ├── main/          
-    │   ├── renderer/      
-    │   ├── components/    
-    │   ├── hooks/         
-    │   └── utils/         
-    │
-    ├── assets/            
-    ├── data/              
-    ├── package.json
-    └── README.md
-
-------------------------------------------------------------------------
-
-## ⚙ Installation
+## Installation - Draft
 
 ### 1. Clone the repository
 
@@ -166,37 +143,7 @@ npm run build
 ```
 
 ------------------------------------------------------------------------
-
-## 🧪 Validation & Testing
-
--   10 university students tested
--   SUS Score: 82.5 / 100
-
-Strong positive feedback on: - Timeline visualization -
-Auto-categorization - Passive tracking
-
-------------------------------------------------------------------------
-
-## 🎨 Design System
-
-### Typography
-
--   Inter
--   Optimized for readability
--   Clear hierarchy with multiple font weights
-
-### Dark Mode First
-
-Base: #0A0A0E\
-Surface: #13131A\
-Border: #3B4254
-
-Semantic chart colors: - Work -- Indigo - Study -- Emerald -
-Entertainment -- Amber - Communication -- Purple
-
-------------------------------------------------------------------------
-
-## 📈 Target Market
+## Target Market
 
 -   University students (18--25)
 -   6--10+ hours daily laptop usage
@@ -206,40 +153,17 @@ Singapore market indicator: - 140,000+ tertiary students - 86% rely on
 laptops/desktops
 
 ------------------------------------------------------------------------
-
-## 💰 Business Model
-
--   Freemium model
--   Core features free
--   Paid tier for deeper insights
--   No advertisements
-
-Planned pricing: - SGD \$3/month
-
-------------------------------------------------------------------------
-
-## 🔮 Roadmap
-
--   Improve context-switch actionable insights
--   AI-based productivity suggestions
--   Weekly behavioral summary reports
--   Cross-device synchronization (future)
--   Productivity trend analytics
-
-------------------------------------------------------------------------
-
 ## 👥 Team
 
--   Marc Lim\
--   Amos Young\
--   Orvin Wirawan\
--   JiaJun Liu\
--   Jeremy Tan\
+-   Marc Lim
+-   Amos Young
+-   Orvin Wirawan
+-   JiaJun Liu
+-   Jeremy Tan
 -   Steven Nathenial
-
 ------------------------------------------------------------------------
 
-## 📜 License
+## License
 
 MIT License
 

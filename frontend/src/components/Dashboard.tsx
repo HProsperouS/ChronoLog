@@ -30,6 +30,28 @@ export function Dashboard() {
     return `${hours}h ${mins}m`;
   };
 
+  const renderPieTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    const { name, value } = payload[0];
+    const color = categoryColors[name] ?? '#e5e7eb';
+    const minutes = typeof value === 'number' ? value : 0;
+
+    return (
+      <div
+        style={{
+          backgroundColor: '#111827',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 8,
+          padding: '6px 8px',
+          fontSize: 12,
+        }}
+      >
+        <div style={{ color }}>{name}</div>
+        <div style={{ color: '#e5e7eb', marginTop: 2 }}>{formatTime(minutes)}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
@@ -103,7 +125,7 @@ export function Dashboard() {
                   fill="#8884d8"
                   dataKey="value"
                   stroke="none"
-                  onClick={(data) => {
+                  onClick={() => {
                     // Navigate to Activity page when clicking a segment
                     navigate('/activity');
                   }}
@@ -117,16 +139,7 @@ export function Dashboard() {
                     />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: number) => formatTime(value)}
-                  contentStyle={{
-                    backgroundColor: '#13131a',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                  }}
-                  labelStyle={{ color: '#fff' }}
-                />
+                <Tooltip content={renderPieTooltip} />
               </PieChart>
             </ResponsiveContainer>
           </div>

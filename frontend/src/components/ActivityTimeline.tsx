@@ -1,9 +1,13 @@
 import { Calendar, Clock, Filter } from 'lucide-react';
 import { todayActivities, categoryColors } from '../data/mockData';
 import { useState } from 'react';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 
 export function ActivityTimeline() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedDate, setSelectedDate] = useState<Date>(() => todayActivities[0]?.startTime ?? new Date());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -24,13 +28,21 @@ export function ActivityTimeline() {
   };
 
   // Generate timeline bar data
+  const isSameDay = (a: Date, b: Date) => {
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
+  };
+
   const generateTimelineBar = () => {
     const startHour = 9; // 9 AM
     const endHour = 19; // 7 PM
     const totalMinutes = (endHour - startHour) * 60; // 600 minutes (10 hours)
     
     const sortedActivities = [...todayActivities]
-      .filter(a => a.appName !== 'Spotify')
+      .filter(a => a.appName !== 'Spotify' && isSameDay(a.startTime, selectedDate))
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     return sortedActivities.map(activity => {
@@ -52,10 +64,19 @@ export function ActivityTimeline() {
 
   const categories = ['All', 'Work', 'Study', 'Entertainment', 'Communication', 'Utilities'];
 
-  const filteredActivities = todayActivities
-    .filter(a => a.appName !== 'Spotify') // Exclude background apps
+  const activitiesForSelectedDate = todayActivities
+    .filter(a => a.appName !== 'Spotify')
+    .filter(a => isSameDay(a.startTime, selectedDate));
+
+  const filteredActivities = activitiesForSelectedDate
     .filter(a => selectedCategory === 'All' || a.category === selectedCategory)
     .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+
+  const formattedSelectedDate = selectedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
@@ -68,15 +89,29 @@ export function ActivityTimeline() {
               Chronological view of your activity
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all">
+          <div className="relative">
+            <button
+              onClick={() => setIsDatePickerOpen((open) => !open)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
+            >
               <Calendar className="w-3.5 h-3.5" />
-              Today
+              {formattedSelectedDate}
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all">
-              <Filter className="w-3.5 h-3.5" />
-              Filter
-            </button>
+            {isDatePickerOpen && (
+              <div className="absolute right-0 mt-2 z-50">
+                <div className="bg-[#13131a] border border-white/10 rounded-xl p-3 shadow-lg">
+                  <DayPicker
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (!date) return;
+                      setSelectedDate(date);
+                      setIsDatePickerOpen(false);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

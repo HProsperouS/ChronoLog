@@ -136,3 +136,43 @@
 html {
   font-size: var(--font-size);
 }
+
+/* React DayPicker dark theme overrides - reuse chart colors */
+.rdp {
+  --rdp-background-color: #050816; /* close to app background */
+  --rdp-accent-color: #6366f1; /* Work */
+  --rdp-accent-background-color: rgba(99, 102, 241, 0.15);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+}
+
+.rdp-months {
+  background-color: #050816;
+}
+
+.rdp-caption_label {
+  color: #e5e7eb;
+}
+
+.rdp-head_cell {
+  color: #6b7280; /* Utilities gray */
+}
+
+.rdp-day {
+  color: #e5e7eb;
+}
+
+.rdp-day_disabled {
+  color: #4b5563;
+}
+
+.rdp-day_selected,
+.rdp-day_selected:focus-visible,
+.rdp-day_selected:hover {
+  background-color: #6366f1; /* Work */
+  color: #ffffff;
+}
+
+.rdp-day_today:not(.rdp-day_selected) {
+  border: 1px solid #10b981; /* Study */
+}

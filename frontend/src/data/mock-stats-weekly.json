@@ -1,0 +1,51 @@
+[
+  {
+    "date": "2026-02-02",
+    "categoryTotals": { "Work": 320, "Study": 80, "Entertainment": 85, "Communication": 55, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 540, "focusScore": 74, "contextSwitches": 15, "longestSession": 90,
+    "topApps": []
+  },
+  {
+    "date": "2026-02-03",
+    "categoryTotals": { "Work": 340, "Study": 70, "Entertainment": 75, "Communication": 55, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 540, "focusScore": 76, "contextSwitches": 12, "longestSession": 95,
+    "topApps": []
+  },
+  {
+    "date": "2026-02-04",
+    "categoryTotals": { "Work": 245, "Study": 60, "Entertainment": 185, "Communication": 50, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 540, "focusScore": 56, "contextSwitches": 28, "longestSession": 70,
+    "topApps": []
+  },
+  {
+    "date": "2026-02-05",
+    "categoryTotals": { "Work": 334, "Study": 0, "Entertainment": 165, "Communication": 35, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 534, "focusScore": 63, "contextSwitches": 18, "longestSession": 55,
+    "topApps": [
+      { "appName": "VS Code",  "category": "Work",          "duration": 267 },
+      { "appName": "Chrome",   "category": "Entertainment", "duration": 165 },
+      { "appName": "Terminal", "category": "Work",          "duration": 40  },
+      { "appName": "Chrome",   "category": "Work",          "duration": 27  },
+      { "appName": "Chrome",   "category": "Communication", "duration": 15  },
+      { "appName": "Discord",  "category": "Communication", "duration": 12  }
+    ]
+  },
+  {
+    "date": "2026-02-06",
+    "categoryTotals": { "Work": 0, "Study": 0, "Entertainment": 0, "Communication": 0, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 0, "focusScore": 0, "contextSwitches": 0, "longestSession": 0,
+    "topApps": []
+  },
+  {
+    "date": "2026-02-07",
+    "categoryTotals": { "Work": 0, "Study": 0, "Entertainment": 0, "Communication": 0, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 0, "focusScore": 0, "contextSwitches": 0, "longestSession": 0,
+    "topApps": []
+  },
+  {
+    "date": "2026-02-08",
+    "categoryTotals": { "Work": 0, "Study": 0, "Entertainment": 0, "Communication": 0, "Utilities": 0, "Uncategorized": 0 },
+    "totalTime": 0, "focusScore": 0, "contextSwitches": 0, "longestSession": 0,
+    "topApps": []
+  }
+]

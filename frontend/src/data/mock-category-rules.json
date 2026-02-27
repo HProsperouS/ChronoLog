@@ -1,0 +1,14 @@
+[
+  { "id": "1",  "appName": "VS Code",         "category": "Work",          "isAutomatic": true  },
+  { "id": "2",  "appName": "IntelliJ IDEA",   "category": "Work",          "isAutomatic": true  },
+  { "id": "3",  "appName": "Terminal",        "category": "Work",          "isAutomatic": true  },
+  { "id": "4",  "appName": "Notion",          "category": "Study",         "isAutomatic": true  },
+  { "id": "5",  "appName": "Obsidian",        "category": "Study",         "isAutomatic": true  },
+  { "id": "6",  "appName": "Slack",           "category": "Communication", "isAutomatic": true  },
+  { "id": "7",  "appName": "Discord",         "category": "Communication", "isAutomatic": true  },
+  { "id": "8",  "appName": "Zoom",            "category": "Communication", "isAutomatic": true  },
+  { "id": "9",  "appName": "Spotify",         "category": "Entertainment", "isAutomatic": true  },
+  { "id": "10", "appName": "Finder",          "category": "Utilities",     "isAutomatic": true  },
+  { "id": "11", "appName": "Chrome",          "category": "Work",          "isAutomatic": false, "keywords": ["github", "stackoverflow", "docs", "mdn", "localhost"] },
+  { "id": "12", "appName": "Chrome",          "category": "Entertainment", "isAutomatic": false, "keywords": ["youtube", "netflix", "twitch", "reddit"] }
+]

@@ -1,0 +1,23 @@
+{
+  "date": "2026-02-05",
+  "categoryTotals": {
+    "Work":          334,
+    "Study":         0,
+    "Entertainment": 165,
+    "Communication": 35,
+    "Utilities":     0,
+    "Uncategorized": 0
+  },
+  "totalTime": 534,
+  "focusScore": 63,
+  "contextSwitches": 18,
+  "longestSession": 55,
+  "topApps": [
+    { "appName": "VS Code",  "category": "Work",          "duration": 267 },
+    { "appName": "Chrome",   "category": "Entertainment", "duration": 165 },
+    { "appName": "Terminal", "category": "Work",          "duration": 40  },
+    { "appName": "Chrome",   "category": "Work",          "duration": 27  },
+    { "appName": "Chrome",   "category": "Communication", "duration": 15  },
+    { "appName": "Discord",  "category": "Communication", "duration": 12  }
+  ]
+}

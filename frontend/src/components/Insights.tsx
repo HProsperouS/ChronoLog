@@ -1,8 +1,18 @@
+import { useEffect, useState } from 'react';
 import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2 } from 'lucide-react';
-import { aiInsights } from '../data/mockData';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import * as api from '../api';
+import type { Insight } from '../types';
+
+const TODAY = '2026-02-05';
 
 export function Insights() {
+  const [insights, setInsights] = useState<Insight[]>([]);
+
+  useEffect(() => {
+    api.getInsights(TODAY).then(setInsights);
+  }, []);
+
   const getIcon = (iconName: string) => {
     const icons: Record<string, React.ElementType> = {
       TrendingDown,
@@ -421,9 +431,10 @@ export function Insights() {
         <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-white mb-4">AI-Generated Insights</h2>
           <div className="space-y-3">
-            {aiInsights.map((insight) => {
+            {insights.map((insight) => {
               const Icon = getIcon(insight.icon);
               const gradientColor = getIconColor(insight.type);
+              const time = new Date(insight.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
               return (
                 <div
@@ -436,21 +447,14 @@ export function Insights() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="text-sm font-semibold text-white">{insight.title}</h3>
-                      <span className="text-[10px] text-gray-500 ml-2">
-                        {insight.timestamp.toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+                      <span className="text-[10px] text-gray-500 ml-2">{time}</span>
                     </div>
                     <p className="text-xs text-gray-400 leading-relaxed mb-2">{insight.description}</p>
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
-                        insight.type === 'pattern'
-                          ? 'bg-indigo-500/10 text-indigo-400'
-                          : insight.type === 'achievement'
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : 'bg-orange-500/10 text-orange-400'
+                        insight.type === 'pattern'     ? 'bg-indigo-500/10 text-indigo-400'
+                        : insight.type === 'achievement' ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'bg-orange-500/10 text-orange-400'
                       }`}
                     >
                       {insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}

@@ -1,15 +1,22 @@
+import { useEffect, useState } from 'react';
 import { FolderTree, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
-import { categoryRules, categoryColors } from '../data/mockData';
-import { useState } from 'react';
+import * as api from '../api';
+import { categoryColors } from '../constants';
+import type { CategoryRule } from '../types';
 
 export function Categories() {
-  const [rules, setRules] = useState(categoryRules);
+  const [rules, setRules] = useState<CategoryRule[]>([]);
+
+  useEffect(() => {
+    api.getCategoryRules().then(setRules);
+  }, []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
   const categories = ['Work', 'Study', 'Entertainment', 'Communication', 'Utilities', 'Uncategorized'];
 
   const handleDelete = (id: string) => {
+    api.deleteCategoryRule(id);
     setRules(rules.filter(r => r.id !== id));
   };
 

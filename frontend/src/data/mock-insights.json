@@ -1,0 +1,47 @@
+[
+  {
+    "id": "1",
+    "type": "pattern",
+    "title": "Context Switching Peaks in Afternoon",
+    "description": "You switched between VS Code and YouTube 8 times between 2pm-4pm today. These frequent context switches may be reducing your focus and productivity. Consider using website blockers or the Pomodoro technique during this time period.",
+    "icon": "TrendingDown",
+    "date": "2026-02-05",
+    "created_at": "2026-02-05T18:30:00"
+  },
+  {
+    "id": "2",
+    "type": "recommendation",
+    "title": "Schedule Focused Work Sessions",
+    "description": "Your morning sessions (9am-12pm) show much better focus with an average of 45 minutes per task. Try scheduling your most challenging work during these hours and saving routine tasks for the afternoon when you tend to be more distracted.",
+    "icon": "AlertCircle",
+    "date": "2026-02-05",
+    "created_at": "2026-02-05T18:25:00"
+  },
+  {
+    "id": "3",
+    "type": "pattern",
+    "title": "Short Breaks Accumulating",
+    "description": "What felt like 'quick YouTube breaks' actually totaled 2 hours 45 minutes today. While breaks are important, these frequent short distractions may be preventing you from entering deep work states. Consider taking fewer, longer breaks instead.",
+    "icon": "TrendingDown",
+    "date": "2026-02-05",
+    "created_at": "2026-02-05T18:20:00"
+  },
+  {
+    "id": "4",
+    "type": "achievement",
+    "title": "Strong Morning Focus",
+    "description": "Great job maintaining focus this morning! You completed 2 hours and 20 minutes of uninterrupted coding work before lunch. This is your longest focused session this week.",
+    "icon": "Trophy",
+    "date": "2026-02-05",
+    "created_at": "2026-02-05T12:30:00"
+  },
+  {
+    "id": "5",
+    "type": "recommendation",
+    "title": "Recategorize Educational YouTube?",
+    "description": "Some of your YouTube time was spent on tech podcasts and tutorials. Consider creating a 'Learning' category to better distinguish educational entertainment from pure distraction.",
+    "icon": "AlertCircle",
+    "date": "2026-02-05",
+    "created_at": "2026-02-05T18:15:00"
+  }
+]

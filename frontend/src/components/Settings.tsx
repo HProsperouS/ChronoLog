@@ -1,13 +1,31 @@
+import { useEffect, useState } from 'react';
 import { Shield, Eye, EyeOff, Clock, Bell, Database, Lock, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import * as api from '../api';
 
 export function Settings() {
   const [trackingEnabled, setTrackingEnabled] = useState(true);
   const [screenshotEnabled, setScreenshotEnabled] = useState(false);
   const [idleDetection, setIdleDetection] = useState(true);
   const [notifications, setNotifications] = useState(true);
-
+  const [pollInterval, setPollInterval]   = useState(5);
   const [excludedApps, setExcludedApps] = useState(['1Password', 'Bitwarden', 'KeePass']);
+
+  useEffect(() => {
+    api.getSettings().then((s) => {
+      setPollInterval(s.pollIntervalSeconds);
+      setIdleDetection(s.idleThresholdMinutes < 60);
+    });
+  }, []);
+
+  function handlePollIntervalChange(seconds: number) {
+    setPollInterval(seconds);
+    api.updateSettings({ pollIntervalSeconds: seconds });
+  }
+
+  function handleIdleToggle(enabled: boolean) {
+    setIdleDetection(enabled);
+    api.updateSettings({ idleThresholdMinutes: enabled ? 5 : 999 });
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
@@ -79,7 +97,7 @@ export function Settings() {
                 </p>
               </div>
               <button
-                onClick={() => setIdleDetection(!idleDetection)}
+                onClick={() => handleIdleToggle(!idleDetection)}
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                   idleDetection ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-white/10'
                 }`}
@@ -275,10 +293,14 @@ export function Settings() {
               <p className="text-xs text-gray-500 mb-3">
                 How often to check active window (lower = more accurate, higher CPU usage)
               </p>
-              <select className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" defaultValue="5 seconds (Recommended)">
-                <option>1 second (Highest accuracy)</option>
-                <option>5 seconds (Recommended)</option>
-                <option>10 seconds (Battery saver)</option>
+              <select
+                value={pollInterval}
+                onChange={(e) => handlePollIntervalChange(Number(e.target.value))}
+                className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value={1}>1 second (Highest accuracy)</option>
+                <option value={5}>5 seconds (Recommended)</option>
+                <option value={10}>10 seconds (Battery saver)</option>
               </select>
             </div>
           </div>

@@ -2,16 +2,30 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import * as api from '../api';
-import type { Insight } from '../types';
+import { todayStr } from '../utils';
+import type { Insight, DailyStats } from '../types';
 
-const TODAY = '2026-02-05';
+const TODAY = todayStr();
 
 export function Insights() {
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [insights, setInsights]   = useState<Insight[]>([]);
+  const [generating, setGenerating] = useState(false);
+  const [weeklyStats, setWeeklyStats] = useState<DailyStats[]>([]);
 
   useEffect(() => {
     api.getInsights(TODAY).then(setInsights);
+    api.getWeeklyStats().then(setWeeklyStats);
   }, []);
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const fresh = await api.generateInsights(TODAY);
+      setInsights(fresh);
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   const getIcon = (iconName: string) => {
     const icons: Record<string, React.ElementType> = {
@@ -32,21 +46,99 @@ export function Insights() {
     return colors[type] || 'from-indigo-500 to-purple-600';
   };
 
-  const productivityTrend = [
-    { date: 'Mon', score: 72, focusTime: 240 },
-    { date: 'Tue', score: 78, focusTime: 280 },
-    { date: 'Wed', score: 65, focusTime: 210 },
-    { date: 'Thu', score: 82, focusTime: 310 },
-    { date: 'Fri', score: 75, focusTime: 265 },
-  ];
+  // ─── Derived stats from backend weekly data ───────────────────────────────────
 
-  const timeDistributionTrend = [
-    { day: 'Mon', productive: 360, neutral: 120, unproductive: 90 },
-    { day: 'Tue', productive: 380, neutral: 100, unproductive: 60 },
-    { day: 'Wed', productive: 340, neutral: 130, unproductive: 80 },
-    { day: 'Thu', productive: 400, neutral: 90, unproductive: 70 },
-    { day: 'Fri', productive: 350, neutral: 110, unproductive: 120 },
-  ];
+  const productivityTrend = weeklyStats.map((d) => ({
+    date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+    score: d.focusScore,
+    focusTime: d.totalTime,
+  }));
+
+  const timeDistributionTrend = weeklyStats.map((d) => {
+    const productive = d.categoryTotals.Work + d.categoryTotals.Study;
+    const unproductive = d.categoryTotals.Entertainment;
+    const neutral = d.totalTime - productive - unproductive;
+    return {
+      day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+      productive,
+      neutral,
+      unproductive,
+    };
+  });
+
+  const latestDay = weeklyStats[weeklyStats.length - 1];
+  const latestProductiveMinutes =
+    latestDay ? latestDay.categoryTotals.Work + latestDay.categoryTotals.Study : 0;
+  const latestProductiveHours = (latestProductiveMinutes / 60).toFixed(1);
+  const latestFocusScore = latestDay?.focusScore ?? 0;
+  const latestContextSwitches = latestDay?.contextSwitches ?? 0;
+
+  // ─── Habit tracker helpers ────────────────────────────────────────────────────
+
+  type HabitLevel = 'none' | 'far' | 'mid' | 'near' | 'hit';
+
+  function levelToClasses(level: HabitLevel): string {
+    switch (level) {
+      case 'far':
+        return 'bg-[#1a1d28] border border-white/5 text-gray-500';
+      case 'mid':
+        return 'bg-[#1f2937] border border-white/10 text-gray-400';
+      case 'near':
+        return 'bg-[#065f46] border border-emerald-500/20 text-emerald-300';
+      case 'hit':
+        return 'bg-[#10b981] border border-emerald-400/40 text-white';
+      case 'none':
+      default:
+        return 'bg-white/5 border border-white/10 text-gray-400';
+    }
+  }
+
+  function weekdayLabel(date: string): string {
+    const d = new Date(date + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
+  }
+
+  function buildHabitDays() {
+    if (!weeklyStats.length) return [];
+    return weeklyStats.map((d) => {
+      const productiveMinutes = d.categoryTotals.Work + d.categoryTotals.Study;
+      const entertainmentMinutes = d.categoryTotals.Entertainment;
+      return {
+        date: d.date,
+        label: weekdayLabel(d.date),
+        contextSwitches: d.contextSwitches,
+        productiveHours: productiveMinutes / 60,
+        entertainmentHours: entertainmentMinutes / 60,
+        hasData: d.totalTime > 0,
+      };
+    });
+  }
+
+  const habitDays = buildHabitDays();
+
+  function levelForContextSwitches(value: number, hasData: boolean): HabitLevel {
+    if (!hasData) return 'none';
+    if (value <= 10) return 'hit';
+    if (value <= 20) return 'near';
+    if (value <= 30) return 'mid';
+    return 'far';
+  }
+
+  function levelForProductiveHours(value: number, hasData: boolean): HabitLevel {
+    if (!hasData) return 'none';
+    if (value >= 8) return 'hit';
+    if (value >= 7) return 'near';
+    if (value >= 5) return 'mid';
+    return 'far';
+  }
+
+  function levelForEntertainmentHours(value: number, hasData: boolean): HabitLevel {
+    if (!hasData) return 'none';
+    if (value <= 0.5) return 'hit';
+    if (value <= 1) return 'near';
+    if (value <= 2) return 'mid';
+    return 'far';
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
@@ -64,9 +156,6 @@ export function Insights() {
               <Calendar className="w-3.5 h-3.5" />
               Last 7 Days
             </button>
-            <button className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
-              Generate Report
-            </button>
           </div>
         </div>
       </div>
@@ -78,19 +167,19 @@ export function Insights() {
           <div className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-indigo-500/20 rounded-xl p-5">
             <Sparkles className="w-6 h-6 text-indigo-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Focus Score</p>
-            <p className="text-2xl font-semibold text-white">74%</p>
+            <p className="text-2xl font-semibold text-white">{latestFocusScore}%</p>
             <p className="text-xs text-indigo-400 mt-2">↑ 8% from last week</p>
           </div>
           <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 rounded-xl p-5">
             <Trophy className="w-6 h-6 text-emerald-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Productive Hours</p>
-            <p className="text-2xl font-semibold text-white">28.5h</p>
+            <p className="text-2xl font-semibold text-white">{latestProductiveHours}h</p>
             <p className="text-xs text-emerald-400 mt-2">↑ 12% from last week</p>
           </div>
           <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 border border-purple-500/20 rounded-xl p-5">
             <Shuffle className="w-6 h-6 text-orange-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Context Switches</p>
-            <p className="text-2xl font-semibold text-white">47</p>
+            <p className="text-2xl font-semibold text-white">{latestContextSwitches}</p>
             <p className="text-xs text-orange-400 mt-2">↑ 18% from last week</p>
           </div>
         </div>
@@ -229,62 +318,23 @@ export function Insights() {
               </div>
               <div className="flex items-center gap-2 pl-7">
                 <div className="flex gap-1.5">
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#065f46] border border-emerald-500/20 rounded-lg flex items-center justify-center text-[11px] font-semibold text-emerald-300 hover:scale-110 transition-transform cursor-pointer">
-                      M
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      15 switches
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1f2937] border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      T
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      28 switches
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1a1d28] border border-white/5 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-500 hover:scale-110 transition-transform cursor-pointer">
-                      W
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      35 switches
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#059669] border border-emerald-500/30 rounded-lg flex items-center justify-center text-[11px] font-semibold text-emerald-200 hover:scale-110 transition-transform cursor-pointer">
-                      T
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      18 switches
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#10b981] border border-emerald-400/40 rounded-lg flex items-center justify-center text-[11px] font-semibold text-white hover:scale-110 transition-transform cursor-pointer">
-                      F
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      12 switches
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#059669] border border-emerald-500/30 rounded-lg flex items-center justify-center text-[11px] font-semibold text-emerald-200 hover:scale-110 transition-transform cursor-pointer">
-                      S
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      16 switches
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      S
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      Today
-                    </div>
-                  </div>
+                  {habitDays.map((d) => {
+                    const level = levelForContextSwitches(d.contextSwitches, d.hasData);
+                    const classes = levelToClasses(level);
+                    const tooltip = d.hasData ? `${d.contextSwitches} switches` : 'No data';
+                    return (
+                      <div key={`ctx-${d.date}`} className="group/day relative">
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-semibold hover:scale-110 transition-transform cursor-pointer ${classes}`}
+                        >
+                          {d.label}
+                        </div>
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
+                          {tooltip}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -297,62 +347,25 @@ export function Insights() {
               </div>
               <div className="flex items-center gap-2 pl-7">
                 <div className="flex gap-1.5">
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#065f46] border border-emerald-500/20 rounded-lg flex items-center justify-center text-[11px] font-semibold text-emerald-300 hover:scale-110 transition-transform cursor-pointer">
-                      M
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      7.2 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#059669] border border-emerald-500/30 rounded-lg flex items-center justify-center text-[11px] font-semibold text-emerald-200 hover:scale-110 transition-transform cursor-pointer">
-                      T
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      6.8 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1a1d28] border border-white/5 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-500 hover:scale-110 transition-transform cursor-pointer">
-                      W
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      5.1 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#10b981] border border-emerald-400/40 rounded-lg flex items-center justify-center text-[11px] font-semibold text-white hover:scale-110 transition-transform cursor-pointer">
-                      T
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      7.5 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#10b981] border border-emerald-400/40 rounded-lg flex items-center justify-center text-[11px] font-semibold text-white hover:scale-110 transition-transform cursor-pointer">
-                      F
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      8.0 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1f2937] border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      S
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      4.5 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      S
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      Today
-                    </div>
-                  </div>
+                  {habitDays.map((d) => {
+                    const level = levelForProductiveHours(d.productiveHours, d.hasData);
+                    const classes = levelToClasses(level);
+                    const tooltip = d.hasData
+                      ? `${d.productiveHours.toFixed(1)} hours`
+                      : 'No data';
+                    return (
+                      <div key={`prod-${d.date}`} className="group/day relative">
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-semibold hover:scale-110 transition-transform cursor-pointer ${classes}`}
+                        >
+                          {d.label}
+                        </div>
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
+                          {tooltip}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -365,62 +378,25 @@ export function Insights() {
               </div>
               <div className="flex items-center gap-2 pl-7">
                 <div className="flex gap-1.5">
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#10b981] border border-emerald-400/40 rounded-lg flex items-center justify-center text-[11px] font-semibold text-white hover:scale-110 transition-transform cursor-pointer">
-                      M
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      0.5 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1f2937] border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      T
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      1.8 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1a1d28] border border-white/5 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-500 hover:scale-110 transition-transform cursor-pointer">
-                      W
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      2.3 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#059669] border border-emerald-500/30 rounded-lg flex items-center justify-center text-[11px] font-semibold text-emerald-200 hover:scale-110 transition-transform cursor-pointer">
-                      T
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      0.9 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#10b981] border border-emerald-400/40 rounded-lg flex items-center justify-center text-[11px] font-semibold text-white hover:scale-110 transition-transform cursor-pointer">
-                      F
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      0.3 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-[#1f2937] border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      S
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      1.5 hours
-                    </div>
-                  </div>
-                  <div className="group/day relative">
-                    <div className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[11px] font-semibold text-gray-400 hover:scale-110 transition-transform cursor-pointer">
-                      S
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
-                      Today
-                    </div>
-                  </div>
+                  {habitDays.map((d) => {
+                    const level = levelForEntertainmentHours(d.entertainmentHours, d.hasData);
+                    const classes = levelToClasses(level);
+                    const tooltip = d.hasData
+                      ? `${d.entertainmentHours.toFixed(1)} hours`
+                      : 'No data';
+                    return (
+                      <div key={`ent-${d.date}`} className="group/day relative">
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-semibold hover:scale-110 transition-transform cursor-pointer ${classes}`}
+                        >
+                          {d.label}
+                        </div>
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a24] px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover/day:opacity-100 transition-opacity pointer-events-none">
+                          {tooltip}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

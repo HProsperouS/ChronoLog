@@ -4,25 +4,22 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import * as api from '../api';
 import { categoryColors } from '../constants';
+import { dateStr, todayStr } from '../utils';
 import type { Activity } from '../types';
 
-const DEFAULT_DATE = new Date('2026-02-05T00:00:00');
-
-function toDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 export function ActivityTimeline() {
-  const [selectedDate, setSelectedDate]         = useState<Date>(DEFAULT_DATE);
+  const [selectedDate, setSelectedDate]         = useState<Date>(() => new Date());
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [activities, setActivities]             = useState<Activity[]>([]);
+  const [availableDates, setAvailableDates]     = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    api.getActivities(toDateStr(selectedDate)).then(setActivities);
+    api.getAvailableDates().then((dates) => setAvailableDates(new Set(dates)));
+  }, []);
+
+  useEffect(() => {
+    api.getActivities(dateStr(selectedDate)).then(setActivities);
   }, [selectedDate]);
 
   const formatTime = (date: Date) =>
@@ -75,13 +72,17 @@ export function ActivityTimeline() {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
             >
               <Calendar className="w-3.5 h-3.5" />
-              {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} {availableDates.has(dateStr(selectedDate)) ? '●' : ''}
             </button>
             {isDatePickerOpen && (
               <div className="absolute right-0 mt-2 z-50">
                 <div className="bg-[#13131a] border border-white/10 rounded-xl p-3 shadow-lg">
-                  <DayPicker mode="single" selected={selectedDate}
+                  <DayPicker
+                    mode="single"
+                    selected={selectedDate}
                     onSelect={(d) => { if (!d) return; setSelectedDate(d); setIsDatePickerOpen(false); }}
+                    modifiers={{ hasData: (d) => availableDates.has(dateStr(d)) }}
+                    modifiersStyles={{ hasData: { fontWeight: 'bold', textDecoration: 'underline', color: '#6366f1' } }}
                   />
                 </div>
               </div>

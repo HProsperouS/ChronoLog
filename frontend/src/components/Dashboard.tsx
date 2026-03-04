@@ -5,9 +5,10 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useNavigate } from 'react-router';
 import * as api from '../api';
 import { categoryColors } from '../constants';
+import { todayStr } from '../utils';
 import type { DailyStats } from '../types';
 
-const TODAY = '2026-02-05';
+const TODAY = todayStr();
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -64,17 +65,17 @@ export function Dashboard() {
           <div>
             <h1 className="text-xl font-semibold text-white">Dashboard</h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              {new Date(TODAY + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <button className="px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all">
               This Week
             </button>
             <button className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
               Export
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
 

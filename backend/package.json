@@ -1,0 +1,25 @@
+{
+  "name": "chronolog-backend",
+  "version": "1.0.0",
+  "description": "ChronoLog local backend service",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "tracker": "tsx src/tracker.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "active-win": "^8.2.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.27.0",
+    "openai": "^4.47.1",
+    "pino-pretty": "^11.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.15.0",
+    "typescript": "^5.4.5"
+  }
+}

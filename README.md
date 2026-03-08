@@ -116,6 +116,7 @@ activity.
 **AI** — OpenAI GPT-4o-mini (optional, for Insights)
 
 **Design** - Figma - Inter font - Dark-mode-first UI
+Figma Link: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1&t=FPzoA59Dcc1iliIc-1 
 
 ------------------------------------------------------------------------
 

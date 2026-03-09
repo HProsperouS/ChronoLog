@@ -35,10 +35,6 @@ export async function getAvailableDates(): Promise<string[]> {
   return data.dates;
 }
 
-export async function deleteActivity(id: number, date: string): Promise<void> {
-  await apiFetch(`/api/activities/${id}?date=${date}`, { method: 'DELETE' });
-}
-
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 export async function getDailyStats(date: string): Promise<DailyStats> {
@@ -85,6 +81,7 @@ export async function deleteCategoryRule(id: string): Promise<void> {
 export interface TrackerSettings {
   pollIntervalSeconds:   number;
   idleThresholdMinutes:  number;
+  retentionDays:         number;
 }
 
 export async function getSettings(): Promise<TrackerSettings> {
@@ -116,4 +113,65 @@ export async function generateInsights(date: string): Promise<Insight[]> {
     body: JSON.stringify({ date }),
   });
   return data.insights;
+}
+
+// ─── Settings: privacy & data management ───────────────────────────────────────
+
+export interface PrivacySettings {
+  excludedApps: string[];
+  respectPrivateBrowsing: boolean;
+}
+
+export interface DataSummary {
+  totalBytes: number;
+  activityDays: number;
+  firstDate?: string;
+  lastDate?: string;
+}
+
+export async function getPrivacySettings(): Promise<PrivacySettings> {
+  const data = await apiFetch<{ privacy: PrivacySettings }>('/api/settings/privacy');
+  return data.privacy;
+}
+
+export async function updatePrivacySettings(
+  patch: Partial<PrivacySettings>,
+): Promise<PrivacySettings> {
+  const data = await apiFetch<{ privacy: PrivacySettings }>('/api/settings/privacy', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return data.privacy;
+}
+
+export async function getDataSummary(): Promise<DataSummary> {
+  const data = await apiFetch<{ summary: DataSummary }>('/api/settings/data-summary');
+  return data.summary;
+}
+
+export async function clearOldData(olderThanDays: number): Promise<DataSummary> {
+  const data = await apiFetch<{ summary: DataSummary }>('/api/settings/data/clear-old', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ olderThanDays }),
+  });
+  return data.summary;
+}
+
+export async function deleteAllData(): Promise<DataSummary> {
+  const data = await apiFetch<{ summary: DataSummary }>('/api/settings/data/all', {
+    method: 'DELETE',
+  });
+  return data.summary;
+}
+
+export interface ExportPayload {
+  config: unknown;
+  activities: Record<string, Activity[]>;
+  insights: Insight[];
+}
+
+export async function exportAllData(): Promise<ExportPayload> {
+  return await apiFetch<ExportPayload>('/api/settings/data/export');
 }

@@ -6,9 +6,15 @@ const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const INSIGHTS_FILE = path.join(DATA_DIR, 'insights.json');
 
+interface PrivacyExclusions {
+  excludedApps: string[];
+  respectPrivateBrowsing: boolean;
+}
+
 interface Config {
   categoryRules: CategoryRule[];
   settings: Settings;
+  privacy: PrivacyExclusions;
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -37,6 +43,11 @@ const DEFAULT_CONFIG: Config = {
   settings: {
     pollIntervalSeconds: 5,
     idleThresholdMinutes: 5,
+    retentionDays: 90,
+  },
+  privacy: {
+    excludedApps: ['1Password', 'Bitwarden', 'KeePass'],
+    respectPrivateBrowsing: true,
   },
 };
 
@@ -54,7 +65,16 @@ export function readConfig(): Config {
   ensureDir();
   if (!fs.existsSync(CONFIG_FILE)) return structuredClone(DEFAULT_CONFIG);
   try {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) as Config;
+    const parsed = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) as Partial<Config>;
+    const config: Config = {
+      categoryRules: parsed.categoryRules ?? structuredClone(DEFAULT_CONFIG.categoryRules),
+      settings: {
+        ...structuredClone(DEFAULT_CONFIG.settings),
+        ...(parsed.settings ?? {}),
+      },
+      privacy: parsed.privacy ?? structuredClone(DEFAULT_CONFIG.privacy),
+    };
+    return config;
   } catch {
     return structuredClone(DEFAULT_CONFIG);
   }
@@ -79,3 +99,5 @@ export function writeInsights(insights: Insight[]): void {
   ensureDir();
   atomicWrite(INSIGHTS_FILE, insights);
 }
+
+export type { PrivacyExclusions, Config };

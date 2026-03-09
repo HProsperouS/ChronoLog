@@ -1,0 +1,113 @@
+import fs from 'fs';
+import path from 'path';
+import { readConfig, writeConfig, type PrivacyExclusions, readInsights } from '../store/config.store';
+import type { Activity, Insight } from '../types';
+
+const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
+const ACTIVITIES_DIR = path.join(DATA_DIR, 'activities');
+
+export interface DataSummary {
+  totalBytes: number;
+  activityDays: number;
+  firstDate?: string;
+  lastDate?: string;
+}
+
+export function getPrivacy(): PrivacyExclusions {
+  const config = readConfig();
+  return config.privacy;
+}
+
+export function updatePrivacy(patch: Partial<PrivacyExclusions>): PrivacyExclusions {
+  const config = readConfig();
+  config.privacy = { ...config.privacy, ...patch };
+  writeConfig(config);
+  return config.privacy;
+}
+
+export function getDataSummary(): DataSummary {
+  let totalBytes = 0;
+  let activityDays = 0;
+  let firstDate: string | undefined;
+  let lastDate: string | undefined;
+
+  if (fs.existsSync(DATA_DIR)) {
+    for (const entry of fs.readdirSync(DATA_DIR, { withFileTypes: true })) {
+      const fullPath = path.join(DATA_DIR, entry.name);
+      if (entry.isFile()) {
+        totalBytes += fs.statSync(fullPath).size;
+      }
+    }
+  }
+
+  if (fs.existsSync(ACTIVITIES_DIR)) {
+    const files = fs
+      .readdirSync(ACTIVITIES_DIR)
+      .filter((f) => f.endsWith('.json'))
+      .sort();
+
+    activityDays = files.length;
+    if (files.length > 0) {
+      firstDate = files[0].replace('.json', '');
+      lastDate = files[files.length - 1].replace('.json', '');
+    }
+  }
+
+  return { totalBytes, activityDays, firstDate, lastDate };
+}
+
+export function clearDataOlderThan(days: number): void {
+  if (!fs.existsSync(ACTIVITIES_DIR)) return;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  for (const file of fs.readdirSync(ACTIVITIES_DIR)) {
+    if (!file.endsWith('.json')) continue;
+    const date = file.replace('.json', '');
+    if (date < cutoffStr) {
+      fs.unlinkSync(path.join(ACTIVITIES_DIR, file));
+    }
+  }
+}
+
+export function deleteAllData(): void {
+  if (!fs.existsSync(DATA_DIR)) return;
+  for (const entry of fs.readdirSync(DATA_DIR, { withFileTypes: true })) {
+    const fullPath = path.join(DATA_DIR, entry.name);
+    if (entry.isDirectory()) {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+    } else {
+      fs.unlinkSync(fullPath);
+    }
+  }
+}
+
+export interface ExportPayload {
+  config: ReturnType<typeof readConfig>;
+  activities: Record<string, Activity[]>;
+  insights: Insight[];
+}
+
+export function exportAllData(): ExportPayload {
+  const config = readConfig();
+  const insights = readInsights();
+  const activities: Record<string, Activity[]> = {};
+
+  if (fs.existsSync(ACTIVITIES_DIR)) {
+    for (const file of fs.readdirSync(ACTIVITIES_DIR)) {
+      if (!file.endsWith('.json')) continue;
+      const date = file.replace('.json', '');
+      const fullPath = path.join(ACTIVITIES_DIR, file);
+      try {
+        const raw = fs.readFileSync(fullPath, 'utf8');
+        activities[date] = JSON.parse(raw) as Activity[];
+      } catch {
+        // skip malformed file
+      }
+    }
+  }
+
+  return { config, activities, insights };
+}
+

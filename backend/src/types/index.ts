@@ -49,6 +49,11 @@ export interface DailyStats {
 export interface Settings {
   pollIntervalSeconds: number;
   idleThresholdMinutes: number;
+  /**
+   * How many days of activity data to keep before it is considered "old".
+   * Used by the data retention UI (e.g. 90 = 3 months). 0 can mean "never delete automatically".
+   */
+  retentionDays: number;
 }
 
 // ─── Request body types ───────────────────────────────────────────────────────

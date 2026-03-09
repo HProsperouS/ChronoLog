@@ -71,7 +71,13 @@ export function getSettings() {
   return readConfig().settings;
 }
 
-export function updateSettings(patch: Partial<{ pollIntervalSeconds: number; idleThresholdMinutes: number }>) {
+export function updateSettings(
+  patch: Partial<{
+    pollIntervalSeconds: number;
+    idleThresholdMinutes: number;
+    retentionDays: number;
+  }>,
+) {
   const config = readConfig();
   Object.assign(config.settings, patch);
   writeConfig(config);

@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { readConfig, writeConfig, type PrivacyExclusions, readInsights } from '../store/config.store';
-import type { Activity, Insight } from '../types';
+import { readSettings, writeSettings, type PrivacyExclusions, type SettingsConfig } from '../store/settings.store';
+import { readRules } from '../store/category-rules.store';
+import { readInsights } from '../store/config.store';
+import type { Activity, CategoryRule, Insight } from '../types';
 
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const ACTIVITIES_DIR = path.join(DATA_DIR, 'activities');
@@ -14,14 +16,13 @@ export interface DataSummary {
 }
 
 export function getPrivacy(): PrivacyExclusions {
-  const config = readConfig();
-  return config.privacy;
+  return readSettings().privacy;
 }
 
 export function updatePrivacy(patch: Partial<PrivacyExclusions>): PrivacyExclusions {
-  const config = readConfig();
+  const config = readSettings();
   config.privacy = { ...config.privacy, ...patch };
-  writeConfig(config);
+  writeSettings(config);
   return config.privacy;
 }
 
@@ -84,13 +85,15 @@ export function deleteAllData(): void {
 }
 
 export interface ExportPayload {
-  config: ReturnType<typeof readConfig>;
+  settings: SettingsConfig;
+  categoryRules: CategoryRule[];
   activities: Record<string, Activity[]>;
   insights: Insight[];
 }
 
 export function exportAllData(): ExportPayload {
-  const config = readConfig();
+  const settings = readSettings();
+  const categoryRules = readRules();
   const insights = readInsights();
   const activities: Record<string, Activity[]> = {};
 
@@ -108,6 +111,5 @@ export function exportAllData(): ExportPayload {
     }
   }
 
-  return { config, activities, insights };
+  return { settings, categoryRules, activities, insights };
 }
-

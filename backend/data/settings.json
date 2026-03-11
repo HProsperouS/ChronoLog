@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "trackingEnabled": true,
+    "idleDetectionEnabled": true,
+    "notificationsEnabled": true,
+    "launchAtStartup": true,
+    "runInBackground": true,
+    "pollIntervalSeconds": 5,
+    "idleThresholdMinutes": 5,
+    "retentionDays": 90
+  },
+  "privacy": {
+    "excludedApps": [
+      "Cursor"
+    ],
+    "respectPrivateBrowsing": true
+  }
+}

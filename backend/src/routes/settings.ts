@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import * as SettingsService from '../services/settings.service';
-import type { PrivacyExclusions } from '../store/config.store';
+import type { PrivacyExclusions } from '../store/settings.store';
 
 export default async function settingsRoutes(app: FastifyInstance) {
   app.get('/privacy', async (_request, reply) => {

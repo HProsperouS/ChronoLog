@@ -36,6 +36,11 @@ export async function getAvailableDates(): Promise<string[]> {
   return data.dates;
 }
 
+export async function getAppNames(): Promise<string[]> {
+  const data = await apiFetch<{ apps: string[] }>('/api/activities/apps');
+  return data.apps;
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 export async function getDailyStats(date: string): Promise<DailyStats> {

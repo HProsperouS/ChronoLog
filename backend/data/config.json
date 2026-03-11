@@ -128,7 +128,9 @@
     "retentionDays": 90
   },
   "privacy": {
-    "excludedApps": ["1Password", "Bitwarden", "KeePass"], 
+    "excludedApps": [
+      "Cursor"
+    ],
     "respectPrivateBrowsing": true
   }
 }

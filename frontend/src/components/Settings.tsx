@@ -1,8 +1,97 @@
-import { useEffect, useState } from 'react';
-import { Shield, Eye, EyeOff, Clock, Bell, Database, Lock, AlertTriangle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Shield, Eye, EyeOff, Clock, Bell, Database, Lock, AlertTriangle, Search, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
+
+// ─── App icon card helpers ────────────────────────────────────────────────────
+
+const AVATAR_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6'];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) & 0x7fffffff;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function AppIconCard({
+  name,
+  selected,
+  isExcluded,
+  onToggle,
+}: {
+  name: string;
+  selected: boolean;
+  isExcluded: boolean;
+  onToggle: () => void;
+}) {
+  const [imgError, setImgError] = useState(false);
+  const baseUrl = import.meta.env.VITE_API_URL as string;
+  const iconSrc = `${baseUrl}/api/activities/app-icon?name=${encodeURIComponent(name)}`;
+  const initials = name
+    .replace(/[^a-zA-Z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase() || name.slice(0, 2).toUpperCase();
+  const color = getAvatarColor(name);
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+        selected
+          ? 'border-indigo-500 bg-indigo-500/10 shadow-md shadow-indigo-500/10'
+          : 'border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/15'
+      }`}
+    >
+      {/* Icon or letter-avatar */}
+      <div className="relative">
+        {!imgError ? (
+          <img
+            src={iconSrc}
+            alt={name}
+            width={44}
+            height={44}
+            className="rounded-xl object-contain"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div
+            style={{ width: 44, height: 44, backgroundColor: color + '22', border: `1.5px solid ${color}55` }}
+            className="rounded-xl flex items-center justify-center text-sm font-bold"
+          >
+            <span style={{ color }}>{initials}</span>
+          </div>
+        )}
+        {/* Selected checkmark badge */}
+        {selected && (
+          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center shadow-md">
+            <Check className="w-3 h-3 text-white" />
+          </span>
+        )}
+      </div>
+
+      {/* App name */}
+      <span className="text-[10px] text-gray-300 text-center leading-tight line-clamp-2 w-full px-0.5">
+        {name}
+      </span>
+
+      {/* "on" pill for already-excluded apps */}
+      {isExcluded && (
+        <span className="absolute top-1.5 left-1.5 text-[8px] text-indigo-400 bg-indigo-500/15 px-1 py-0.5 rounded leading-none font-medium">
+          on
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function Settings() {
   const [trackingEnabled, setTrackingEnabled] = useState(true);
@@ -17,6 +106,12 @@ export function Settings() {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  const [isAddAppDialogOpen, setIsAddAppDialogOpen] = useState(false);
+  const [appSearch, setAppSearch] = useState('');
+  const [allAppNames, setAllAppNames] = useState<string[]>([]);
+  const [pendingSelection, setPendingSelection] = useState<Set<string>>(new Set());
+  const { messages, flash, dismiss } = useFlash();
 
   useEffect(() => {
     api.getSettings().then((s) => {
@@ -43,18 +138,38 @@ export function Settings() {
     void api.updateSettings({ idleThresholdMinutes: enabled ? 5 : 999 });
   }
 
-  function handleAddExcludedApp() {
-    const name = window.prompt('App name to exclude from tracking (e.g. 1Password):');
-    if (!name) return;
-    const next = [...new Set([...excludedApps, name])];
+  function handleOpenAddAppDialog() {
+    api.getAppNames().then(setAllAppNames).catch(() => setAllAppNames([]));
+    setPendingSelection(new Set(excludedApps));
+    setAppSearch('');
+    setIsAddAppDialogOpen(true);
+  }
+
+  function handleToggleApp(name: string) {
+    setPendingSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  function handleSubmitExcludedApps() {
+    const next = [...pendingSelection].sort();
     setExcludedApps(next);
-    void api.updatePrivacySettings({ excludedApps: next });
+    api.updatePrivacySettings({ excludedApps: next })
+      .then(() => flash('success', 'Excluded apps updated'))
+      .catch(() => flash('error', 'Failed to update excluded apps'));
+    setIsAddAppDialogOpen(false);
   }
 
   function handleRemoveExcludedApp(index: number) {
+    const removed = excludedApps[index];
     const next = excludedApps.filter((_, i) => i !== index);
     setExcludedApps(next);
-    void api.updatePrivacySettings({ excludedApps: next });
+    api.updatePrivacySettings({ excludedApps: next })
+      .then(() => flash('success', `"${removed}" removed from exclusions`))
+      .catch(() => flash('error', `Failed to remove "${removed}"`));
   }
 
   function handlePrivateBrowsingToggle(checked: boolean) {
@@ -111,6 +226,7 @@ export function Settings() {
 
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
+      <FlashContainer messages={messages} onDismiss={dismiss} />
       {/* Header */}
       <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
         <div className="flex flex-wrap items-center gap-3">
@@ -250,7 +366,7 @@ export function Settings() {
             </div>
             <button
               type="button"
-              onClick={handleAddExcludedApp}
+              onClick={handleOpenAddAppDialog}
               className="mt-3 w-full px-4 py-2 text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/20 transition-all"
             >
               + Add Application
@@ -458,6 +574,85 @@ export function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Add Application Dialog */}
+      <Dialog open={isAddAppDialogOpen} onOpenChange={(open) => { if (!open) setIsAddAppDialogOpen(false); }}>
+        <DialogContent className="w-[600px] max-w-[calc(100vw-2rem)]">
+          <DialogHeader>
+            <DialogTitle className="text-sm text-white">Exclude Applications</DialogTitle>
+            <DialogDescription>
+              Select apps to exclude from tracking. Already-excluded apps are pre-checked.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search applications…"
+              value={appSearch}
+              onChange={(e) => setAppSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+              autoFocus
+            />
+          </div>
+
+          {/* App grid */}
+          <div className="overflow-y-auto max-h-80 -mx-5 px-5">
+            {(() => {
+              const filtered = allAppNames.filter((name) =>
+                name.toLowerCase().includes(appSearch.toLowerCase())
+              );
+              if (allAppNames.length === 0) {
+                return (
+                  <p className="text-xs text-gray-500 text-center py-8">
+                    No installed apps found — make sure the backend is running
+                  </p>
+                );
+              }
+              if (filtered.length === 0) {
+                return (
+                  <p className="text-xs text-gray-500 text-center py-8">
+                    No apps match your search
+                  </p>
+                );
+              }
+              return (
+                <div className="grid grid-cols-4 gap-2 pb-1">
+                  {filtered.map((name) => (
+                    <AppIconCard
+                      key={name}
+                      name={name}
+                      selected={pendingSelection.has(name)}
+                      isExcluded={excludedApps.includes(name)}
+                      onToggle={() => handleToggleApp(name)}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="text-xs bg-white/10 text-white border-white/20 hover:bg-white/15"
+              onClick={() => setIsAddAppDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white border-0"
+              onClick={handleSubmitExcludedApps}
+            >
+              Save ({pendingSelection.size} selected)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

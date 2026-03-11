@@ -38,6 +38,21 @@ export default async function activitiesRoutes(app: FastifyInstance) {
     return reply.send({ dates: ActivityService.availableDates() });
   });
 
+  app.get('/apps', async (_request, reply) => {
+    return reply.send({ apps: ActivityService.listInstalledApps() });
+  });
+
+  app.get<{ Querystring: { name: string } }>('/app-icon', async (request, reply) => {
+    const { name } = request.query;
+    if (!name) return reply.code(400).send({ error: 'name is required' });
+    const buffer = ActivityService.getAppIconBuffer(name);
+    if (!buffer) return reply.code(404).send();
+    return reply
+      .header('content-type', 'image/png')
+      .header('cache-control', 'public, max-age=86400')
+      .send(buffer);
+  });
+
   app.delete<{ Params: { id: string }; Querystring: { date: string } }>('/:id', async (request, reply) => {
     const deleted = ActivityService.deleteActivity(
       Number(request.params.id),

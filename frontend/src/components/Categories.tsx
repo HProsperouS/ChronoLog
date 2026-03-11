@@ -1,47 +1,109 @@
 import { useEffect, useState } from 'react';
 import { FolderTree, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
 import { categoryColors } from '../constants';
 import type { CategoryRule } from '../types';
 
+const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
+
 export function Categories() {
   const [rules, setRules] = useState<CategoryRule[]>([]);
-
-  useEffect(() => {
-    api.getCategoryRules().then(setRules);
-  }, []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { messages, flash, dismiss } = useFlash();
+
+  useEffect(() => {
+    api.getCategoryRules().then(setRules).catch(() => flash('error', 'Failed to load category rules'));
+  }, []);
 
   const categories = ['Work', 'Study', 'Entertainment', 'Communication', 'Utilities', 'Uncategorized'];
 
-  const handleDelete = (id: string) => {
-    api.deleteCategoryRule(id);
-    setRules(rules.filter(r => r.id !== id));
-  };
+  async function confirmDelete() {
+    if (!deletingId) return;
+    setIsDeleting(true);
+    try {
+      await api.deleteCategoryRule(deletingId);
+      setRules((prev) => prev.filter((r) => r.id !== deletingId));
+      flash('success', 'Rule deleted successfully');
+    } catch {
+      flash('error', 'Failed to delete rule');
+    } finally {
+      setIsDeleting(false);
+      setDeletingId(null);
+    }
+  }
 
-  const handleEdit = (id: string) => {
+  function handleEdit(id: string) {
+    const rule = rules.find((r) => r.id === id);
+    if (!rule) return;
+    setDraft({
+      appName: rule.appName,
+      category: rule.category,
+      keywords: rule.keywords?.join(', ') ?? '',
+      isAutomatic: rule.isAutomatic,
+    });
     setEditingId(id);
-  };
+  }
 
-  const handleSave = () => {
+  async function handleSaveEdit() {
+    if (!editingId) return;
+    try {
+      const patch = {
+        category: draft.category,
+        keywords: draft.keywords ? draft.keywords.split(',').map((k) => k.trim()).filter(Boolean) : [],
+        isAutomatic: draft.isAutomatic,
+      };
+      const updated = await api.updateCategoryRule(editingId, patch);
+      setRules((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
+      setEditingId(null);
+      flash('success', 'Rule updated successfully');
+    } catch {
+      flash('error', 'Failed to update rule');
+    }
+  }
+
+  async function handleSaveAdd() {
+    if (!draft.appName.trim()) {
+      flash('warning', 'Application name is required');
+      return;
+    }
+    try {
+      const created = await api.createCategoryRule({
+        appName: draft.appName.trim(),
+        category: draft.category,
+        keywords: draft.keywords ? draft.keywords.split(',').map((k) => k.trim()).filter(Boolean) : [],
+        isAutomatic: draft.isAutomatic,
+      });
+      setRules((prev) => [...prev, created]);
+      setIsAdding(false);
+      setDraft({ ...EMPTY_DRAFT });
+      flash('success', `Rule for "${created.appName}" added`);
+    } catch {
+      flash('error', 'Failed to add rule');
+    }
+  }
+
+  function handleCancel() {
     setEditingId(null);
     setIsAdding(false);
-  };
+    setDraft({ ...EMPTY_DRAFT });
+  }
 
-  const handleCancel = () => {
+  function handleStartAdd() {
+    setDraft({ ...EMPTY_DRAFT });
     setEditingId(null);
-    setIsAdding(false);
-  };
-
-  const handleCategoryChange = (id: string, newCategory: string) => {
-    setRules(rules.map(rule => 
-      rule.id === id ? { ...rule, category: newCategory as any } : rule
-    ));
-  };
+    setIsAdding(true);
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
+      <FlashContainer messages={messages} onDismiss={dismiss} />
       {/* Header */}
       <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -52,7 +114,7 @@ export function Categories() {
             </p>
           </div>
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={handleStartAdd}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -121,12 +183,18 @@ export function Categories() {
                       <input
                         type="text"
                         placeholder="Application name"
+                        value={draft.appName}
+                        onChange={(e) => setDraft((d) => ({ ...d, appName: e.target.value }))}
                         className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                       />
                     </td>
                     <td className="px-5 py-3">
-                      <select className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
-                        {categories.map(cat => (
+                      <select
+                        value={draft.category}
+                        onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
+                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                      >
+                        {categories.map((cat) => (
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
@@ -135,18 +203,25 @@ export function Categories() {
                       <input
                         type="text"
                         placeholder="keyword1, keyword2"
+                        value={draft.keywords}
+                        onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
                         className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                       />
                     </td>
                     <td className="px-5 py-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-400">
-                        Manual
-                      </span>
+                      <select
+                        value={draft.isAutomatic ? 'auto' : 'manual'}
+                        onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
+                        className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="auto">Automatic</option>
+                        <option value="manual">Manual</option>
+                      </select>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={handleSave}
+                          onClick={handleSaveAdd}
                           className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
                         >
                           <Save className="w-3.5 h-3.5" />
@@ -173,11 +248,11 @@ export function Categories() {
                       <td className="px-5 py-3">
                         {isEditing ? (
                           <select
-                            value={rule.category}
-                            onChange={(e) => handleCategoryChange(rule.id, e.target.value)}
+                            value={draft.category}
+                            onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
                             className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                           >
-                            {categories.map(cat => (
+                            {categories.map((cat) => (
                               <option key={cat} value={cat}>{cat}</option>
                             ))}
                           </select>
@@ -195,8 +270,10 @@ export function Categories() {
                         {isEditing ? (
                           <input
                             type="text"
-                            value={rule.keywords?.join(', ') || ''}
-                            className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                            value={draft.keywords}
+                            onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
+                            placeholder="keyword1, keyword2"
+                            className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                           />
                         ) : (
                           <span className="text-xs text-gray-500">
@@ -205,21 +282,32 @@ export function Categories() {
                         )}
                       </td>
                       <td className="px-5 py-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                            rule.isAutomatic
-                              ? 'bg-emerald-500/10 text-emerald-400'
-                              : 'bg-gray-500/10 text-gray-400'
-                          }`}
-                        >
-                          {rule.isAutomatic ? 'Automatic' : 'Manual'}
-                        </span>
+                        {isEditing ? (
+                          <select
+                            value={draft.isAutomatic ? 'auto' : 'manual'}
+                            onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
+                            className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
+                          >
+                            <option value="auto">Automatic</option>
+                            <option value="manual">Manual</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                              rule.isAutomatic
+                                ? 'bg-emerald-500/10 text-emerald-400'
+                                : 'bg-gray-500/10 text-gray-400'
+                            }`}
+                          >
+                            {rule.isAutomatic ? 'Automatic' : 'Manual'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3">
                         {isEditing ? (
                           <div className="flex items-center gap-1">
                             <button
-                              onClick={handleSave}
+                              onClick={handleSaveEdit}
                               className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
                             >
                               <Save className="w-3.5 h-3.5" />
@@ -240,7 +328,7 @@ export function Categories() {
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDelete(rule.id)}
+                              onClick={() => setDeletingId(rule.id)}
                               className="p-1 text-red-400 hover:bg-red-500/10 rounded transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -274,6 +362,42 @@ export function Categories() {
           </div>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+        <DialogContent className="bg-[#111827] border border-red-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-sm text-red-400">Delete rule?</DialogTitle>
+            <DialogDescription className="text-xs text-gray-400">
+              This will permanently remove the rule for{' '}
+              <span className="text-white font-medium">
+                {rules.find((r) => r.id === deletingId)?.appName ?? ''}
+              </span>
+              . The change will apply to new activity tracking immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-xs bg-white/10 text-white border-white/20 hover:bg-white/15"
+              onClick={() => setDeletingId(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="text-xs"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting…' : 'Yes, delete rule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

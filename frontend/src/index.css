@@ -184,5 +184,8 @@ html {
 }
 
 .rdp-day_today:not(.rdp-day_selected) {
-  border: 1px solid #10b981; /* Study */
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  background: none !important;
+  color: #a5b4fc;
+  font-weight: 600;
 }

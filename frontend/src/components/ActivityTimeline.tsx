@@ -82,7 +82,10 @@ export function ActivityTimeline() {
                     selected={selectedDate}
                     onSelect={(d) => { if (!d) return; setSelectedDate(d); setIsDatePickerOpen(false); }}
                     modifiers={{ hasData: (d) => availableDates.has(dateStr(d)) }}
-                    modifiersStyles={{ hasData: { fontWeight: 'bold', textDecoration: 'underline', color: '#6366f1' } }}
+                    modifiersStyles={{
+                      hasData: { fontWeight: 'bold', textDecoration: 'underline', color: '#6366f1' },
+                      today: { color: '#a5b4fc', fontWeight: '600', background: 'none' },
+                    }}
                   />
                 </div>
               </div>

@@ -20,6 +20,7 @@ function parseActivity(raw: Record<string, unknown>): Activity {
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, init);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${path}`);
+  if (res.status === 204 || res.headers.get('content-length') === '0') return undefined as T;
   return await res.json() as T;
 }
 

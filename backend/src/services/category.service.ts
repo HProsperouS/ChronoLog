@@ -73,9 +73,14 @@ export function getSettings() {
 
 export function updateSettings(
   patch: Partial<{
-    pollIntervalSeconds: number;
+    trackingEnabled:      boolean;
+    idleDetectionEnabled: boolean;
+    notificationsEnabled: boolean;
+    launchAtStartup:      boolean;
+    runInBackground:      boolean;
+    pollIntervalSeconds:  number;
     idleThresholdMinutes: number;
-    retentionDays: number;
+    retentionDays:        number;
   }>,
 ) {
   const config = readConfig();

@@ -97,6 +97,8 @@ export function Settings() {
   const [trackingEnabled, setTrackingEnabled] = useState(true);
   const [idleDetection, setIdleDetection] = useState(true);
   const [notifications, setNotifications] = useState(true);
+  const [launchAtStartup, setLaunchAtStartup] = useState(true);
+  const [runInBackground, setRunInBackground] = useState(true);
   const [pollInterval, setPollInterval]   = useState(5);
   const [retentionDays, setRetentionDays] = useState<number>(90);
 
@@ -115,8 +117,12 @@ export function Settings() {
 
   useEffect(() => {
     api.getSettings().then((s) => {
+      setTrackingEnabled(s.trackingEnabled ?? true);
       setPollInterval(s.pollIntervalSeconds);
-      setIdleDetection(s.idleThresholdMinutes < 60);
+      setIdleDetection(s.idleDetectionEnabled ?? true);
+      setNotifications(s.notificationsEnabled ?? true);
+      setLaunchAtStartup(s.launchAtStartup ?? true);
+      setRunInBackground(s.runInBackground ?? true);
       setRetentionDays(s.retentionDays ?? 90);
     });
     api.getPrivacySettings().then((p) => {
@@ -128,6 +134,11 @@ export function Settings() {
     });
   }, []);
 
+  function handleTrackingToggle(enabled: boolean) {
+    setTrackingEnabled(enabled);
+    void api.updateSettings({ trackingEnabled: enabled });
+  }
+
   function handlePollIntervalChange(seconds: number) {
     setPollInterval(seconds);
     void api.updateSettings({ pollIntervalSeconds: seconds });
@@ -135,7 +146,22 @@ export function Settings() {
 
   function handleIdleToggle(enabled: boolean) {
     setIdleDetection(enabled);
-    void api.updateSettings({ idleThresholdMinutes: enabled ? 5 : 999 });
+    void api.updateSettings({ idleDetectionEnabled: enabled });
+  }
+
+  function handleNotificationsToggle(enabled: boolean) {
+    setNotifications(enabled);
+    void api.updateSettings({ notificationsEnabled: enabled });
+  }
+
+  function handleLaunchAtStartupToggle(enabled: boolean) {
+    setLaunchAtStartup(enabled);
+    void api.updateSettings({ launchAtStartup: enabled });
+  }
+
+  function handleRunInBackgroundToggle(enabled: boolean) {
+    setRunInBackground(enabled);
+    void api.updateSettings({ runInBackground: enabled });
   }
 
   function handleOpenAddAppDialog() {
@@ -274,7 +300,7 @@ export function Settings() {
                 </p>
               </div>
               <button
-                onClick={() => setTrackingEnabled(!trackingEnabled)}
+                onClick={() => handleTrackingToggle(!trackingEnabled)}
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                   trackingEnabled ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-white/10'
                 }`}
@@ -318,7 +344,7 @@ export function Settings() {
                 </p>
               </div>
               <button
-                onClick={() => setNotifications(!notifications)}
+                onClick={() => handleNotificationsToggle(!notifications)}
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                   notifications ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-white/10'
                 }`}
@@ -535,11 +561,18 @@ export function Settings() {
                   Automatically start ChronoLog when your computer boots
                 </p>
               </div>
-              <input
-                type="checkbox"
-                defaultChecked
-                className="w-3.5 h-3.5 text-indigo-600 bg-white/5 border-white/10 rounded focus:ring-indigo-500 focus:ring-offset-0"
-              />
+              <button
+                onClick={() => handleLaunchAtStartupToggle(!launchAtStartup)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  launchAtStartup ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-white/10'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                    launchAtStartup ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="flex items-center justify-between">
@@ -549,11 +582,18 @@ export function Settings() {
                   Keep tracking even when the window is closed
                 </p>
               </div>
-              <input
-                type="checkbox"
-                defaultChecked
-                className="w-3.5 h-3.5 text-indigo-600 bg-white/5 border-white/10 rounded focus:ring-indigo-500 focus:ring-offset-0"
-              />
+              <button
+                onClick={() => handleRunInBackgroundToggle(!runInBackground)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  runInBackground ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-white/10'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                    runInBackground ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="pt-4 border-t border-white/5">

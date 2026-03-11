@@ -85,6 +85,11 @@ export async function deleteCategoryRule(id: string): Promise<void> {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 export interface TrackerSettings {
+  trackingEnabled:       boolean;
+  idleDetectionEnabled:  boolean;
+  notificationsEnabled:  boolean;
+  launchAtStartup:       boolean;
+  runInBackground:       boolean;
   pollIntervalSeconds:   number;
   idleThresholdMinutes:  number;
   retentionDays:         number;

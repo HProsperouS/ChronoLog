@@ -47,13 +47,15 @@ export interface DailyStats {
 }
 
 export interface Settings {
-  pollIntervalSeconds: number;
+  trackingEnabled:      boolean;
+  idleDetectionEnabled: boolean;
+  notificationsEnabled: boolean;
+  launchAtStartup:      boolean;
+  runInBackground:      boolean;
+  pollIntervalSeconds:  number;
   idleThresholdMinutes: number;
-  /**
-   * How many days of activity data to keep before it is considered "old".
-   * Used by the data retention UI (e.g. 90 = 3 months). 0 can mean "never delete automatically".
-   */
-  retentionDays: number;
+  /** Days of activity data to keep (90 = 3 months, 0 = never auto-delete). */
+  retentionDays:        number;
 }
 
 // ─── Request body types ───────────────────────────────────────────────────────

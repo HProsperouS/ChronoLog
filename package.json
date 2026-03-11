@@ -1,0 +1,69 @@
+{
+  "name": "chronolog",
+  "version": "0.1.0",
+  "description": "ChronoLog — Local-first time tracker",
+  "main": "electron/dist/main.js",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others --names \"ELECTRON,VITE,BACKEND\" --prefix-colors \"cyan,green,yellow\" \"npm run electron:dev\" \"npm run vite:dev\" \"npm run backend:dev\"",
+    "vite:dev": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && npm run dev",
+    "electron:dev": "wait-on http://localhost:3000 && NODE_ENV=development electron .",
+    "build": "npm run build:frontend && npm run build:backend && npm run build:electron",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.chronolog.app",
+    "productName": "ChronoLog",
+    "copyright": "Copyright © 2026 ChronoLog",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/dist/**",
+      "frontend/dist/**",
+      "backend/dist/**",
+      "electron/assets/**"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/dist",
+        "to": "backend/dist",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "icon": "electron/assets/icon.icns",
+      "darkModeSupport": true
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "electron/assets/icon.ico"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "icon": "electron/assets/icon.png",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.4.5",
+    "wait-on": "^7.2.0",
+    "@types/node": "^20.14.0"
+  }
+}

@@ -1,0 +1,234 @@
+[
+  {
+    "id": "1",
+    "appName": "Cursor",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "2",
+    "appName": "Discord",
+    "category": "Communication",
+    "isAutomatic": true
+  },
+  {
+    "id": "3",
+    "appName": "Docker",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "4",
+    "appName": "GitHub Desktop",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "5",
+    "appName": "Google Chrome",
+    "category": "Work",
+    "isAutomatic": false,
+    "keywords": [
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "6",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "youtube",
+      "youtu.be",
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili"
+    ]
+  },
+  {
+    "id": "7",
+    "appName": "Ice",
+    "category": "Utilities",
+    "isAutomatic": true
+  },
+  {
+    "id": "8",
+    "appName": "IntelliJ IDEA",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "9",
+    "appName": "Keynote",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "10",
+    "appName": "Microsoft Excel",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "11",
+    "appName": "Microsoft PowerPoint",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "12",
+    "appName": "Microsoft Teams",
+    "category": "Communication",
+    "isAutomatic": true
+  },
+  {
+    "id": "13",
+    "appName": "Microsoft Word",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "14",
+    "appName": "Notion",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "15",
+    "appName": "Numbers",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "16",
+    "appName": "Pages",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "17",
+    "appName": "Postman",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "18",
+    "appName": "Safari",
+    "category": "Work",
+    "isAutomatic": false,
+    "keywords": [
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "19",
+    "appName": "Safari",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "youtube",
+      "youtu.be",
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili"
+    ]
+  },
+  {
+    "id": "20",
+    "appName": "Visual Studio Code",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "21",
+    "appName": "Wireshark",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "22",
+    "appName": "Xcode",
+    "category": "Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "23",
+    "appName": "zoom.us",
+    "category": "Communication",
+    "isAutomatic": true
+  }
+]

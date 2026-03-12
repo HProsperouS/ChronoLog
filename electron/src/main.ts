@@ -77,7 +77,7 @@ function startBackend(): Promise<void> {
 function startTracker(): void {
   const env = {
     ...process.env,
-    BACKEND_URL: `http://localhost:${BACKEND_PORT}`,
+    API_URL: `http://localhost:${BACKEND_PORT}`,
     NODE_ENV: isDev ? 'development' : 'production',
   };
 

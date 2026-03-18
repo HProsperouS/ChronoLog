@@ -214,6 +214,16 @@ async function poll(): Promise<void> {
   } else if (!sameWindow) {
     await postActivity(current, new Date());
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
+  } else {
+    // Same window — checkpoint if session has been running too long
+    const SESSION_CHECKPOINT_MS = 5 * 60 * 1_000; // 5 minutes
+    const elapsed = Date.now() - current.startTime.getTime();
+    if (elapsed >= SESSION_CHECKPOINT_MS) {
+      const now = new Date();
+      await postActivity(current, now);
+      // Restart session from now so the next chunk begins fresh
+      current = { appName, windowTitle, url: recordUrl, startTime: now };
+    }
   }
 }
 

@@ -16,8 +16,13 @@ export function Dashboard() {
   const [weekly, setWeekly] = useState<DailyStats[]>([]);
 
   useEffect(() => {
-    api.getDailyStats(TODAY).then(setDaily);
-    api.getWeeklyStats().then(setWeekly);
+    const fetch = () => {
+      api.getDailyStats(TODAY).then(setDaily);
+      api.getWeeklyStats().then(setWeekly);
+    };
+    fetch();
+    const timer = setInterval(fetch, 30_000);
+    return () => clearInterval(timer);
   }, []);
 
 

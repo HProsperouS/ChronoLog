@@ -19,7 +19,18 @@ export function ActivityTimeline() {
   }, []);
 
   useEffect(() => {
-    api.getActivities(dateStr(selectedDate)).then(setActivities);
+    const date = dateStr(selectedDate);
+    const isToday = date === todayStr();
+
+    const fetch = () => {
+      api.getActivities(date).then(setActivities);
+      if (isToday) api.getAvailableDates().then((dates) => setAvailableDates(new Set(dates)));
+    };
+
+    fetch();
+    if (!isToday) return;
+    const timer = setInterval(fetch, 30_000);
+    return () => clearInterval(timer);
   }, [selectedDate]);
 
   const formatTime = (date: Date) =>

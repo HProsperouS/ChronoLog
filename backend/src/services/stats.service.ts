@@ -12,10 +12,13 @@ function emptyTotals(): Record<Category, number> {
 function countContextSwitches(activities: Activity[]): number {
   const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
   const IGNORE: Category[] = ['Utilities', 'Uncategorized'];
+  const FOCUS: Category[] = ['Work', 'Study'];
   const relevant = sorted.filter((a) => !IGNORE.includes(a.category));
   let switches = 0;
   for (let i = 1; i < relevant.length; i++) {
-    if (relevant[i].category !== relevant[i - 1].category) switches++;
+    const prev = relevant[i - 1].category;
+    const curr = relevant[i].category;
+    if (FOCUS.includes(prev) && !FOCUS.includes(curr)) switches++;
   }
   return switches;
 }

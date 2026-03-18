@@ -3,7 +3,7 @@ import activeWin from 'active-win';
 import { execSync } from 'child_process';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
-const MIN_DURATION_SECONDS = 10;
+const MIN_DURATION_SECONDS = 5;
 
 // ─── Config (refreshed from backend every 60 s) ───────────────────────────────
 
@@ -204,10 +204,20 @@ async function poll(): Promise<void> {
     : url;
 
   // 6. Session tracking
+  // For browsers, group by URL hostname so that title changes (e.g. YouTube
+  // switching videos) don't fragment the session into many tiny pieces.
+  const isBrowser = /chrome|safari|firefox|arc|brave|edge|opera/i.test(appName);
+  const sessionKey = (app: string, title: string | undefined, u: string | undefined) => {
+    if (isBrowser && u) {
+      try { return app + '|' + new URL(u).hostname; } catch { /* fall through */ }
+    }
+    return app + '|' + (title ?? '');
+  };
+
   const sameWindow =
     current &&
-    current.appName === appName &&
-    (current.windowTitle ?? '') === (windowTitle ?? '');
+    sessionKey(current.appName, current.windowTitle, current.url) ===
+    sessionKey(appName, windowTitle, recordUrl);
 
   if (!current) {
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
@@ -215,8 +225,12 @@ async function poll(): Promise<void> {
     await postActivity(current, new Date());
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
   } else {
-    // Same window — checkpoint if session has been running too long
-    const SESSION_CHECKPOINT_MS = 5 * 60 * 1_000; // 5 minutes
+    // Same session — keep title/url up to date so category rules stay accurate
+    current.windowTitle = windowTitle;
+    current.url = recordUrl;
+
+    // Checkpoint if session has been running too long
+    const SESSION_CHECKPOINT_MS = 2 * 60 * 1_000; // 2 minutes
     const elapsed = Date.now() - current.startTime.getTime();
     if (elapsed >= SESSION_CHECKPOINT_MS) {
       const now = new Date();

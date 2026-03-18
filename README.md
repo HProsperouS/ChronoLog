@@ -139,94 +139,152 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 
 ## Tracker Logic
 
-The tracker (`backend/src/tracker.ts`) is a lightweight background process that detects what the user is doing and records it.
+The tracker (`backend/src/tracker.ts`) is a lightweight background process that continuously monitors what the user is doing and records it into the local data store.
+
+### What the tracker can detect
+
+| Data | Details |
+|---|---|
+| **App name** | The name of the currently focused application (e.g. `Google Chrome`, `Cursor`, `Spotify`) |
+| **Window title** | The title bar text — e.g. `"JavaScript Tutorial - YouTube"`, `"project.ts — Cursor"` |
+| **URL** | Full URL for supported browsers (Chrome, Safari, Firefox, Arc, Brave, Edge) |
+| **Duration** | Exact time spent, measured from session start to end, accurate to the second |
+| **Start / end timestamps** | ISO 8601, stored in UTC |
+| **System idle time** | OS-level time since last keyboard or mouse input |
+| **Private browsing** | Detected via window title keywords; URL is stripped but app is still recorded |
+
+> The tracker does **not** capture screenshots, keystrokes, clipboard contents, or any window content beyond the title and URL.
+
+---
 
 ### Poll loop
 
-Every N seconds (default 5, configurable), the tracker:
-
-1. Checks if tracking is **enabled** — if not, flushes the current session and skips
-2. Checks **system idle time** — if the user has been idle beyond the threshold, closes the session and skips
-3. Reads the **active window** via `active-win`
-4. Checks if the app is in the **excluded apps** list — if so, skips
-5. Checks for **private browsing** — strips the URL but still records the app
-6. Compares the window with the previous poll — if it changed, **closes the old session** and starts a new one
+Every N seconds (default 5, configurable via Settings), the tracker runs one poll cycle:
 
 ```
-Each poll cycle:
-
-  trackingEnabled? ─── No ──► flush session, return
-       │
-      Yes
-       │
-  idleDetectionEnabled? ─── No ──► skip idle check
-       │
-      Yes
-       │
-  getSystemIdleSeconds() >= threshold? ─── Yes ──► close session (back-dated), return
-       │
-      No
-       │
-  active-win() ──► no result? ──► close session, return
-       │
-  result
-       │
-  app in excludedApps? ──► Yes ──► close session, return
-       │
-      No
-       │
-  private browsing? ──► Yes ──► record app, strip URL
-       │
-      No ──► record app + URL
-       │
-  same window as last poll? ──► Yes ──► extend current session
-       │
-      No ──► POST old session, start new session
+trackingEnabled? ─── No ──► flush current session → return
+      │
+     Yes
+      │
+idleDetectionEnabled? ── Yes ──► getSystemIdleSeconds() >= threshold?
+      │                                │
+      │                               Yes ──► close session (back-dated to idle start) → return
+      │                                │
+      │                               No
+      │◄──────────────────────────────┘
+      │
+active-win() ──► no result (locked screen / UAC)? ──► close session → return
+      │
+app in excludedApps? ──► Yes ──► close session → return
+      │
+     No
+      │
+private browsing? ──► Yes ──► record app, strip URL
+      │
+     No ──► record app + URL
+      │
+same session? (see "Session grouping" below)
+      ├── Yes ──► update windowTitle + URL in place
+      │          elapsed ≥ 2 min? ──► checkpoint: POST session, restart timer
+      │
+      └── No  ──► POST old session → start new session
 ```
+
+Sessions shorter than **5 seconds** are silently discarded to filter out accidental focus (e.g. quick Alt+Tab glances).
+
+---
+
+### Session grouping
+
+The tracker decides whether the current poll belongs to the **same session** as the previous one:
+
+- **Non-browser apps** (Cursor, Notion, Figma, etc.): same session if `appName` **and** `windowTitle` are unchanged. A new document or project in the same app creates a new session.
+- **Browser apps** (Chrome, Safari, Firefox, Arc, Brave, Edge, Opera): same session if `appName` **and** URL **hostname** are unchanged. This means navigating between videos on YouTube or pages within GitHub does **not** split the session — only switching to a different website does.
+
+Within a session, `windowTitle` and `url` are updated live on every poll. This ensures that when the session is eventually written, it captures the **most recent** title — keeping category auto-detection accurate even if content changed mid-session (e.g. switching from a tutorial to a music video on YouTube).
+
+---
+
+### Session checkpoints (2-minute writes)
+
+If the user stays in the same session for more than **2 minutes**, the tracker automatically:
+
+1. Writes the current session to disk (POST to backend)
+2. Restarts the session timer from the current moment
+
+This prevents two problems:
+- **Data loss** if the tracker crashes or the machine shuts down unexpectedly
+- **Timeline gaps** — the Activity Timeline chart would show blank space for any unwritten session
+
+---
 
 ### Idle detection
 
-The tracker uses **real OS-level idle time** (time since last keyboard or mouse input), not window-switch time. This means a user actively typing in the same app all day is never incorrectly marked as idle.
+The tracker uses **real OS-level idle time** — the time since the last keyboard or mouse input — not inferred from window-switching activity.
 
 | Platform | API used |
 |---|---|
 | macOS | `ioreg -c IOHIDSystem` → `HIDIdleTime` (nanoseconds) |
-| Windows | `GetLastInputInfo` Win32 API via PowerShell |
+| Windows | `GetLastInputInfo` Win32 API via inline PowerShell |
 
-When idle is detected, the session end time is **back-dated** to when the idle actually started — so idle minutes are not counted as app usage time.
+When idle is detected, the session end time is **back-dated** to when idle actually started — so the minutes the user was away are not counted as usage time.
+
+---
 
 ### Private browsing
 
-If `respectPrivateBrowsing` is enabled, the tracker detects private windows by checking window title keywords:
+If `respectPrivateBrowsing` is enabled (default: on), the tracker detects private windows by checking for keywords in the window title:
 
-- `incognito` (Chrome)
-- `private` (Firefox, Safari)
-- `InPrivate` (Edge)
+- `incognito` → Chrome
+- `private` → Firefox, Safari
+- `InPrivate` → Edge
 
-In private mode: the **app activity is still recorded** (so total screen time is accurate), but the **URL is stripped** (so visited sites are not stored).
+In private mode: the **app activity is still recorded** (total screen time stays accurate), but the **URL is stripped** (no visited sites are stored).
+
+---
 
 ### Settings sync
 
-On startup and every 60 seconds, the tracker fetches the latest settings from the backend:
+On startup and every 60 seconds, the tracker fetches the latest settings from the backend API so changes take effect without restarting:
 
-- `trackingEnabled` — pause/resume tracking without restarting the process
-- `idleDetectionEnabled` + `idleThresholdMinutes` — idle configuration
-- `pollIntervalSeconds` — if changed, the poll timer is automatically rescheduled
-- `excludedApps` — updated exclusion list
-- `respectPrivateBrowsing` — updated privacy preference
+| Setting | Effect |
+|---|---|
+| `trackingEnabled` | Pause or resume tracking instantly |
+| `idleDetectionEnabled` | Toggle idle detection on/off |
+| `idleThresholdMinutes` | How long before a session is considered idle |
+| `pollIntervalSeconds` | Poll frequency — timer is automatically rescheduled if changed |
+| `excludedApps` | Updated list of apps to ignore (e.g. password managers, banking) |
+| `respectPrivateBrowsing` | Toggle URL stripping in private windows |
 
-### What gets recorded per session
+---
+
+### Data written per session
+
+Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`:
 
 ```json
 {
+  "id":          "a1b2c3d4",
   "appName":     "Google Chrome",
-  "windowTitle": "Never Gonna Give You Up - YouTube - Google Chrome",
-  "url":         "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-  "duration":    3.5,
-  "startTime":   "2026-03-12T14:00:00.000Z",
-  "endTime":     "2026-03-12T14:03:30.000Z"
+  "windowTitle": "JavaScript Tutorial - YouTube",
+  "url":         "https://www.youtube.com/watch?v=abc123",
+  "duration":    2.0,
+  "startTime":   "2026-03-18T13:00:00.000Z",
+  "endTime":     "2026-03-18T13:02:00.000Z",
+  "date":        "2026-03-18",
+  "category":    "Study"
 }
 ```
+
+`category` is assigned by the backend at write time, by matching `appName`, `windowTitle`, and `url` against the user's category rules (stored in `category-rules.json`).
+
+---
+
+### Context switches
+
+A **context switch** is counted when the user moves **away from a focused session** — specifically when the previous activity's category was `Work` or `Study` and the next activity's category is something else (e.g. `Entertainment`, `Communication`).
+
+Switching back into `Work`/`Study` does not count — only the interruptions that pulled the user out of focus are tracked. This gives a meaningful measure of how many times focused work was broken.
 
 ---
 

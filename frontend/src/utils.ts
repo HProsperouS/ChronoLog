@@ -16,13 +16,13 @@ export function dateStr(d: Date): string {
 }
 
 /**
- * Formats a duration in minutes to a human-readable string.
- * Always rounds to at most 1 decimal place to avoid float noise.
- * Examples: 5.2 → "5.2m", 65.7 → "1h 5.7m", 120 → "2h 0m"
+ * Formats a duration in minutes to a human-readable string with exactly 2 decimal places.
+ * Examples: 5.2 → "5.20m", 65.71 → "1h 5.71m", 120 → "2h 0.00m"
  */
 export function formatDuration(minutes: number): string {
-  const total = Math.round(minutes * 10) / 10;
+  const total = Math.round(minutes * 100) / 100;
   const h = Math.floor(total / 60);
-  const m = parseFloat((total % 60).toFixed(1));
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const m = total % 60;
+  if (h > 0 && m === 0) return `${h}h`;
+  return h > 0 ? `${h}h ${m.toFixed(2)}m` : `${m.toFixed(2)}m`;
 }

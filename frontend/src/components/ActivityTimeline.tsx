@@ -18,6 +18,20 @@ export function ActivityTimeline() {
     api.getAvailableDates().then((dates) => setAvailableDates(new Set(dates)));
   }, []);
 
+  // Auto-advance to the new day at midnight (for late-night workers)
+  useEffect(() => {
+    let lastToday = todayStr();
+    const timer = setInterval(() => {
+      const nowToday = todayStr();
+      if (nowToday !== lastToday) {
+        // Date rolled over — if user was viewing the old "today", move them forward
+        setSelectedDate((prev) => dateStr(prev) === lastToday ? new Date() : prev);
+        lastToday = nowToday;
+      }
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     const date = dateStr(selectedDate);
     const isToday = date === todayStr();

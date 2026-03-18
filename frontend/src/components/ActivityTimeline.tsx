@@ -65,7 +65,8 @@ export function ActivityTimeline() {
       .map((a) => {
         const h = a.endTime?.getHours?.() ?? NaN;
         const m = a.endTime?.getMinutes?.() ?? 0;
-        return isNaN(h) ? NaN : (m > 0 ? h + 1 : h);
+        const s = a.endTime?.getSeconds?.() ?? 0;
+        return isNaN(h) ? NaN : (m > 0 || s > 0 ? h + 1 : h);
       })
       .filter((h) => !isNaN(h));
 
@@ -86,7 +87,9 @@ export function ActivityTimeline() {
     return activities
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
       .map((activity) => {
-        const startMin = activity.startTime.getHours() * 60 + activity.startTime.getMinutes();
+        const startMin = activity.startTime.getHours() * 60
+          + activity.startTime.getMinutes()
+          + activity.startTime.getSeconds() / 60;
         const offset   = startMin - startHour * 60;
         const left     = (offset / totalMins) * 100;
         const width    = (activity.duration / totalMins) * 100;

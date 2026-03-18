@@ -91,12 +91,6 @@ function getSystemIdleSeconds(): number {
       return parseInt(out, 10) || 0;
     }
 
-    // Linux — requires xprintidle (returns ms)
-    const out = execSync('xprintidle', {
-      timeout: 1_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).toString().trim();
-    return Math.floor(parseInt(out, 10) / 1_000);
   } catch {
     return 0; // fallback: assume not idle
   }

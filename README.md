@@ -260,7 +260,7 @@ On startup and every 60 seconds, the tracker fetches the latest settings from th
 
 ### Data written per session
 
-Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`:
+Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`, where `YYYY-MM-DD` is derived from the **server's local calendar day** (the same \"today\" you see in the UI), not UTC. Timestamps remain in UTC so they can be safely reinterpreted in any timezone later.
 
 ```json
 {

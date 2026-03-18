@@ -288,6 +288,31 @@ Switching back into `Work`/`Study` does not count — only the interruptions tha
 
 ---
 
+### Focus Score (0–100)
+
+The Focus Score combines three dimensions to reflect both **how much** and **how well** the user focused:
+
+| Dimension | Weight | Max 100% when |
+|---|---|---|
+| **Productive time ratio** | 50% | All tracked time is Work or Study |
+| **Longest focus block** | 25% | Longest continuous Work/Study block ≥ 90 minutes |
+| **Context-switch penalty** | 25% | 0 switches away from focus; 10+ switches = 0 |
+
+**Formula:**
+```
+score = (productiveTime / totalTime) × 50
+      + min(longestFocusBlockMins / 90, 1) × 25
+      + max(0, 1 − contextSwitches / 10) × 25
+```
+
+**Longest focus block** merges consecutive Work/Study activities that are within 5 minutes of each other — so 2-minute checkpoint writes don't fragment a long session into many short pieces.
+
+**Examples:**
+- 3h Work, 2 context switches, longest block 90 min → ~95
+- 30 min Work, 8 context switches, longest block 15 min → ~30
+
+---
+
 ## Folder Structure
 
 ```

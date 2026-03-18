@@ -24,5 +24,5 @@ export function formatDuration(minutes: number): string {
   const h = Math.floor(total / 60);
   const m = total % 60;
   if (h > 0 && m === 0) return `${h}h`;
-  return h > 0 ? `${h}h ${m.toFixed(2)}m` : `${m.toFixed(2)}m`;
+  return h > 0 ? `${h}h ${m.toFixed(1)}m` : `${m.toFixed(1)}m`;
 }

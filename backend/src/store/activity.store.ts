@@ -26,7 +26,9 @@ export function readDay(date: string): Activity[] {
   const file = filePath(date);
   if (!fs.existsSync(file)) return [];
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8')) as Activity[];
+    const all = JSON.parse(fs.readFileSync(file, 'utf8')) as Activity[];
+    // Normalise: any activity stored in this file belongs to this date
+    return all.map((a) => ({ ...a, date }));
   } catch {
     return [];
   }

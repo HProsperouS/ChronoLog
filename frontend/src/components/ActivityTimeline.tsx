@@ -29,9 +29,35 @@ export function ActivityTimeline() {
   const isProductive = (category: string) =>
     category === 'Work' || category === 'Study';
 
+  const getTimeWindow = () => {
+    if (activities.length === 0) return { startHour: 9, endHour: 19 };
+
+    const startHours = activities
+      .map((a) => a.startTime.getHours())
+      .filter((h) => !isNaN(h));
+
+    const endHours = activities
+      .map((a) => {
+        const h = a.endTime?.getHours?.() ?? NaN;
+        const m = a.endTime?.getMinutes?.() ?? 0;
+        return isNaN(h) ? NaN : (m > 0 ? h + 1 : h);
+      })
+      .filter((h) => !isNaN(h));
+
+    if (startHours.length === 0) return { startHour: 9, endHour: 19 };
+
+    const startHour = Math.min(...startHours);
+    const rawEnd    = endHours.length > 0 ? Math.max(...endHours) : startHour + 1;
+    // always guarantee at least a 1-hour window to avoid division by zero
+    const endHour   = Math.max(rawEnd, startHour + 1);
+
+    return { startHour, endHour };
+  };
+
+  const { startHour, endHour } = getTimeWindow();
+
   const generateTimelineBar = () => {
-    const startHour = 9, endHour = 19;
-    const totalMins = (endHour - startHour) * 60;
+    const totalMins = Math.max((endHour - startHour) * 60, 1);
     return activities
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
       .map((activity) => {
@@ -39,11 +65,29 @@ export function ActivityTimeline() {
         const offset   = startMin - startHour * 60;
         const left     = (offset / totalMins) * 100;
         const width    = (activity.duration / totalMins) * 100;
-        return { ...activity, left: Math.max(0, left), width: Math.min(width, 100 - Math.max(0, left)), isProductive: isProductive(activity.category) };
+        return { ...activity, left: Math.max(0, left), width: Math.min(Math.max(width, 0.5), 100 - Math.max(0, left)), isProductive: isProductive(activity.category) };
       });
   };
 
   const timelineData = generateTimelineBar();
+
+  const timeLabels = (() => {
+    const windowHours = endHour - startHour;
+    const step = windowHours <= 4 ? 1 : 2;
+    const fmt = (h: number) => {
+      const suffix  = h >= 12 ? 'PM' : 'AM';
+      const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${display} ${suffix}`;
+    };
+    const labels: string[] = [];
+    for (let h = startHour; h <= endHour; h += step) {
+      labels.push(fmt(h));
+    }
+    // Always include the end label
+    const endLabel = fmt(endHour);
+    if (labels[labels.length - 1] !== endLabel) labels.push(endLabel);
+    return labels;
+  })();
   const categories   = ['All', 'Work', 'Study', 'Entertainment', 'Communication', 'Utilities'];
 
   const filteredActivities = activities
@@ -101,7 +145,7 @@ export function ActivityTimeline() {
           </div>
           <div className="relative">
             <div className="flex justify-between text-[10px] text-gray-500 mb-2">
-              {['9 AM','11 AM','1 PM','3 PM','5 PM','7 PM'].map((t) => <span key={t}>{t}</span>)}
+              {timeLabels.map((t) => <span key={t}>{t}</span>)}
             </div>
             <div className="relative h-10 bg-white/5 rounded-lg overflow-hidden">
               {timelineData.map((a) => (

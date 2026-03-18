@@ -69,8 +69,8 @@ export function Insights() {
   const latestDay = weeklyStats[weeklyStats.length - 1];
   const latestProductiveMinutes =
     latestDay ? latestDay.categoryTotals.Work + latestDay.categoryTotals.Study : 0;
-  const latestProductiveHours = (latestProductiveMinutes / 60).toFixed(2);
-  const latestFocusScore = (latestDay?.focusScore ?? 0).toFixed(2);
+  const latestProductiveHours = (latestProductiveMinutes / 60).toFixed(1);
+  const latestFocusScore = (latestDay?.focusScore ?? 0).toFixed(1);
   const latestContextSwitches = latestDay?.contextSwitches ?? 0;
 
   // ─── Habit tracker helpers ────────────────────────────────────────────────────
@@ -351,7 +351,7 @@ export function Insights() {
                     const level = levelForProductiveHours(d.productiveHours, d.hasData);
                     const classes = levelToClasses(level);
                     const tooltip = d.hasData
-                      ? `${d.productiveHours.toFixed(2)} hours`
+                      ? `${d.productiveHours.toFixed(1)} hours`
                       : 'No data';
                     return (
                       <div key={`prod-${d.date}`} className="group/day relative">
@@ -382,7 +382,7 @@ export function Insights() {
                     const level = levelForEntertainmentHours(d.entertainmentHours, d.hasData);
                     const classes = levelToClasses(level);
                     const tooltip = d.hasData
-                      ? `${d.entertainmentHours.toFixed(2)} hours`
+                      ? `${d.entertainmentHours.toFixed(1)} hours`
                       : 'No data';
                     return (
                       <div key={`ent-${d.date}`} className="group/day relative">

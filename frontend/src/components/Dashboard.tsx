@@ -21,9 +21,10 @@ export function Dashboard() {
   }, []);
 
   const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins  = minutes % 60;
-    return `${hours}h ${mins}m`;
+    const total = Math.round(minutes * 100) / 100;
+    const hours = Math.floor(total / 60);
+    const mins  = parseFloat((total % 60).toFixed(1));
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   const renderPieTooltip = ({ active, payload }: any) => {

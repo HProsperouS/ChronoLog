@@ -26,8 +26,9 @@ export function ActivityTimeline() {
     date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   const formatDuration = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
+    const total = Math.round(minutes * 100) / 100;
+    const h = Math.floor(total / 60);
+    const m = parseFloat((total % 60).toFixed(1));
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 

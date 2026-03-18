@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import * as api from '../api';
 import { categoryColors } from '../constants';
-import { dateStr, todayStr } from '../utils';
+import { dateStr, todayStr, formatDuration } from '../utils';
 import type { Activity } from '../types';
 
 export function ActivityTimeline() {
@@ -25,12 +25,6 @@ export function ActivityTimeline() {
   const formatTime = (date: Date) =>
     date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  const formatDuration = (minutes: number) => {
-    const total = Math.round(minutes * 100) / 100;
-    const h = Math.floor(total / 60);
-    const m = parseFloat((total % 60).toFixed(1));
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
-  };
 
   const isProductive = (category: string) =>
     category === 'Work' || category === 'Study';

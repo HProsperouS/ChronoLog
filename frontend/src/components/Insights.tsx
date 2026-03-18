@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import * as api from '../api';
-import { todayStr } from '../utils';
+import { todayStr, formatDuration } from '../utils';
 import type { Insight, DailyStats } from '../types';
 
 const TODAY = todayStr();
@@ -69,7 +69,7 @@ export function Insights() {
   const latestDay = weeklyStats[weeklyStats.length - 1];
   const latestProductiveMinutes =
     latestDay ? latestDay.categoryTotals.Work + latestDay.categoryTotals.Study : 0;
-  const latestProductiveHours = (latestProductiveMinutes / 60).toFixed(1);
+  const latestProductiveHours = parseFloat((latestProductiveMinutes / 60).toFixed(1));
   const latestFocusScore = latestDay?.focusScore ?? 0;
   const latestContextSwitches = latestDay?.contextSwitches ?? 0;
 
@@ -251,7 +251,7 @@ export function Insights() {
                   tickLine={false}
                 />
                 <Tooltip 
-                  formatter={(value: number) => `${Math.round(value / 60)}h ${value % 60}m`}
+                  formatter={(value: number) => formatDuration(value)}
                   contentStyle={{
                     backgroundColor: '#13131a',
                     border: '1px solid rgba(255,255,255,0.1)',
@@ -351,7 +351,7 @@ export function Insights() {
                     const level = levelForProductiveHours(d.productiveHours, d.hasData);
                     const classes = levelToClasses(level);
                     const tooltip = d.hasData
-                      ? `${d.productiveHours.toFixed(1)} hours`
+                      ? `${parseFloat(d.productiveHours.toFixed(1))} hours`
                       : 'No data';
                     return (
                       <div key={`prod-${d.date}`} className="group/day relative">
@@ -382,7 +382,7 @@ export function Insights() {
                     const level = levelForEntertainmentHours(d.entertainmentHours, d.hasData);
                     const classes = levelToClasses(level);
                     const tooltip = d.hasData
-                      ? `${d.entertainmentHours.toFixed(1)} hours`
+                      ? `${parseFloat(d.entertainmentHours.toFixed(1))} hours`
                       : 'No data';
                     return (
                       <div key={`ent-${d.date}`} className="group/day relative">

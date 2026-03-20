@@ -52,12 +52,21 @@ export function getAppIconBuffer(appName: string): Buffer | null {
   }
 }
 
-function toDateString(iso: string): string {
-  return iso.slice(0, 10);
+/**
+ * Derive calendar date (YYYY-MM-DD) in the server's **local timezone**
+ * from an ISO timestamp. This keeps daily files aligned with what the user
+ * sees as \"today\" on their machine, instead of UTC.
+ */
+function toLocalDateString(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export function createActivity(body: CreateActivityBody): Activity {
-  const date = toDateString(body.startTime);
+  const date = toLocalDateString(body.startTime);
   const activities = ActivityStore.readDay(date);
 
   const category = body.category ?? autoCategory(body.appName, body.windowTitle, body.url);

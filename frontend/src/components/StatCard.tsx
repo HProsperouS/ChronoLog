@@ -7,6 +7,8 @@ interface StatCardProps {
   trend?: {
     value: string;
     isPositive: boolean;
+    /** e.g. "vs yesterday" */
+    label?: string;
   };
   color?: string;
 }
@@ -44,8 +46,15 @@ export function StatCard({ title, value, icon: Icon, trend, color = 'indigo' }: 
           <Icon className="w-5 h-5 text-white" />
         </div>
         {trend && (
-          <div className={`${colors.trendBg} px-2 py-0.5 rounded text-xs font-medium`}>
-            {trend.isPositive ? '↑' : '↓'} {trend.value}
+          <div className="flex flex-col items-end gap-0.5">
+            <div className={`${colors.trendBg} px-2 py-0.5 rounded text-xs font-medium`}>
+              {trend.isPositive ? '↑' : '↓'} {trend.value}
+            </div>
+            {trend.label ? (
+              <span className="text-[10px] text-gray-500 text-right max-w-[5.5rem] leading-tight">
+                {trend.label}
+              </span>
+            ) : null}
           </div>
         )}
       </div>

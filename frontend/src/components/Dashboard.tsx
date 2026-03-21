@@ -5,20 +5,40 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useNavigate } from 'react-router';
 import * as api from '../api';
 import { categoryColors } from '../constants';
-import { todayStr, formatDuration } from '../utils';
+import { todayStr, formatDuration, addDaysYmd } from '../utils';
 import type { DailyStats } from '../types';
 
-const TODAY = todayStr();
+/** Trend badge: % change vs yesterday (higher curr = positive arrow). */
+function trendVsYesterday(curr: number, prev: number): { value: string; isPositive: boolean } | undefined {
+  const c = Number(curr);
+  const p = Number(prev);
+  if (!Number.isFinite(c) || !Number.isFinite(p)) return undefined;
+  if (c === 0 && p === 0) return undefined;
+  if (p === 0) return c > 0 ? { value: 'new', isPositive: true } : undefined;
+  const pct = ((c - p) / p) * 100;
+  if (!Number.isFinite(pct)) return undefined;
+  return { value: `${Math.abs(Math.round(pct))}%`, isPositive: pct >= 0 };
+}
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const [daily, setDaily]   = useState<DailyStats | null>(null);
-  const [weekly, setWeekly] = useState<DailyStats[]>([]);
+  const [daily, setDaily]             = useState<DailyStats | null>(null);
+  const [yesterdayDaily, setYesterdayDaily] = useState<DailyStats | null>(null);
+  const [weekly, setWeekly]           = useState<DailyStats[]>([]);
 
   useEffect(() => {
     const fetch = () => {
-      api.getDailyStats(TODAY).then(setDaily);
-      api.getWeeklyStats().then(setWeekly);
+      const today = todayStr();
+      const yest  = addDaysYmd(today, -1);
+      void Promise.all([
+        api.getDailyStats(today),
+        api.getDailyStats(yest).catch(() => null),
+        api.getWeeklyStats(),
+      ]).then(([d, y, w]) => {
+        setDaily(d);
+        setYesterdayDaily(y);
+        setWeekly(w);
+      });
     };
     fetch();
     const timer = setInterval(fetch, 30_000);
@@ -57,6 +77,24 @@ export function Dashboard() {
   const productiveTime = daily.categoryTotals.Work + daily.categoryTotals.Study;
   const mostUsed = daily.topApps[0]?.appName ?? '—';
 
+  function trendWithYesterday(curr: number, prev: number) {
+    const t = trendVsYesterday(curr, prev);
+    return t ? { ...t, label: 'vs yesterday' as const } : undefined;
+  }
+
+  const productiveTrend = yesterdayDaily
+    ? trendWithYesterday(
+        productiveTime,
+        yesterdayDaily.categoryTotals.Work + yesterdayDaily.categoryTotals.Study,
+      )
+    : undefined;
+  const focusTrend = yesterdayDaily
+    ? trendWithYesterday(daily.focusScore, yesterdayDaily.focusScore)
+    : undefined;
+  const longestTrend = yesterdayDaily
+    ? trendWithYesterday(daily.longestSession, yesterdayDaily.longestSession)
+    : undefined;
+
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
@@ -83,10 +121,10 @@ export function Dashboard() {
       <div className="p-4 sm:p-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <StatCard title="Productive Time" value={formatDuration(productiveTime)} icon={Clock}      trend={{ value: '12%', isPositive: true }} color="indigo"  />
-          <StatCard title="Focus Score"     value={`${daily.focusScore}%`}      icon={Target}     trend={{ value: '5%',  isPositive: true }} color="green"   />
+          <StatCard title="Productive Time" value={formatDuration(productiveTime)} icon={Clock}      trend={productiveTrend} color="indigo"  />
+          <StatCard title="Focus Score"     value={`${daily.focusScore}%`}      icon={Target}     trend={focusTrend}      color="green"   />
           <StatCard title="Most Used"       value={mostUsed}                    icon={TrendingUp}                                           color="purple"  />
-          <StatCard title="Longest Session" value={formatDuration(daily.longestSession)} icon={Zap}  trend={{ value: '20m', isPositive: true }} color="orange"  />
+          <StatCard title="Longest Session" value={formatDuration(daily.longestSession)} icon={Zap}  trend={longestTrend}    color="orange"  />
         </div>
 
         {/* Charts Row */}

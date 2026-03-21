@@ -12,8 +12,6 @@ import {
 } from '../utils';
 import type { Insight, DailyStats } from '../types';
 
-const TODAY = todayStr();
-
 type SummaryMode = 'daily' | 'weekly';
 
 function formatComparison(curr: number, prev: number, priorLabel: string): string {
@@ -35,19 +33,28 @@ export function Insights() {
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('daily');
 
   useEffect(() => {
-    api.getInsights(TODAY).then(setInsights);
-    // Calendar week (Mon–Sun): fetch previous full week + current full week (14 days)
-    const today = todayStr();
-    const thisWeekMon = startOfWeekMonday(today);
-    const thisWeekSun = endOfWeekSunday(thisWeekMon);
-    const fetchFrom = addDaysYmd(thisWeekMon, -7);
-    api.getWeeklyStatsRange(fetchFrom, thisWeekSun).then(setRangeStats);
+    const load = () => {
+      const today = todayStr();
+      const thisWeekMon = startOfWeekMonday(today);
+      const thisWeekSun = endOfWeekSunday(thisWeekMon);
+      const fetchFrom = addDaysYmd(thisWeekMon, -7);
+      void Promise.all([
+        api.getInsights(today),
+        api.getWeeklyStatsRange(fetchFrom, thisWeekSun),
+      ]).then(([ins, stats]) => {
+        setInsights(ins);
+        setRangeStats(stats);
+      });
+    };
+    load();
+    const timer = setInterval(load, 30_000);
+    return () => clearInterval(timer);
   }, []);
 
   async function handleGenerate() {
     setGenerating(true);
     try {
-      const fresh = await api.generateInsights(TODAY);
+      const fresh = await api.generateInsights(todayStr());
       setInsights(fresh);
     } finally {
       setGenerating(false);

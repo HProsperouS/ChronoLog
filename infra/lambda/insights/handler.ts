@@ -2,7 +2,7 @@ import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda
 import { timingSafeEqual } from 'crypto';
 import OpenAI from 'openai';
 import { buildSystemPrompt, buildUserPrompt } from './prompt';
-import type { GenerateRequestBody, InsightContent } from './types';
+import type { Category, GenerateRequestBody, InsightContent, SessionTimelineEntry } from './types';
 
 function json(statusCode: number, body: unknown): APIGatewayProxyResultV2 {
   return {
@@ -38,19 +38,90 @@ function extractBearer(headers: Record<string, string | undefined> | undefined):
   return m ? m[1].trim() : null;
 }
 
-function isDailyStats(x: unknown): x is GenerateRequestBody['stats'] {
+const CATEGORIES = new Set<string>([
+  'Work',
+  'Study',
+  'Entertainment',
+  'Communication',
+  'Utilities',
+  'Uncategorized',
+]);
+
+function isCategory(x: unknown): x is Category {
+  return typeof x === 'string' && CATEGORIES.has(x);
+}
+
+function isBusiestWindowVal(x: unknown): boolean {
+  if (x === null) return true;
   if (!x || typeof x !== 'object') return false;
   const o = x as Record<string, unknown>;
   return (
-    typeof o.date === 'string' &&
-    typeof o.totalTime === 'number' &&
-    typeof o.focusScore === 'number' &&
-    typeof o.contextSwitches === 'number' &&
-    typeof o.longestSession === 'number' &&
-    o.categoryTotals !== null &&
-    typeof o.categoryTotals === 'object' &&
-    Array.isArray(o.topApps)
+    typeof o.windowStartLocal === 'string' &&
+    typeof o.windowEndLocal === 'string' &&
+    typeof o.transitionCount === 'number'
   );
+}
+
+function isFocusSwitchSampleRow(x: unknown): boolean {
+  if (!x || typeof x !== 'object') return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.timeLocal === 'string' &&
+    typeof o.fromApp === 'string' &&
+    typeof o.toApp === 'string' &&
+    isCategory(o.fromCategory) &&
+    isCategory(o.toCategory)
+  );
+}
+
+function isInsightsLambdaStatsPayload(x: unknown): x is GenerateRequestBody['stats'] {
+  if (!x || typeof x !== 'object') return false;
+  const o = x as Record<string, unknown>;
+  if (
+    typeof o.date !== 'string' ||
+    typeof o.totalTime !== 'number' ||
+    typeof o.focusScore !== 'number' ||
+    typeof o.contextSwitches !== 'number' ||
+    typeof o.longestSession !== 'number' ||
+    o.categoryTotals === null ||
+    typeof o.categoryTotals !== 'object' ||
+    !Array.isArray(o.topApps) ||
+    typeof o.sessionCount !== 'number' ||
+    typeof o.appTransitionCount !== 'number' ||
+    typeof o.shortFocusSessionCount !== 'number' ||
+    !isBusiestWindowVal(o.busiestWindow) ||
+    !Array.isArray(o.focusSwitchSamples)
+  ) {
+    return false;
+  }
+  return (o.focusSwitchSamples as unknown[]).every(isFocusSwitchSampleRow);
+}
+
+function parseSessionTimeline(raw: unknown): SessionTimelineEntry[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) return undefined;
+  const out: SessionTimelineEntry[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') continue;
+    const o = row as Record<string, unknown>;
+    if (
+      typeof o.startTime !== 'string' ||
+      typeof o.startLocal !== 'string' ||
+      typeof o.durationMinutes !== 'number' ||
+      typeof o.appName !== 'string' ||
+      !isCategory(o.category)
+    ) {
+      continue;
+    }
+    out.push({
+      startTime: o.startTime,
+      startLocal: o.startLocal,
+      durationMinutes: o.durationMinutes,
+      appName: o.appName,
+      category: o.category,
+    });
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function normalizeInsights(raw: unknown): InsightContent[] {
@@ -113,9 +184,19 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     return json(400, { error: 'Invalid JSON body' });
   }
 
-  if (!body.date || typeof body.date !== 'string' || !isDailyStats(body.stats)) {
-    return json(400, { error: 'Expected { date: string, stats: DailyStats, comparison?: { yesterday } }' });
+  if (!body.date || typeof body.date !== 'string' || !isInsightsLambdaStatsPayload(body.stats)) {
+    return json(400, {
+      error:
+        'Expected { date, stats (InsightsLambdaStatsPayload), sessionTimeline?: [...] }',
+    });
   }
+
+  const y = body.comparison?.yesterday;
+  if (y !== undefined && !isInsightsLambdaStatsPayload(y)) {
+    return json(400, { error: 'comparison.yesterday must match insights stats payload shape' });
+  }
+
+  const sessionTimeline = parseSessionTimeline(body.sessionTimeline);
 
   const client = new OpenAI({ apiKey: openAiKey });
 
@@ -127,13 +208,12 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         {
           role: 'user',
           content: buildUserPrompt(body.stats, {
-            comparison: body.comparison?.yesterday
-              ? { yesterday: body.comparison.yesterday }
-              : undefined,
+            sessionTimeline,
+            comparison: y ? { yesterday: y } : undefined,
           }),
         },
       ],
-      max_tokens: 900,
+      max_tokens: 1200,
       temperature: 0.55,
       response_format: { type: 'json_object' },
     });

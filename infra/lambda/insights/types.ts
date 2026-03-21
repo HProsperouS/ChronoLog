@@ -1,5 +1,5 @@
 /**
- * Mirror of backend DailyStats — keep in sync with backend/src/types/index.ts
+ * Keep in sync with backend insights payload — NOT the public DailyStats API shape.
  */
 export type Category =
   | 'Work'
@@ -9,7 +9,22 @@ export type Category =
   | 'Utilities'
   | 'Uncategorized';
 
-export interface DailyStats {
+export interface BusiestSwitchWindow {
+  windowStartLocal: string;
+  windowEndLocal: string;
+  transitionCount: number;
+}
+
+export interface FocusSwitchSample {
+  timeLocal: string;
+  fromApp: string;
+  toApp: string;
+  fromCategory: Category;
+  toCategory: Category;
+}
+
+/** Public daily stats + fragmentation — same as backend InsightsLambdaStatsPayload */
+export interface InsightsLambdaStatsPayload {
   date: string;
   categoryTotals: Record<Category, number>;
   totalTime: number;
@@ -17,9 +32,21 @@ export interface DailyStats {
   contextSwitches: number;
   longestSession: number;
   topApps: { appName: string; category: Category; duration: number }[];
+  sessionCount: number;
+  appTransitionCount: number;
+  shortFocusSessionCount: number;
+  busiestWindow: BusiestSwitchWindow | null;
+  focusSwitchSamples: FocusSwitchSample[];
 }
 
-/** Raw items from the model before local ids are applied */
+export interface SessionTimelineEntry {
+  startTime: string;
+  startLocal: string;
+  durationMinutes: number;
+  appName: string;
+  category: Category;
+}
+
 export interface InsightContent {
   type: 'pattern' | 'achievement' | 'recommendation';
   title: string;
@@ -29,9 +56,9 @@ export interface InsightContent {
 
 export interface GenerateRequestBody {
   date: string;
-  stats: DailyStats;
-  /** Optional second day for comparison in the prompt */
+  stats: InsightsLambdaStatsPayload;
+  sessionTimeline?: SessionTimelineEntry[];
   comparison?: {
-    yesterday?: DailyStats;
+    yesterday?: InsightsLambdaStatsPayload;
   };
 }

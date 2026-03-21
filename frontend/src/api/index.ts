@@ -53,6 +53,13 @@ export async function getWeeklyStats(): Promise<DailyStats[]> {
   return data.stats;
 }
 
+/** Inclusive date range `from` … `to` (YYYY-MM-DD), sorted ascending by day. */
+export async function getWeeklyStatsRange(from: string, to: string): Promise<DailyStats[]> {
+  const q = new URLSearchParams({ from, to });
+  const data = await apiFetch<{ stats: DailyStats[] }>(`/api/stats/weekly?${q}`);
+  return data.stats;
+}
+
 // ─── Category rules ───────────────────────────────────────────────────────────
 
 export async function getCategoryRules(): Promise<CategoryRule[]> {

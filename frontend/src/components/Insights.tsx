@@ -1,20 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import * as api from '../api';
-import { todayStr, formatDuration } from '../utils';
+import {
+  todayStr,
+  formatDuration,
+  addDaysYmd,
+  startOfWeekMonday,
+  endOfWeekSunday,
+  formatCalendarWeekRange,
+} from '../utils';
 import type { Insight, DailyStats } from '../types';
 
 const TODAY = todayStr();
 
+type SummaryMode = 'daily' | 'weekly';
+
+function formatComparison(curr: number, prev: number, priorLabel: string): string {
+  const c = Number(curr);
+  const p = Number(prev);
+  if (!Number.isFinite(c) || !Number.isFinite(p)) return `— vs ${priorLabel}`;
+  if (c === 0 && p === 0) return `No data vs ${priorLabel}`;
+  if (p === 0) return c > 0 ? `↑ vs ${priorLabel}` : `— vs ${priorLabel}`;
+  const pct = ((c - p) / p) * 100;
+  if (!Number.isFinite(pct)) return `— vs ${priorLabel}`;
+  const arrow = pct >= 0 ? '↑' : '↓';
+  return `${arrow} ${Math.abs(Math.round(pct))}% vs ${priorLabel}`;
+}
+
 export function Insights() {
   const [insights, setInsights]   = useState<Insight[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [weeklyStats, setWeeklyStats] = useState<DailyStats[]>([]);
+  const [rangeStats, setRangeStats] = useState<DailyStats[]>([]);
+  const [summaryMode, setSummaryMode] = useState<SummaryMode>('daily');
 
   useEffect(() => {
     api.getInsights(TODAY).then(setInsights);
-    api.getWeeklyStats().then(setWeeklyStats);
+    // Calendar week (Mon–Sun): fetch previous full week + current full week (14 days)
+    const today = todayStr();
+    const thisWeekMon = startOfWeekMonday(today);
+    const thisWeekSun = endOfWeekSunday(thisWeekMon);
+    const fetchFrom = addDaysYmd(thisWeekMon, -7);
+    api.getWeeklyStatsRange(fetchFrom, thisWeekSun).then(setRangeStats);
   }, []);
 
   async function handleGenerate() {
@@ -46,32 +73,102 @@ export function Insights() {
     return colors[type] || 'from-indigo-500 to-purple-600';
   };
 
-  // ─── Derived stats from backend weekly data ───────────────────────────────────
+  // ─── This calendar week (Mon–Sun, local) for charts & habit grid ─────────────
+  const weekStart = startOfWeekMonday(todayStr());
+  const weekEnd = endOfWeekSunday(weekStart);
+  const calendarWeekLabel = formatCalendarWeekRange(weekStart, weekEnd);
 
-  const productivityTrend = weeklyStats.map((d) => ({
-    date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-    score: d.focusScore,
-    focusTime: d.totalTime,
-  }));
+  const chartStats = useMemo(() => {
+    return [...rangeStats]
+      .filter((s) => s.date >= weekStart && s.date <= weekEnd)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [rangeStats, weekStart, weekEnd]);
 
-  const timeDistributionTrend = weeklyStats.map((d) => {
-    const productive = d.categoryTotals.Work + d.categoryTotals.Study;
-    const unproductive = d.categoryTotals.Entertainment;
-    const neutral = d.totalTime - productive - unproductive;
+  const productivityTrend = useMemo(
+    () =>
+      chartStats.map((d) => ({
+        date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+        score: d.focusScore,
+        focusTime: d.totalTime,
+      })),
+    [chartStats],
+  );
+
+  const timeDistributionTrend = useMemo(
+    () =>
+      chartStats.map((d) => {
+        const productive = d.categoryTotals.Work + d.categoryTotals.Study;
+        const unproductive = d.categoryTotals.Entertainment;
+        const neutral = d.totalTime - productive - unproductive;
+        return {
+          day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+          productive,
+          neutral,
+          unproductive,
+        };
+      }),
+    [chartStats],
+  );
+
+  // ─── Summary cards: Daily = today vs yesterday; Weekly = last 7 vs prior 7 ───
+  const summary = useMemo(() => {
+    const sorted = [...rangeStats].sort((a, b) => a.date.localeCompare(b.date));
+    const priorDaily = 'yesterday';
+    const priorWeekly = 'prior calendar week';
+
+    if (summaryMode === 'daily') {
+      const today = todayStr();
+      const ymdYest = addDaysYmd(today, -1);
+      const t = sorted.find((s) => s.date === today);
+      const y = sorted.find((s) => s.date === ymdYest);
+      const focusC = t?.focusScore ?? 0;
+      const focusP = y?.focusScore ?? 0;
+      const prodC = ((t?.categoryTotals.Work ?? 0) + (t?.categoryTotals.Study ?? 0)) / 60;
+      const prodP = ((y?.categoryTotals.Work ?? 0) + (y?.categoryTotals.Study ?? 0)) / 60;
+      const ctxC = t?.contextSwitches ?? 0;
+      const ctxP = y?.contextSwitches ?? 0;
+      return {
+        focusDisplay: `${focusC}`,
+        focusCmp: formatComparison(focusC, focusP, priorDaily),
+        prodDisplay: `${prodC.toFixed(1)}h`,
+        prodCmp: formatComparison(prodC, prodP, priorDaily),
+        ctxDisplay: `${ctxC}`,
+        ctxCmp: formatComparison(ctxC, ctxP, priorDaily),
+        ctxHint: 'Today (exits from focus)',
+        prodHint: 'Work + Study',
+      };
+    }
+
+    const prevStart = addDaysYmd(weekStart, -7);
+    const prevEnd = addDaysYmd(weekStart, -1);
+    const curr7 = sorted.filter((s) => s.date >= weekStart && s.date <= weekEnd);
+    const prev7 = sorted.filter((s) => s.date >= prevStart && s.date <= prevEnd);
+    const avgFocus = (days: DailyStats[]) =>
+      days.length ? days.reduce((s, d) => s + d.focusScore, 0) / days.length : 0;
+    const sumProdMin = (days: DailyStats[]) =>
+      days.reduce((s, d) => s + d.categoryTotals.Work + d.categoryTotals.Study, 0);
+    const sumCtx = (days: DailyStats[]) => days.reduce((s, d) => s + d.contextSwitches, 0);
+
+    const focusC = Math.round(avgFocus(curr7));
+    const focusP = Math.round(avgFocus(prev7));
+    const prodC = sumProdMin(curr7) / 60;
+    const prodP = sumProdMin(prev7) / 60;
+    const ctxAvgC = sumCtx(curr7) / 7;
+    const ctxAvgP = prev7.length >= 7 ? sumCtx(prev7) / 7 : 0;
+
+    const hasPrev = prev7.length >= 7;
+    const needPrevMsg = 'Not enough history (need last full week too)';
     return {
-      day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-      productive,
-      neutral,
-      unproductive,
+      focusDisplay: `${focusC}`,
+      focusCmp: hasPrev ? formatComparison(focusC, focusP, priorWeekly) : needPrevMsg,
+      prodDisplay: `${prodC.toFixed(1)}h`,
+      prodCmp: hasPrev ? formatComparison(prodC, prodP, priorWeekly) : needPrevMsg,
+      ctxDisplay: ctxAvgC.toFixed(1),
+      ctxCmp: hasPrev ? formatComparison(ctxAvgC, ctxAvgP, priorWeekly) : needPrevMsg,
+      ctxHint: 'Avg / day (this calendar week)',
+      prodHint: 'Total Work + Study (this calendar week)',
     };
-  });
-
-  const latestDay = weeklyStats[weeklyStats.length - 1];
-  const latestProductiveMinutes =
-    latestDay ? latestDay.categoryTotals.Work + latestDay.categoryTotals.Study : 0;
-  const latestProductiveHours = (latestProductiveMinutes / 60).toFixed(1);
-  const latestFocusScore = (latestDay?.focusScore ?? 0).toFixed(1);
-  const latestContextSwitches = latestDay?.contextSwitches ?? 0;
+  }, [rangeStats, summaryMode, weekStart, weekEnd]);
 
   // ─── Habit tracker helpers ────────────────────────────────────────────────────
 
@@ -99,8 +196,8 @@ export function Insights() {
   }
 
   function buildHabitDays() {
-    if (!weeklyStats.length) return [];
-    return weeklyStats.map((d) => {
+    if (!chartStats.length) return [];
+    return chartStats.map((d) => {
       const productiveMinutes = d.categoryTotals.Work + d.categoryTotals.Study;
       const entertainmentMinutes = d.categoryTotals.Entertainment;
       return {
@@ -151,11 +248,38 @@ export function Insights() {
               Personalized productivity analysis
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all">
-              <Calendar className="w-3.5 h-3.5" />
-              Last 7 Days
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-white/10 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setSummaryMode('daily')}
+                className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                  summaryMode === 'daily'
+                    ? 'bg-indigo-500/25 text-indigo-300'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                onClick={() => setSummaryMode('weekly')}
+                className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-white/10 ${
+                  summaryMode === 'weekly'
+                    ? 'bg-indigo-500/25 text-indigo-300'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                Weekly
+              </button>
+            </div>
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 bg-white/5 border border-white/10 rounded-lg max-w-[220px] sm:max-w-none"
+              title="Week runs Mon–Sun in your local timezone"
+            >
+              <Calendar className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate sm:whitespace-normal">Charts: {calendarWeekLabel}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -167,20 +291,25 @@ export function Insights() {
           <div className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-indigo-500/20 rounded-xl p-5">
             <Sparkles className="w-6 h-6 text-indigo-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Focus Score</p>
-            <p className="text-2xl font-semibold text-white">{latestFocusScore}%</p>
-            <p className="text-xs text-indigo-400 mt-2">↑ 8% from last week</p>
+            <p className="text-2xl font-semibold text-white">{summary.focusDisplay}%</p>
+            <p className="text-[10px] text-gray-600 mt-1">
+              {summaryMode === 'daily' ? 'Today' : '7-day average'}
+            </p>
+            <p className="text-xs text-indigo-400 mt-2">{summary.focusCmp}</p>
           </div>
           <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 rounded-xl p-5">
             <Trophy className="w-6 h-6 text-emerald-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Productive Hours</p>
-            <p className="text-2xl font-semibold text-white">{latestProductiveHours}h</p>
-            <p className="text-xs text-emerald-400 mt-2">↑ 12% from last week</p>
+            <p className="text-2xl font-semibold text-white">{summary.prodDisplay}</p>
+            <p className="text-[10px] text-gray-600 mt-1">{summary.prodHint}</p>
+            <p className="text-xs text-emerald-400 mt-2">{summary.prodCmp}</p>
           </div>
           <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 border border-purple-500/20 rounded-xl p-5">
             <Shuffle className="w-6 h-6 text-orange-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Context Switches</p>
-            <p className="text-2xl font-semibold text-white">{latestContextSwitches}</p>
-            <p className="text-xs text-orange-400 mt-2">↑ 18% from last week</p>
+            <p className="text-2xl font-semibold text-white">{summary.ctxDisplay}</p>
+            <p className="text-[10px] text-gray-600 mt-1">{summary.ctxHint}</p>
+            <p className="text-xs text-orange-400 mt-2">{summary.ctxCmp}</p>
           </div>
         </div>
 

@@ -91,7 +91,7 @@ The Activity screen also runs a **60-second** check for the local calendar date 
 | **Backend** | Node.js · Fastify 4 · TypeScript |
 | **Tracker** | active-win (cross-platform window focus detection) |
 | **Storage** | Local JSON files — no database required |
-| **AI Insights** | OpenAI GPT-4o-mini (optional, user-supplied key) |
+| **AI Insights** | AWS Lambda proxy (GPT-4o-mini in cloud); backend calls Function URL |
 | **Design** | Figma · Dark-mode-first UI |
 
 Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1&t=FPzoA59Dcc1iliIc-1
@@ -139,12 +139,12 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 │                             └──────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                              │ Only for AI Insights generation
+                              │ POST daily stats (HTTPS)
                               ▼
-                       OpenAI API (internet)
+                       Lambda Function URL → OpenAI (internet)
 ```
 
-> Everything runs locally on the user's machine. The only optional external call is to OpenAI when generating AI Insights.
+> Core tracking and data stay local. Generating AI Insights sends **aggregated daily stats** to your **Lambda** (see `infra/`); the OpenAI key stays in AWS, not in `backend/.env`.
 
 ---
 
@@ -329,6 +329,8 @@ score = (productiveTime / totalTime) × 50
 ```
 ChronoLog/
 │
+├── infra/                       # Optional: AWS CDK — Lambda + Function URL (AI insights proxy)
+│
 ├── package.json                 # Root: Electron entry + all dev scripts
 ├── electron/
 │   ├── tsconfig.json            # Compiles electron/src → electron/dist (CJS)
@@ -386,7 +388,7 @@ ChronoLog/
         │   ├── category.service.ts   # Category rules, auto-categorisation
         │   ├── stats.service.ts      # Focus score, context switches, top apps
         │   ├── settings.service.ts   # Settings, privacy, data retention, export
-        │   ├── ai.service.ts         # OpenAI integration
+        │   ├── ai.service.ts         # Calls insights Lambda; reads/writes insights.json
         │   └── app-catalog.ts        # 230+ app → category mapping for first-launch seeding
         └── store/
             ├── activity.store.ts       # Reads/writes activities/YYYY-MM-DD.json
@@ -435,7 +437,8 @@ cp backend/.env.example backend/.env
 |---|---|---|
 | `PORT` | `3001` | API server port |
 | `DATA_DIR` | `./data` | Where JSON data files are stored |
-| `OPENAI_API_KEY` | — | Required only for AI Insights |
+| `INSIGHTS_FUNCTION_URL` | — | Lambda Function URL for `POST` generate |
+| `INSIGHTS_PROXY_SECRET` | — | `Authorization: Bearer` value (same as CDK `ProxySecret`) |
 
 ### 4. Run in development mode
 
@@ -528,6 +531,10 @@ In production, the user's data is stored in the OS-standard location:
 |---|---|---|
 | `GET` | `/api/insights?date=YYYY-MM-DD` | Get AI insights for a day |
 | `POST` | `/api/insights/generate` | Generate new AI insights |
+
+### Hosted AI proxy (AWS)
+
+Deploy **`infra/`** (CDK) for the Lambda + Function URL, then set **`INSIGHTS_FUNCTION_URL`** and **`INSIGHTS_PROXY_SECRET`** in `backend/.env`. Prompts live in **`infra/lambda/insights/prompt.ts`** — see **`infra/README.md`**.
 
 ---
 

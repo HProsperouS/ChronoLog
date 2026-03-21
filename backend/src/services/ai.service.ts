@@ -1,5 +1,10 @@
 import { readInsights, writeInsights } from '../store/config.store';
-import type { DailyStats, Insight } from '../types';
+import { readRange } from '../store/activity.store';
+import * as StatsService from './stats.service';
+import type { Insight, SessionTimelineEntry } from '../types';
+
+/** Cap rows sent to Lambda (privacy + payload size). */
+const MAX_SESSION_TIMELINE = 120;
 
 function getInsightsUrl(): string {
   const url = process.env.INSIGHTS_FUNCTION_URL?.trim();
@@ -13,6 +18,25 @@ function getProxySecret(): string {
   return secret;
 }
 
+function buildSessionTimeline(date: string): SessionTimelineEntry[] {
+  const acts = readRange(date, date).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  return acts.slice(0, MAX_SESSION_TIMELINE).map((a) => {
+    const d = new Date(a.startTime);
+    const startLocal = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return {
+      startTime: a.startTime,
+      startLocal,
+      durationMinutes: a.duration,
+      appName: a.appName,
+      category: a.category,
+    };
+  });
+}
+
 function isInsightShape(x: unknown): x is Omit<Insight, 'id' | 'date' | 'created_at'> {
   if (!x || typeof x !== 'object') return false;
   const o = x as Record<string, unknown>;
@@ -23,12 +47,12 @@ function isInsightShape(x: unknown): x is Omit<Insight, 'id' | 'date' | 'created
 
 /**
  * Calls the hosted Lambda (Function URL), merges results into insights.json.
- * OpenAI is only invoked inside AWS — not from this process.
+ * Uses extended payload (not the public `/api/stats` shape). OpenAI runs only in AWS.
  */
-export async function generateInsights(stats: DailyStats): Promise<Insight[]> {
+export async function generateInsights(date: string): Promise<Insight[]> {
   const url = getInsightsUrl();
   const secret = getProxySecret();
-  const date = stats.date;
+  const stats = StatsService.getInsightsLambdaStats(date);
 
   const res = await fetch(url, {
     method: 'POST',
@@ -36,7 +60,11 @@ export async function generateInsights(stats: DailyStats): Promise<Insight[]> {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${secret}`,
     },
-    body: JSON.stringify({ date, stats }),
+    body: JSON.stringify({
+      date,
+      stats,
+      sessionTimeline: buildSessionTimeline(date),
+    }),
   });
 
   const rawText = await res.text();

@@ -69,6 +69,17 @@ Daily goals with color-coded progress (context switches, productive hours, enter
 - Excluded apps list (e.g. password managers, banking)
 - Private browsing mode respected
 
+### Live UI refresh (frontend polling)
+The React UI **polls the backend every 30 seconds** on open pages so numbers update without a manual reload:
+
+| Screen | What refreshes |
+|---|---|
+| **Dashboard** | Today’s daily stats, yesterday (for trend badges), rolling 7-day weekly stats |
+| **Insights** | AI insights list for today + 14-day stats window (summary cards & charts) |
+| **Activity** | Only when the selected calendar day is **today**; historical dates load once per selection |
+
+The Activity screen also runs a **60-second** check for the local calendar date rolling over (so “today” advances after midnight for late-night use).
+
 ---
 
 ## Tech Stack

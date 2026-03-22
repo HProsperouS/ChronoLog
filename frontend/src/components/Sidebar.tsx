@@ -22,7 +22,7 @@ export function Sidebar({ className = '', collapsed = false, onToggle, onMobileC
   return (
     <div
       className={`
-        ${collapsed ? 'w-[64px]' : 'w-56'}
+        ${collapsed ? 'w-[80px]' : 'w-56'}
         bg-[#0a0a0f] border-r border-white/5 flex flex-col flex-shrink-0
         transition-all duration-300 ease-in-out
         ${className}
@@ -34,18 +34,14 @@ export function Sidebar({ className = '', collapsed = false, onToggle, onMobileC
           <button
             onClick={onToggle}
             title="Expand sidebar"
-            className="w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 hover:opacity-80 transition-all"
-          >
-            <ChevronRight className="w-4 h-4 text-white" />
+            className="w-12 h-12 rounded-lg overflow-hidden hover:opacity-80 transition-all">
+            <img src="/Logo_Alone.png" alt="ChronoLog" className="w-full h-full object-contain" />
           </button>
         </div>
       ) : (
         <div className="flex items-center justify-between px-4 py-5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Clock className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-[15px] font-semibold text-white truncate">ChronoLog</h1>
+          <div className="flex items-center flex-1">
+            <img src="/Product_Logo_Side.png" alt="ChronoLog" className="h-16 w-48 object-contain" />
           </div>
           <button
             onClick={onToggle}

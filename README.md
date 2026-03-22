@@ -437,10 +437,15 @@ cp backend/.env.example backend/.env
 | `DATA_DIR` | `./data` | Where JSON data files are stored |
 | `OPENAI_API_KEY` | — | Required only for AI Insights |
 
-### 4. Run in development mode
+### 4. Run in development mode (Browser Mode)
 
 ```bash
-npm run dev
+# Frontend
+cd frontend && npm run dev
+# Backend
+cd backend && npm run dev
+# Tracker
+cd backend && npm run tracker
 ```
 
 This single command starts all three processes concurrently:

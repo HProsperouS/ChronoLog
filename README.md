@@ -324,6 +324,33 @@ score = (productiveTime / totalTime) × 50
 
 ---
 
+### System Notifications
+
+ChronoLog passively monitors your activity and sends desktop reminders to help
+you stay aware of unproductive patterns — without interrupting your flow unnecessarily.
+
+Every **1 minute**, ChronoLog checks your current daily stats against a set of thresholds. When a threshold is exceeded, a desktop notification is fired. Each notification type has a **15-minute cooldown** to avoid repeat alerts for the same issue.
+
+Notifications respect the `notificationsEnabled` toggle in Settings — they can be disabled at any time.
+
+| Notification | Trigger | Cooldown | Basis |
+|---|---|---|---|
+| 🔀 Focus Fragmentation | Context switches exceed **8** in a day | 15 min | UC Irvine research on interruption & stress |
+| 🎮 Entertainment Check | Entertainment time exceeds **45 minutes** | 15 min | Pomodoro principle — breaks beyond 45 min become distractions |
+| 📉 Low Focus Score | Focus score drops below **40%** | 15 min | Calibrated across productive time ratio, focus block length, and switch penalty |
+| ⏰ Take a Break | Longest session exceeds **90 minutes** | 15 min | 90-min ultradian rhythm — attention drops sharply beyond this point |
+| 💡 Productivity Reminder | Less than **30%** of screen time is productive (min. 60 mins tracked) | 15 min | Below average productive ratio for university students |
+
+**Scientific basis:**
+
+- **90-minute break threshold** — Based on the ultradian rhythm cycle, focus and retention drop significantly after 90 continuous minutes of work. Information studied in a fatigued state is substantially less likely to be recalled later.
+- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog only counts meaningful category switches (Utilities and Uncategorized are excluded), making 8 a strict but fair limit for deep study work.
+- **Productive ratio threshold (30%)** — Studies of university students show that productive screen time (Work + Study) typically falls between 30–50% of total screen time. A warning fires when a student falls below this average range, indicating a genuinely off day rather than a normal one.
+
+> **Note:** Notifications are currently implemented via the browser Web Notification API (`frontend/src/hooks/useNotifications.ts`). When Electron is integrated, this will be replaced with Electron's native notification system for a cleaner desktop experience.
+
+---
+
 ## Folder Structure
 
 ```

@@ -1,9 +1,13 @@
 import 'dotenv/config';
 import activeWin from 'active-win';
 import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 const MIN_DURATION_SECONDS = 5;
+const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
+const TRACKER_STATE_FILE = path.join(DATA_DIR, 'tracker-state.json');
 
 // ─── Config (refreshed from backend every 60 s) ───────────────────────────────
 
@@ -94,11 +98,17 @@ function getSystemIdleSeconds(): number {
   } catch {
     return 0; // fallback: assume not idle
   }
+  return 0;
 }
 
 // ─── Private browsing detection ───────────────────────────────────────────────
 
 const PRIVATE_TITLE_KEYWORDS = ['private', 'incognito', 'inprivate', 'navigation privée'];
+const BROWSER_APP_RE = /chrome|safari|firefox|arc|brave|edge|opera/i;
+
+function isBrowserApp(appName: string): boolean {
+  return BROWSER_APP_RE.test(appName);
+}
 
 function isPrivateBrowsing(title: string | undefined, url: string | undefined): boolean {
   const t = (title ?? '').toLowerCase();
@@ -120,9 +130,52 @@ interface Session {
 
 let current: Session | null = null;
 
-async function postActivity(session: Session, endTime: Date): Promise<void> {
+function ensureStateDir(): void {
+  fs.mkdirSync(path.dirname(TRACKER_STATE_FILE), { recursive: true });
+}
+
+function saveTrackerState(session: Session | null): void {
+  ensureStateDir();
+  if (!session) {
+    try { fs.unlinkSync(TRACKER_STATE_FILE); } catch { /* state file may not exist */ }
+    return;
+  }
+  const payload = {
+    appName: session.appName,
+    windowTitle: session.windowTitle,
+    url: session.url,
+    startTime: session.startTime.toISOString(),
+    savedAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(TRACKER_STATE_FILE, JSON.stringify(payload, null, 2), 'utf8');
+}
+
+function loadTrackerState(): Session | null {
+  try {
+    if (!fs.existsSync(TRACKER_STATE_FILE)) return null;
+    const raw = JSON.parse(fs.readFileSync(TRACKER_STATE_FILE, 'utf8')) as {
+      appName?: string;
+      windowTitle?: string;
+      url?: string;
+      startTime?: string;
+    };
+    if (!raw.appName || !raw.startTime) return null;
+    const start = new Date(raw.startTime);
+    if (Number.isNaN(start.getTime())) return null;
+    return {
+      appName: raw.appName,
+      windowTitle: raw.windowTitle,
+      url: raw.url,
+      startTime: start,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   const durationMs = endTime.getTime() - session.startTime.getTime();
-  if (durationMs / 1_000 < MIN_DURATION_SECONDS) return;
+  if (durationMs / 1_000 < MIN_DURATION_SECONDS) return true;
 
   const body = {
     appName:     session.appName,
@@ -139,9 +192,14 @@ async function postActivity(session: Session, endTime: Date): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body),
     });
-    if (!res.ok) console.error(`[tracker] POST failed: ${res.status}`);
+    if (!res.ok) {
+      console.error(`[tracker] POST failed: ${res.status}`);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error('[tracker] Could not reach backend:', (err as Error).message);
+    return false;
   }
 }
 
@@ -155,7 +213,11 @@ function extractUrl(win: activeWin.Result): string | undefined {
 async function poll(): Promise<void> {
   // 1. Tracking disabled — flush and do nothing
   if (!config.trackingEnabled) {
-    if (current) { await postActivity(current, new Date()); current = null; }
+    if (current) {
+      await postActivity(current, new Date());
+      current = null;
+      saveTrackerState(null);
+    }
     return;
   }
 
@@ -169,6 +231,7 @@ async function poll(): Promise<void> {
         const endTime = new Date(Date.now() - idleSecs * 1_000);
         await postActivity(current, endTime);
         current = null;
+        saveTrackerState(null);
         console.log(`[tracker] Idle ${idleSecs}s ≥ ${thresholdSecs}s — session closed`);
       }
       return;
@@ -184,17 +247,26 @@ async function poll(): Promise<void> {
   }
 
   if (!win) {
-    if (current) { await postActivity(current, new Date()); current = null; }
+    if (current) {
+      await postActivity(current, new Date());
+      current = null;
+      saveTrackerState(null);
+    }
     return;
   }
 
   const appName     = win.owner.name;
   const windowTitle = win.title || undefined;
-  const url         = extractUrl(win);
+  const rawUrl      = extractUrl(win);
+  const url         = isBrowserApp(appName) ? rawUrl : undefined;
 
   // 4. Excluded apps
   if (config.excludedApps.has(appName.toLowerCase())) {
-    if (current) { await postActivity(current, new Date()); current = null; }
+    if (current) {
+      await postActivity(current, new Date());
+      current = null;
+      saveTrackerState(null);
+    }
     return;
   }
 
@@ -206,10 +278,14 @@ async function poll(): Promise<void> {
   // 6. Session tracking
   // For browsers, group by URL hostname so that title changes (e.g. YouTube
   // switching videos) don't fragment the session into many tiny pieces.
-  const isBrowser = /chrome|safari|firefox|arc|brave|edge|opera/i.test(appName);
   const sessionKey = (app: string, title: string | undefined, u: string | undefined) => {
-    if (isBrowser && u) {
-      try { return app + '|' + new URL(u).hostname; } catch { /* fall through */ }
+    if (isBrowserApp(app)) {
+      if (u) {
+        try { return app + '|' + new URL(u).hostname; } catch { /* fall through */ }
+      }
+      // URL may be unavailable in some browser privacy/permission states.
+      // Using only app name avoids fragmenting one browsing period by tab title.
+      return app;
     }
     return app + '|' + (title ?? '');
   };
@@ -221,23 +297,16 @@ async function poll(): Promise<void> {
 
   if (!current) {
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
+    saveTrackerState(current);
   } else if (!sameWindow) {
     await postActivity(current, new Date());
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
+    saveTrackerState(current);
   } else {
     // Same session — keep title/url up to date so category rules stay accurate
     current.windowTitle = windowTitle;
     current.url = recordUrl;
-
-    // Checkpoint if session has been running too long
-    const SESSION_CHECKPOINT_MS = 2 * 60 * 1_000; // 2 minutes
-    const elapsed = Date.now() - current.startTime.getTime();
-    if (elapsed >= SESSION_CHECKPOINT_MS) {
-      const now = new Date();
-      await postActivity(current, now);
-      // Restart session from now so the next chunk begins fresh
-      current = { appName, windowTitle, url: recordUrl, startTime: now };
-    }
+    saveTrackerState(current);
   }
 }
 
@@ -254,7 +323,11 @@ function reschedulePoller(): void {
 async function shutdown(): Promise<void> {
   console.log('\n[tracker] Shutting down…');
   if (pollTimer) clearInterval(pollTimer);
-  if (current) await postActivity(current, new Date());
+  if (current) {
+    await postActivity(current, new Date());
+    current = null;
+  }
+  saveTrackerState(null);
   process.exit(0);
 }
 
@@ -265,6 +338,16 @@ process.on('SIGTERM', () => void shutdown());
 
 async function start(): Promise<void> {
   await fetchConfig();
+  const recovered = loadTrackerState();
+  if (recovered) {
+    const ok = await postActivity(recovered, new Date());
+    if (ok) {
+      saveTrackerState(null);
+      console.log('[tracker] Recovered previous session tail on startup');
+    } else {
+      console.log('[tracker] Recovery post failed, keeping state file for retry');
+    }
+  }
   console.log(`[tracker] Started — poll ${config.pollIntervalMs / 1_000}s, idle ${config.idleThresholdMinutes}min, API: ${API_URL}`);
   await poll();
   reschedulePoller();

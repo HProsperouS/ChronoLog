@@ -27,6 +27,12 @@ Thumbs.db
 infra/cdk.out/
 infra/node_modules/
 
+# Local app data
+backend/data/.DS_Store
+backend/data/activities/
+backend/data/insights.json
+backend/data/tracker-state.json
+
 # Editor
 .vscode/
 .idea/

@@ -91,7 +91,7 @@ The Activity screen also runs a **60-second** check for the local calendar date 
 | **Backend** | Node.js · Fastify 4 · TypeScript |
 | **Tracker** | active-win (cross-platform window focus detection) |
 | **Storage** | Local JSON files — no database required |
-| **AI Insights** | OpenAI GPT-4o-mini (optional, user-supplied key) |
+| **AI Insights** | AWS Lambda proxy (GPT-4o-mini in cloud); backend calls Function URL |
 | **Design** | Figma · Dark-mode-first UI |
 
 Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1&t=FPzoA59Dcc1iliIc-1
@@ -139,12 +139,12 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 │                             └──────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                              │ Only for AI Insights generation
+                              │ POST daily stats (HTTPS)
                               ▼
-                       OpenAI API (internet)
+                       Lambda Function URL → OpenAI (internet)
 ```
 
-> Everything runs locally on the user's machine. The only optional external call is to OpenAI when generating AI Insights.
+> Core tracking and data stay local. Generating AI Insights sends **aggregated daily stats + a sanitized session timeline (max 240 rows, no window titles/URLs)** to your **Lambda** (see `infra/`); the OpenAI key stays in AWS, not in `backend/.env`.
 
 ---
 
@@ -365,6 +365,8 @@ Notifications respect the `notificationsEnabled` toggle in Settings — they can
 ```
 ChronoLog/
 │
+├── infra/                       # Optional: AWS CDK — Lambda + Function URL (AI insights proxy)
+│
 ├── package.json                 # Root: Electron entry + all dev scripts
 ├── electron/
 │   ├── tsconfig.json            # Compiles electron/src → electron/dist (CJS)
@@ -423,7 +425,7 @@ ChronoLog/
         │   ├── category.service.ts   # Category rules, auto-categorisation
         │   ├── stats.service.ts      # Focus score, context switches, top apps
         │   ├── settings.service.ts   # Settings, privacy, data retention, export
-        │   ├── ai.service.ts         # OpenAI integration
+        │   ├── ai.service.ts         # Calls insights Lambda; reads/writes insights.json
         │   └── app-catalog.ts        # 230+ app → category mapping for first-launch seeding
         └── store/
             ├── activity.store.ts       # Reads/writes activities/YYYY-MM-DD.json
@@ -472,7 +474,8 @@ cp backend/.env.example backend/.env
 |---|---|---|
 | `PORT` | `3001` | API server port |
 | `DATA_DIR` | `./data` | Where JSON data files are stored |
-| `OPENAI_API_KEY` | — | Required only for AI Insights |
+| `INSIGHTS_FUNCTION_URL` | — | Lambda Function URL for `POST` generate |
+| `INSIGHTS_PROXY_SECRET` | — | `Authorization: Bearer` value (same as CDK `ProxySecret`) |
 
 ### 4. Run in development mode (Browser Mode)
 
@@ -569,7 +572,20 @@ In production, the user's data is stored in the OS-standard location:
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/insights?date=YYYY-MM-DD` | Get AI insights for a day |
-| `POST` | `/api/insights/generate` | Generate new AI insights |
+| `POST` | `/api/insights/generate` | Generate new AI insights (manual trigger, daily limit applies) |
+| `GET` | `/api/insights/quota?date=YYYY-MM-DD` | Get today’s insights-generate quota (`used`, `remaining`, `limit`, `canGenerate`, cooldown info) |
+
+### AI Insights generation policy
+
+- Generation is **manual-first** (user clicks **Generate insights** in the Insights page).
+- Daily generation cap is currently **3 times per day** per local calendar date.
+- A **2-hour cooldown** is enforced between successful generations.
+- If over limit, backend returns **HTTP 429** with quota details.
+- Insights page reads `/api/insights/quota` and disables generate actions when quota is exhausted or cooldown is active.
+
+### Hosted AI proxy (AWS)
+
+Deploy **`infra/`** (CDK) for the Lambda + Function URL, then set **`INSIGHTS_FUNCTION_URL`** and **`INSIGHTS_PROXY_SECRET`** in `backend/.env`. Prompts live in **`infra/lambda/insights/prompt.ts`** — see **`infra/README.md`**.
 
 ---
 

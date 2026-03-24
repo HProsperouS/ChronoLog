@@ -36,15 +36,51 @@ export interface Insight {
   created_at: string;
 }
 
+/** Local 30-min bucket with the most app/category switches */
+export interface BusiestSwitchWindow {
+  windowStartLocal: string;
+  windowEndLocal: string;
+  transitionCount: number;
+}
+
+export interface FocusSwitchSample {
+  timeLocal: string;
+  fromApp: string;
+  toApp: string;
+  fromCategory: Category;
+  toCategory: Category;
+}
+
+/** Sent to insights Lambda only — no windowTitle/url */
+export interface SessionTimelineEntry {
+  startTime: string;
+  startLocal: string;
+  durationMinutes: number;
+  appName: string;
+  category: Category;
+}
+
+/** Returned by `/api/stats/*` — stable public shape */
 export interface DailyStats {
   date: string;
   categoryTotals: Record<Category, number>;  // minutes per category
   totalTime: number;
   focusScore: number;                        // 0-100
   contextSwitches: number;
-  longestSession: number;                    // minutes
+  longestSession: number;                    // minutes (longest single activity row)
   topApps: { appName: string; category: Category; duration: number }[];
 }
+
+/** Extra fields computed only for `POST` to the insights Lambda */
+export interface InsightFragmentationMetrics {
+  sessionCount: number;
+  appTransitionCount: number;
+  shortFocusSessionCount: number;
+  busiestWindow: BusiestSwitchWindow | null;
+  focusSwitchSamples: FocusSwitchSample[];
+}
+
+export type InsightsLambdaStatsPayload = DailyStats & InsightFragmentationMetrics;
 
 export interface Settings {
   trackingEnabled:      boolean;

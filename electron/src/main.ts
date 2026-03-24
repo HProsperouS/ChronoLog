@@ -3,6 +3,7 @@ import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import { setupTray } from './tray';
 
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
 const isDev = !app.isPackaged;
 const useDevServer = isDev && process.env.ELECTRON_USE_DEV_SERVER !== 'false';
 const BACKEND_PORT = 3001;
@@ -28,6 +29,25 @@ function getNodeExec(): string {
 
 function getTsxCliPath(): string {
   return path.join(__dirname, '../../backend/node_modules/tsx/dist/cli.mjs');
+}
+
+function getPackagedBackendScript(scriptName: 'server.js' | 'tracker.js'): string {
+  return path.join(process.resourcesPath, 'backend', 'dist', scriptName);
+}
+
+function spawnPackagedNodeProcess(
+  scriptName: 'server.js' | 'tracker.js',
+  extraEnv: NodeJS.ProcessEnv,
+): ChildProcess {
+  return spawn(process.execPath, [getPackagedBackendScript(scriptName)], {
+    cwd: process.resourcesPath,
+    env: {
+      ...process.env,
+      ...extraEnv,
+      ELECTRON_RUN_AS_NODE: '1',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
 }
 
 function setupApplicationMenu(): void {
@@ -105,11 +125,7 @@ function startBackend(): Promise<void> {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
     } else {
-      backendProcess = spawn(process.execPath, ['backend/dist/server.js'], {
-        cwd: process.resourcesPath,
-        env,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      backendProcess = spawnPackagedNodeProcess('server.js', env);
     }
 
     let started = false;
@@ -154,11 +170,7 @@ function startTracker(): void {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } else {
-    trackerProcess = spawn(process.execPath, ['backend/dist/tracker.js'], {
-      cwd: process.resourcesPath,
-      env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    trackerProcess = spawnPackagedNodeProcess('tracker.js', env);
   }
 
   trackerProcess.stdout?.on('data', (data: Buffer) => {
@@ -235,6 +247,17 @@ ipcMain.handle('get-platform', () => process.platform);
 ipcMain.on('show-window', () => mainWindow?.show());
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  if (!mainWindow) return;
+  if (!mainWindow.isVisible()) mainWindow.show();
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
+});
 
 app.whenReady().then(async () => {
   console.log('[electron] Starting ChronoLog…');

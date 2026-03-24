@@ -15,6 +15,19 @@ export interface DataSummary {
   lastDate?: string;
 }
 
+export function getSettings(): SettingsConfig['settings'] {
+  return readSettings().settings;
+}
+
+export function updateSettings(
+  patch: Partial<SettingsConfig['settings']>,
+): SettingsConfig['settings'] {
+  const config = readSettings();
+  Object.assign(config.settings, patch);
+  writeSettings(config);
+  return config.settings;
+}
+
 export function getPrivacy(): PrivacyExclusions {
   return readSettings().privacy;
 }

@@ -1,5 +1,4 @@
 import { readRules, writeRules } from '../store/category-rules.store';
-import { readSettings, writeSettings } from '../store/settings.store';
 import type { Category, CategoryRule, CreateCategoryRuleBody, UpdateCategoryRuleBody } from '../types';
 
 export function autoCategory(
@@ -65,26 +64,4 @@ export function deleteRule(id: string): boolean {
   if (filtered.length === rules.length) return false;
   writeRules(filtered);
   return true;
-}
-
-export function getSettings() {
-  return readSettings().settings;
-}
-
-export function updateSettings(
-  patch: Partial<{
-    trackingEnabled:      boolean;
-    idleDetectionEnabled: boolean;
-    notificationsEnabled: boolean;
-    launchAtStartup:      boolean;
-    runInBackground:      boolean;
-    pollIntervalSeconds:  number;
-    idleThresholdMinutes: number;
-    retentionDays:        number;
-  }>,
-) {
-  const config = readSettings();
-  Object.assign(config.settings, patch);
-  writeSettings(config);
-  return config.settings;
 }

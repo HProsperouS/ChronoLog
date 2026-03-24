@@ -2,20 +2,21 @@ import type { InsightsLambdaStatsPayload, SessionTimelineEntry } from './types';
 
 function formatFragmentation(stats: InsightsLambdaStatsPayload): string[] {
   const lines = [
+    `  Context switches (SAME as Dashboard / Insights page — authoritative): ${stats.contextSwitches}`,
+    `    Definition: count only when leaving Work or Study to another category, after dropping Utilities & Uncategorized from the timeline (same code as focus score).`,
+    `  App/category hops (adjacent sessions, ANY change — NOT the dashboard "context switches" number): ${stats.appTransitionCount}`,
     `  Sessions recorded: ${stats.sessionCount}`,
-    `  App or category switches (adjacent sessions): ${stats.appTransitionCount}`,
     `  Short focus sessions (<3 min Work/Study): ${stats.shortFocusSessionCount}`,
-    `  Focus-leaving context switches (dashboard metric): ${stats.contextSwitches}`,
   ];
   if (stats.busiestWindow && stats.busiestWindow.transitionCount > 0) {
     lines.push(
-      `  Busiest switching window (local): ${stats.busiestWindow.windowStartLocal}–${stats.busiestWindow.windowEndLocal} with ${stats.busiestWindow.transitionCount} switches`,
+      `  Busiest app/category hop window (local, 30 min — counts app/category transitions, not contextSwitches): ${stats.busiestWindow.windowStartLocal}–${stats.busiestWindow.windowEndLocal} with ${stats.busiestWindow.transitionCount} hops`,
     );
   } else {
     lines.push('  Busiest switching window: none');
   }
   if (stats.focusSwitchSamples?.length) {
-    lines.push('  Sample switches (local time):');
+    lines.push('  Sample app/category hops (local time — same basis as appTransitionCount, not contextSwitches):');
     for (const s of stats.focusSwitchSamples) {
       lines.push(
         `    ${s.timeLocal}: ${s.fromApp} (${s.fromCategory}) → ${s.toApp} (${s.toCategory})`,
@@ -60,8 +61,9 @@ Language: English only for titles and descriptions.
 
 Rules:
 - Base claims on the provided aggregates AND the session log when present.
-- For time-of-day stories (e.g. "morning", "10:00–12:00"), use only times that appear in the session log or in the busiest-window / sample-switch lines. Do not invent clock times.
-- Distinguish: (1) app/category switches = hopping between apps or categories; (2) focus-leaving context switches = dashboard metric (leaving Work/Study).
+- For time-of-day stories (e.g. "morning", "10:00–12:00"), use only times that appear in the session log or in the busiest-window / sample-hop lines. Do not invent clock times.
+- CONSISTENCY: The field "contextSwitches" is identical to the in-app "Context Switches" / focus-score input. When you mention "context switches" in relation to user goals (e.g. staying under 20), cite ONLY contextSwitches. Never label appTransitionCount or timeline hops as "context switches".
+- appTransitionCount and the session log describe app/category hopping and fragmentation; use different wording (e.g. "switched apps often", "fragmented blocks") so it is not confused with contextSwitches.
 - If data is very sparse, say so briefly — still return at least 1 insight.
 - Tone: supportive, specific, not preachy. Do not say you are an AI.
 

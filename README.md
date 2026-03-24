@@ -144,7 +144,7 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
                        Lambda Function URL → OpenAI (internet)
 ```
 
-> Core tracking and data stay local. Generating AI Insights sends **aggregated daily stats** to your **Lambda** (see `infra/`); the OpenAI key stays in AWS, not in `backend/.env`.
+> Core tracking and data stay local. Generating AI Insights sends **aggregated daily stats + a sanitized session timeline (max 240 rows, no window titles/URLs)** to your **Lambda** (see `infra/`); the OpenAI key stays in AWS, not in `backend/.env`.
 
 ---
 
@@ -530,7 +530,16 @@ In production, the user's data is stored in the OS-standard location:
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/insights?date=YYYY-MM-DD` | Get AI insights for a day |
-| `POST` | `/api/insights/generate` | Generate new AI insights |
+| `POST` | `/api/insights/generate` | Generate new AI insights (manual trigger, daily limit applies) |
+| `GET` | `/api/insights/quota?date=YYYY-MM-DD` | Get today’s insights-generate quota (`used`, `remaining`, `limit`, `canGenerate`, cooldown info) |
+
+### AI Insights generation policy
+
+- Generation is **manual-first** (user clicks **Generate insights** in the Insights page).
+- Daily generation cap is currently **3 times per day** per local calendar date.
+- A **2-hour cooldown** is enforced between successful generations.
+- If over limit, backend returns **HTTP 429** with quota details.
+- Insights page reads `/api/insights/quota` and disables generate actions when quota is exhausted or cooldown is active.
 
 ### Hosted AI proxy (AWS)
 

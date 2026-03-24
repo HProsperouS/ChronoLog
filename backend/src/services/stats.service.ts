@@ -18,6 +18,10 @@ function emptyTotals(): Record<Category, number> {
 
 const FOCUS: Category[] = ['Work', 'Study'];
 
+/**
+ * Same definition everywhere: Dashboard, Insights UI, GET /api/stats, and
+ * InsightsLambdaStatsPayload.contextSwitches sent to Lambda.
+ */
 function countContextSwitches(activities: Activity[]): number {
   const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
   const IGNORE: Category[] = ['Utilities', 'Uncategorized'];

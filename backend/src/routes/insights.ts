@@ -13,8 +13,28 @@ export default async function insightsRoutes(app: FastifyInstance) {
       const insights = await AiService.generateInsights(date);
       return reply.send({ insights });
     } catch (err: unknown) {
+      if (err instanceof AiService.InsightCooldownError) {
+        return reply.code(429).send({
+          error: err.message,
+          quota: {
+            ...AiService.getInsightsGenerateQuota(date),
+          },
+        });
+      }
+      if (err instanceof AiService.InsightQuotaError) {
+        return reply.code(429).send({
+          error: err.message,
+          quota: AiService.getInsightsGenerateQuota(date),
+        });
+      }
       const message = err instanceof Error ? err.message : 'AI service error';
       return reply.code(503).send({ error: message });
     }
+  });
+
+  app.get<{ Querystring: { date?: string } }>('/quota', async (request, reply) => {
+    const date = request.query.date ?? new Date().toISOString().slice(0, 10);
+    const quota = AiService.getInsightsGenerateQuota(date);
+    return reply.send({ quota });
   });
 }

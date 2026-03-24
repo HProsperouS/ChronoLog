@@ -118,12 +118,12 @@ export interface TrackerSettings {
 }
 
 export async function getSettings(): Promise<TrackerSettings> {
-  const data = await apiFetch<{ settings: TrackerSettings }>('/api/settings');
+  const data = await apiFetch<{ settings: TrackerSettings }>('/api/category-rules/settings');
   return data.settings;
 }
 
 export async function updateSettings(patch: Partial<TrackerSettings>): Promise<TrackerSettings> {
-  const data = await apiFetch<{ settings: TrackerSettings }>('/api/settings', {
+  const data = await apiFetch<{ settings: TrackerSettings }>('/api/category-rules/settings', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),

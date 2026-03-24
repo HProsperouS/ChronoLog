@@ -1,19 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import * as SettingsService from '../services/settings.service';
 import type { PrivacyExclusions } from '../store/settings.store';
-import type { Settings } from '../types';
 
 export default async function settingsRoutes(app: FastifyInstance) {
-  app.get('/', async (_request, reply) => {
-    const settings = SettingsService.getSettings();
-    return reply.send({ settings });
-  });
-
-  app.patch<{ Body: Partial<Settings> }>('/', async (request, reply) => {
-    const settings = SettingsService.updateSettings(request.body);
-    return reply.send({ settings });
-  });
-
   app.get('/privacy', async (_request, reply) => {
     const privacy = SettingsService.getPrivacy();
     return reply.send({ privacy });
@@ -52,3 +41,4 @@ export default async function settingsRoutes(app: FastifyInstance) {
       .send(payload);
   });
 }
+

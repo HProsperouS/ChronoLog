@@ -6,9 +6,11 @@
   "private": true,
   "scripts": {
     "dev": "concurrently --kill-others --names \"ELECTRON,VITE,BACKEND\" --prefix-colors \"cyan,green,yellow\" \"npm run electron:dev\" \"npm run vite:dev\" \"npm run backend:dev\"",
+    "dev:desktop": "npm run build && npm run electron:desktop",
     "vite:dev": "cd frontend && npm run dev",
     "backend:dev": "cd backend && npm run dev",
     "electron:dev": "wait-on http://localhost:3000 && NODE_ENV=development electron .",
+    "electron:desktop": "NODE_ENV=production ELECTRON_USE_DEV_SERVER=false electron .",
     "build": "npm run build:frontend && npm run build:backend && npm run build:electron",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",

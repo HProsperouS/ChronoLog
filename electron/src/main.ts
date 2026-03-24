@@ -4,6 +4,7 @@ import path from 'path';
 import { setupTray } from './tray';
 
 const isDev = !app.isPackaged;
+const useDevServer = isDev && process.env.ELECTRON_USE_DEV_SERVER !== 'false';
 const BACKEND_PORT = 3001;
 
 // Flag used to distinguish explicit quit (from tray) vs window close
@@ -127,7 +128,7 @@ function createWindow(): void {
     },
   });
 
-  if (isDev) {
+  if (useDevServer) {
     void mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {

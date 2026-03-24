@@ -522,6 +522,14 @@ npm run dev
 
 This starts Electron + Vite + backend concurrently. Electron will launch the tracker process automatically.
 
+If you want desktop-only mode (no Vite web server), run:
+
+```bash
+npm run dev:desktop
+```
+
+This builds the frontend once, then starts Electron only. Electron will start backend + tracker internally and load `frontend/dist` directly.
+
 > **First launch:** `settings.json` and `category-rules.json` are auto-created in `backend/data/`. Category rules are seeded by scanning your installed applications against a built-in catalog of 230+ apps.
 
 ---

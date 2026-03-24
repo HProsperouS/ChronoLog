@@ -10,6 +10,8 @@ interface SidebarProps {
 
 export function Sidebar({ className = '', collapsed = false, onToggle, onMobileClose }: SidebarProps) {
   const location = useLocation();
+  const logoAloneSrc = `${import.meta.env.BASE_URL}Logo_Alone.png`;
+  const logoSideSrc = `${import.meta.env.BASE_URL}Product_Logo_Side.png`;
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -35,13 +37,13 @@ export function Sidebar({ className = '', collapsed = false, onToggle, onMobileC
             onClick={onToggle}
             title="Expand sidebar"
             className="w-12 h-12 rounded-lg overflow-hidden hover:opacity-80 transition-all">
-            <img src="/Logo_Alone.png" alt="ChronoLog" className="w-full h-full object-contain" />
+            <img src={logoAloneSrc} alt="ChronoLog" className="w-full h-full object-contain" />
           </button>
         </div>
       ) : (
         <div className="flex items-center justify-between px-4 py-5">
           <div className="flex items-center flex-1">
-            <img src="/Product_Logo_Side.png" alt="ChronoLog" className="h-16 w-48 object-contain" />
+            <img src={logoSideSrc} alt="ChronoLog" className="h-16 w-48 object-contain" />
           </div>
           <button
             onClick={onToggle}

@@ -10,7 +10,10 @@
     "retentionDays": 90
   },
   "privacy": {
-    "excludedApps": [],
+    "excludedApps": [
+      "GitHub Desktop",
+      "IntelliJ IDEA"
+    ],
     "respectPrivateBrowsing": true
   }
 }

@@ -9,8 +9,8 @@
     "dev:desktop": "npm run build && npm run electron:desktop",
     "vite:dev": "cd frontend && npm run dev",
     "backend:dev": "cd backend && npm run dev",
-    "electron:dev": "wait-on http://localhost:3000 && NODE_ENV=development electron .",
-    "electron:desktop": "NODE_ENV=production ELECTRON_USE_DEV_SERVER=false electron .",
+    "electron:dev": "wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
+    "electron:desktop": "cross-env NODE_ENV=production ELECTRON_USE_DEV_SERVER=false electron .",
     "build": "npm run build:frontend && npm run build:backend && npm run build:electron",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",
@@ -87,6 +87,7 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "concurrently": "^8.2.2",
+    "cross-env": "^10.0.0",
     "electron": "^35.0.0",
     "electron-builder": "^26.8.1",
     "typescript": "^5.4.5",

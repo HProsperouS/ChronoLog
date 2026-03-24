@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './load-env';
 import activeWin from 'active-win';
 import { execSync } from 'child_process';
 import fs from 'fs';

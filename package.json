@@ -16,7 +16,7 @@
     "build:backend": "cd backend && npm run build",
     "build:electron": "tsc -p electron/tsconfig.json",
     "dist": "npm run build && electron-builder",
-    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:mac": "npm run build && electron-builder --mac --arm64",
     "dist:win": "npm run build && electron-builder --win",
     "dist:linux": "npm run build && electron-builder --linux"
   },
@@ -40,6 +40,17 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "backend/.env",
+        "to": "backend/.env"
+      },
+      {
+        "from": "backend/node_modules",
+        "to": "backend/node_modules",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
@@ -48,8 +59,7 @@
         {
           "target": "dmg",
           "arch": [
-            "arm64",
-            "x64"
+            "arm64"
           ]
         }
       ],

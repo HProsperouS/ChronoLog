@@ -365,7 +365,7 @@ Notifications respect the `notificationsEnabled` toggle in Settings — they can
 ```
 ChronoLog/
 │
-├── infra/                       # Optional: AWS CDK — Lambda + Function URL (AI insights proxy)
+├── infra/                       # AWS CDK — Lambda + Function URL (AI insights proxy)
 │
 ├── package.json                 # Root: Electron entry + all dev scripts
 ├── electron/
@@ -453,6 +453,18 @@ cd ChronoLog
 
 ### 2. Install all dependencies
 
+#### A) Browser mode (without Electron)
+
+```bash
+cd frontend && npm install
+cd ../backend && npm install
+cd ..
+```
+
+#### B) Electron mode
+
+Install all layers (root + frontend + backend):
+
 ```bash
 # Root (Electron + build tools)
 npm install
@@ -464,7 +476,7 @@ cd frontend && npm install && cd ..
 cd backend && npm install && cd ..
 ```
 
-### 3. Configure the backend (optional)
+### 3. Configure the backend
 
 ```bash
 cp backend/.env.example backend/.env
@@ -477,26 +489,46 @@ cp backend/.env.example backend/.env
 | `INSIGHTS_FUNCTION_URL` | — | Lambda Function URL for `POST` generate |
 | `INSIGHTS_PROXY_SECRET` | — | `Authorization: Bearer` value (same as CDK `ProxySecret`) |
 
-### 4. Run in development mode (Browser Mode)
+### 4. Run in development mode (choose one)
+
+#### A) Browser mode (without Electron)
+
+Run each service in its own terminal:
 
 ```bash
-# Frontend
+# Terminal 1
 cd frontend && npm run dev
-# Backend
+
+# Terminal 2
 cd backend && npm run dev
-# Tracker
+
+# Terminal 3
 cd backend && npm run tracker
 ```
 
-This single command starts all three processes concurrently:
+| Service | URL / Notes |
+|---|---|
+| Frontend (Vite) | `http://localhost:3000` |
+| Backend (Fastify) | `http://localhost:3001` |
+| Tracker | posts activity to backend |
 
-| Label | Process | URL |
-|---|---|---|
-| `BACKEND` | Fastify API server | localhost:3001 |
-| `VITE` | React dev server | localhost:3000 |
-| `ELECTRON` | Desktop window | loads localhost:3000 |
+#### B) Electron mode
 
-The Electron window opens automatically once the Vite dev server is ready.
+Run from repository root:
+
+```bash
+npm run dev
+```
+
+This starts Electron + Vite + backend concurrently. Electron will launch the tracker process automatically.
+
+If you want desktop-only mode (no Vite web server), run:
+
+```bash
+npm run dev:desktop
+```
+
+This builds the frontend once, then starts Electron only. Electron will start backend + tracker internally and load `frontend/dist` directly.
 
 > **First launch:** `settings.json` and `category-rules.json` are auto-created in `backend/data/`. Category rules are seeded by scanning your installed applications against a built-in catalog of 230+ apps.
 
@@ -515,6 +547,21 @@ npm run dist:win    # Windows NSIS installer
 ```
 
 Output is placed in `dist-electron/`.
+
+### Electron packaging quick reference
+
+| Command | What it does |
+|---|---|
+| `npm run build` | Compiles frontend (`frontend/dist`), backend (`backend/dist`), and Electron main process (`electron/dist`) |
+| `npm run dist` | Builds everything, then creates installer/package for the current OS |
+| `npm run dist:win` | Builds everything, then creates Windows installer (`NSIS`) |
+| `npm run dist:mac` | Builds everything, then creates macOS installer (`DMG`) |
+
+Packaging includes:
+- `frontend/dist/**` (renderer)
+- `backend/dist/**` (API + tracker runtime)
+- `electron/dist/**` (main/preload)
+- `electron/assets/**` (icons/assets)
 
 In production, the user's data is stored in the OS-standard location:
 
@@ -544,7 +591,7 @@ In production, the user's data is stored in the OS-standard location:
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/stats/daily?date=YYYY-MM-DD` | Daily stats: focus score, context switches, top apps |
-| `GET` | `/api/stats/weekly` | Weekly breakdown (optional `from`/`to` query) |
+| `GET` | `/api/stats/weekly` | Weekly breakdown (`from`/`to` query supported) |
 
 ### Category Rules
 

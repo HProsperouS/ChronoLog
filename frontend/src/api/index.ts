@@ -1,11 +1,13 @@
 /**
  * API client for ChronoLog backend.
- * VITE_API_URL must be set in frontend/.env — all calls go directly to the real backend.
+ * In dev: set VITE_API_URL in frontend/.env
+ * In Electron production: backend always runs on localhost:3001
  */
 
 import type { Activity, CategoryRule, DailyStats, Insight } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL as string;
+const BASE_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
 
 function parseActivity(raw: Record<string, unknown>): Activity {
   return {

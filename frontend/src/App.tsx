@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { HashRouter, Routes, Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { ActivityTimeline } from './components/ActivityTimeline';
@@ -11,7 +11,7 @@ export default function App() {
   useNotifications(); // For Notificatiosn on web browser 
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -21,6 +21,6 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

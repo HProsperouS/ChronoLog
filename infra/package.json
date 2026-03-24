@@ -13,7 +13,7 @@
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.10.0",
     "aws-cdk": "^2.170.0",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.27.4",
     "ts-node": "^10.9.2",
     "typescript": "~5.6.3"
   },

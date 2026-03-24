@@ -5,6 +5,9 @@ frontend/node_modules/
 # Build outputs
 frontend/build/
 frontend/dist/
+backend/dist/
+electron/dist/
+dist-electron/
 
 # Logs
 npm-debug.log*

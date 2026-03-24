@@ -6,7 +6,6 @@ import { setupTray } from './tray';
 const isDev = !app.isPackaged;
 const useDevServer = isDev && process.env.ELECTRON_USE_DEV_SERVER !== 'false';
 const BACKEND_PORT = 3001;
-const NPX_CMD = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 // Flag used to distinguish explicit quit (from tray) vs window close
 let isQuitting = false;
@@ -23,6 +22,14 @@ function getDataDir(): string {
     : path.join(app.getPath('userData'), 'data');
 }
 
+function getNodeExec(): string {
+  return process.env.npm_node_execpath || 'node';
+}
+
+function getTsxCliPath(): string {
+  return path.join(__dirname, '../../backend/node_modules/tsx/dist/cli.mjs');
+}
+
 // ─── Backend process ──────────────────────────────────────────────────────────
 
 function startBackend(): Promise<void> {
@@ -35,7 +42,7 @@ function startBackend(): Promise<void> {
     };
 
     if (isDev) {
-      backendProcess = spawn(NPX_CMD, ['tsx', 'src/server.ts'], {
+      backendProcess = spawn(getNodeExec(), [getTsxCliPath(), 'src/server.ts'], {
         cwd: path.join(__dirname, '../../backend'),
         env,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -84,7 +91,7 @@ function startTracker(): void {
   };
 
   if (isDev) {
-    trackerProcess = spawn(NPX_CMD, ['tsx', 'src/tracker.ts'], {
+    trackerProcess = spawn(getNodeExec(), [getTsxCliPath(), 'src/tracker.ts'], {
       cwd: path.join(__dirname, '../../backend'),
       env,
       stdio: ['ignore', 'pipe', 'pipe'],

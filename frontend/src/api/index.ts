@@ -21,9 +21,22 @@ function parseActivity(raw: Record<string, unknown>): Activity {
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, init);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${path}`);
-  if (res.status === 204 || res.headers.get('content-length') === '0') return undefined as T;
-  return await res.json() as T;
+  const raw = await res.text();
+  let body: unknown = undefined;
+  try {
+    body = raw ? JSON.parse(raw) : undefined;
+  } catch {
+    body = undefined;
+  }
+  if (!res.ok) {
+    const msg =
+      body && typeof body === 'object' && 'error' in body && typeof (body as { error: unknown }).error === 'string'
+        ? (body as { error: string }).error
+        : `HTTP ${res.status}: ${path}`;
+    throw new Error(msg);
+  }
+  if (res.status === 204 || raw.length === 0) return undefined as T;
+  return body as T;
 }
 
 // ─── Activities ───────────────────────────────────────────────────────────────
@@ -52,6 +65,13 @@ export async function getDailyStats(date: string): Promise<DailyStats> {
 
 export async function getWeeklyStats(): Promise<DailyStats[]> {
   const data = await apiFetch<{ stats: DailyStats[] }>('/api/stats/weekly');
+  return data.stats;
+}
+
+/** Inclusive date range `from` … `to` (YYYY-MM-DD), sorted ascending by day. */
+export async function getWeeklyStatsRange(from: string, to: string): Promise<DailyStats[]> {
+  const q = new URLSearchParams({ from, to });
+  const data = await apiFetch<{ stats: DailyStats[] }>(`/api/stats/weekly?${q}`);
   return data.stats;
 }
 
@@ -126,6 +146,21 @@ export async function generateInsights(date: string): Promise<Insight[]> {
     body: JSON.stringify({ date }),
   });
   return data.insights;
+}
+
+export interface InsightsQuota {
+  date: string;
+  used: number;
+  remaining: number;
+  limit: number;
+  canGenerate: boolean;
+  cooldownRemainingMinutes: number;
+  nextAvailableAt: string | null;
+}
+
+export async function getInsightsQuota(date: string): Promise<InsightsQuota> {
+  const data = await apiFetch<{ quota: InsightsQuota }>(`/api/insights/quota?date=${date}`);
+  return data.quota;
 }
 
 // ─── Settings: privacy & data management ───────────────────────────────────────

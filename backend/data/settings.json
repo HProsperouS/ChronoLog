@@ -10,9 +10,7 @@
     "retentionDays": 90
   },
   "privacy": {
-    "excludedApps": [
-      "Cursor"
-    ],
+    "excludedApps": [],
     "respectPrivateBrowsing": true
   }
 }

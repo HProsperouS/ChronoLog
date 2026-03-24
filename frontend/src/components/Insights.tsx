@@ -1,27 +1,79 @@
-import { useEffect, useState } from 'react';
-import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2, Loader2, Wand2 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import * as api from '../api';
-import { todayStr } from '../utils';
+import {
+  todayStr,
+  formatDuration,
+  addDaysYmd,
+  startOfWeekMonday,
+  endOfWeekSunday,
+  formatCalendarWeekRange,
+} from '../utils';
 import type { Insight, DailyStats } from '../types';
 
-const TODAY = todayStr();
+type SummaryMode = 'daily' | 'weekly';
+
+function formatComparison(curr: number, prev: number, priorLabel: string): string {
+  const c = Number(curr);
+  const p = Number(prev);
+  if (!Number.isFinite(c) || !Number.isFinite(p)) return `— vs ${priorLabel}`;
+  if (c === 0 && p === 0) return `No data vs ${priorLabel}`;
+  if (p === 0) return c > 0 ? `↑ vs ${priorLabel}` : `— vs ${priorLabel}`;
+  const pct = ((c - p) / p) * 100;
+  if (!Number.isFinite(pct)) return `— vs ${priorLabel}`;
+  const arrow = pct >= 0 ? '↑' : '↓';
+  return `${arrow} ${Math.abs(Math.round(pct))}% vs ${priorLabel}`;
+}
 
 export function Insights() {
   const [insights, setInsights]   = useState<Insight[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [weeklyStats, setWeeklyStats] = useState<DailyStats[]>([]);
+  const [rangeStats, setRangeStats] = useState<DailyStats[]>([]);
+  const [summaryMode, setSummaryMode] = useState<SummaryMode>('daily');
+  const [quota, setQuota] = useState<api.InsightsQuota | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.getInsights(TODAY).then(setInsights);
-    api.getWeeklyStats().then(setWeeklyStats);
+    const load = () => {
+      const today = todayStr();
+      const thisWeekMon = startOfWeekMonday(today);
+      const thisWeekSun = endOfWeekSunday(thisWeekMon);
+      const fetchFrom = addDaysYmd(thisWeekMon, -7);
+      void Promise.all([
+        api.getInsights(today),
+        api.getWeeklyStatsRange(fetchFrom, thisWeekSun),
+        api.getInsightsQuota(today),
+      ]).then(([ins, stats, quotaInfo]) => {
+        setInsights(ins);
+        setRangeStats(stats);
+        setQuota(quotaInfo);
+      }).catch(() => {
+        // keep existing UI state if poll fails
+      });
+    };
+    load();
+    const timer = setInterval(load, 30_000);
+    return () => clearInterval(timer);
   }, []);
 
   async function handleGenerate() {
+    setGenerateError(null);
     setGenerating(true);
     try {
-      const fresh = await api.generateInsights(TODAY);
+      const fresh = await api.generateInsights(todayStr());
       setInsights(fresh);
+      const nextQuota = await api.getInsightsQuota(todayStr());
+      setQuota(nextQuota);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to generate insights.';
+      setGenerateError(message);
+      try {
+        const nextQuota = await api.getInsightsQuota(todayStr());
+        setQuota(nextQuota);
+      } catch {
+        // ignore follow-up quota fetch failure
+      }
     } finally {
       setGenerating(false);
     }
@@ -46,32 +98,102 @@ export function Insights() {
     return colors[type] || 'from-indigo-500 to-purple-600';
   };
 
-  // ─── Derived stats from backend weekly data ───────────────────────────────────
+  // ─── This calendar week (Mon–Sun, local) for charts & habit grid ─────────────
+  const weekStart = startOfWeekMonday(todayStr());
+  const weekEnd = endOfWeekSunday(weekStart);
+  const calendarWeekLabel = formatCalendarWeekRange(weekStart, weekEnd);
 
-  const productivityTrend = weeklyStats.map((d) => ({
-    date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-    score: d.focusScore,
-    focusTime: d.totalTime,
-  }));
+  const chartStats = useMemo(() => {
+    return [...rangeStats]
+      .filter((s) => s.date >= weekStart && s.date <= weekEnd)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [rangeStats, weekStart, weekEnd]);
 
-  const timeDistributionTrend = weeklyStats.map((d) => {
-    const productive = d.categoryTotals.Work + d.categoryTotals.Study;
-    const unproductive = d.categoryTotals.Entertainment;
-    const neutral = d.totalTime - productive - unproductive;
+  const productivityTrend = useMemo(
+    () =>
+      chartStats.map((d) => ({
+        date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+        score: d.focusScore,
+        focusTime: d.totalTime,
+      })),
+    [chartStats],
+  );
+
+  const timeDistributionTrend = useMemo(
+    () =>
+      chartStats.map((d) => {
+        const productive = d.categoryTotals.Work + d.categoryTotals.Study;
+        const unproductive = d.categoryTotals.Entertainment;
+        const neutral = d.totalTime - productive - unproductive;
+        return {
+          day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+          productive,
+          neutral,
+          unproductive,
+        };
+      }),
+    [chartStats],
+  );
+
+  // ─── Summary cards: Daily = today vs yesterday; Weekly = last 7 vs prior 7 ───
+  const summary = useMemo(() => {
+    const sorted = [...rangeStats].sort((a, b) => a.date.localeCompare(b.date));
+    const priorDaily = 'yesterday';
+    const priorWeekly = 'prior calendar week';
+
+    if (summaryMode === 'daily') {
+      const today = todayStr();
+      const ymdYest = addDaysYmd(today, -1);
+      const t = sorted.find((s) => s.date === today);
+      const y = sorted.find((s) => s.date === ymdYest);
+      const focusC = t?.focusScore ?? 0;
+      const focusP = y?.focusScore ?? 0;
+      const prodC = ((t?.categoryTotals.Work ?? 0) + (t?.categoryTotals.Study ?? 0)) / 60;
+      const prodP = ((y?.categoryTotals.Work ?? 0) + (y?.categoryTotals.Study ?? 0)) / 60;
+      const ctxC = t?.contextSwitches ?? 0;
+      const ctxP = y?.contextSwitches ?? 0;
+      return {
+        focusDisplay: `${focusC}`,
+        focusCmp: formatComparison(focusC, focusP, priorDaily),
+        prodDisplay: `${prodC.toFixed(1)}h`,
+        prodCmp: formatComparison(prodC, prodP, priorDaily),
+        ctxDisplay: `${ctxC}`,
+        ctxCmp: formatComparison(ctxC, ctxP, priorDaily),
+        ctxHint: 'Today (exits from focus)',
+        prodHint: 'Work + Study',
+      };
+    }
+
+    const prevStart = addDaysYmd(weekStart, -7);
+    const prevEnd = addDaysYmd(weekStart, -1);
+    const curr7 = sorted.filter((s) => s.date >= weekStart && s.date <= weekEnd);
+    const prev7 = sorted.filter((s) => s.date >= prevStart && s.date <= prevEnd);
+    const avgFocus = (days: DailyStats[]) =>
+      days.length ? days.reduce((s, d) => s + d.focusScore, 0) / days.length : 0;
+    const sumProdMin = (days: DailyStats[]) =>
+      days.reduce((s, d) => s + d.categoryTotals.Work + d.categoryTotals.Study, 0);
+    const sumCtx = (days: DailyStats[]) => days.reduce((s, d) => s + d.contextSwitches, 0);
+
+    const focusC = Math.round(avgFocus(curr7));
+    const focusP = Math.round(avgFocus(prev7));
+    const prodC = sumProdMin(curr7) / 60;
+    const prodP = sumProdMin(prev7) / 60;
+    const ctxAvgC = sumCtx(curr7) / 7;
+    const ctxAvgP = prev7.length >= 7 ? sumCtx(prev7) / 7 : 0;
+
+    const hasPrev = prev7.length >= 7;
+    const needPrevMsg = 'Not enough history (need last full week too)';
     return {
-      day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-      productive,
-      neutral,
-      unproductive,
+      focusDisplay: `${focusC}`,
+      focusCmp: hasPrev ? formatComparison(focusC, focusP, priorWeekly) : needPrevMsg,
+      prodDisplay: `${prodC.toFixed(1)}h`,
+      prodCmp: hasPrev ? formatComparison(prodC, prodP, priorWeekly) : needPrevMsg,
+      ctxDisplay: ctxAvgC.toFixed(1),
+      ctxCmp: hasPrev ? formatComparison(ctxAvgC, ctxAvgP, priorWeekly) : needPrevMsg,
+      ctxHint: 'Avg / day (this calendar week)',
+      prodHint: 'Total Work + Study (this calendar week)',
     };
-  });
-
-  const latestDay = weeklyStats[weeklyStats.length - 1];
-  const latestProductiveMinutes =
-    latestDay ? latestDay.categoryTotals.Work + latestDay.categoryTotals.Study : 0;
-  const latestProductiveHours = (latestProductiveMinutes / 60).toFixed(1);
-  const latestFocusScore = latestDay?.focusScore ?? 0;
-  const latestContextSwitches = latestDay?.contextSwitches ?? 0;
+  }, [rangeStats, summaryMode, weekStart, weekEnd]);
 
   // ─── Habit tracker helpers ────────────────────────────────────────────────────
 
@@ -99,8 +221,8 @@ export function Insights() {
   }
 
   function buildHabitDays() {
-    if (!weeklyStats.length) return [];
-    return weeklyStats.map((d) => {
+    if (!chartStats.length) return [];
+    return chartStats.map((d) => {
       const productiveMinutes = d.categoryTotals.Work + d.categoryTotals.Study;
       const entertainmentMinutes = d.categoryTotals.Entertainment;
       return {
@@ -151,11 +273,38 @@ export function Insights() {
               Personalized productivity analysis
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all">
-              <Calendar className="w-3.5 h-3.5" />
-              Last 7 Days
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-white/10 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setSummaryMode('daily')}
+                className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                  summaryMode === 'daily'
+                    ? 'bg-indigo-500/25 text-indigo-300'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                onClick={() => setSummaryMode('weekly')}
+                className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-white/10 ${
+                  summaryMode === 'weekly'
+                    ? 'bg-indigo-500/25 text-indigo-300'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                Weekly
+              </button>
+            </div>
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 bg-white/5 border border-white/10 rounded-lg max-w-[220px] sm:max-w-none"
+              title="Week runs Mon–Sun in your local timezone"
+            >
+              <Calendar className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate sm:whitespace-normal">Charts: {calendarWeekLabel}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -167,20 +316,25 @@ export function Insights() {
           <div className="bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-indigo-500/20 rounded-xl p-5">
             <Sparkles className="w-6 h-6 text-indigo-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Focus Score</p>
-            <p className="text-2xl font-semibold text-white">{latestFocusScore}%</p>
-            <p className="text-xs text-indigo-400 mt-2">↑ 8% from last week</p>
+            <p className="text-2xl font-semibold text-white">{summary.focusDisplay}%</p>
+            <p className="text-[10px] text-gray-600 mt-1">
+              {summaryMode === 'daily' ? 'Today' : '7-day average'}
+            </p>
+            <p className="text-xs text-indigo-400 mt-2">{summary.focusCmp}</p>
           </div>
           <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 rounded-xl p-5">
             <Trophy className="w-6 h-6 text-emerald-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Productive Hours</p>
-            <p className="text-2xl font-semibold text-white">{latestProductiveHours}h</p>
-            <p className="text-xs text-emerald-400 mt-2">↑ 12% from last week</p>
+            <p className="text-2xl font-semibold text-white">{summary.prodDisplay}</p>
+            <p className="text-[10px] text-gray-600 mt-1">{summary.prodHint}</p>
+            <p className="text-xs text-emerald-400 mt-2">{summary.prodCmp}</p>
           </div>
           <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 border border-purple-500/20 rounded-xl p-5">
             <Shuffle className="w-6 h-6 text-orange-400 mb-3" />
             <p className="text-xs text-gray-500 mb-1">Context Switches</p>
-            <p className="text-2xl font-semibold text-white">{latestContextSwitches}</p>
-            <p className="text-xs text-orange-400 mt-2">↑ 18% from last week</p>
+            <p className="text-2xl font-semibold text-white">{summary.ctxDisplay}</p>
+            <p className="text-[10px] text-gray-600 mt-1">{summary.ctxHint}</p>
+            <p className="text-xs text-orange-400 mt-2">{summary.ctxCmp}</p>
           </div>
         </div>
 
@@ -251,7 +405,7 @@ export function Insights() {
                   tickLine={false}
                 />
                 <Tooltip 
-                  formatter={(value: number) => `${Math.round(value / 60)}h ${value % 60}m`}
+                  formatter={(value: number) => formatDuration(value)}
                   contentStyle={{
                     backgroundColor: '#13131a',
                     border: '1px solid rgba(255,255,255,0.1)',
@@ -404,41 +558,118 @@ export function Insights() {
         </div>
 
         {/* AI Insights List */}
-        <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">AI-Generated Insights</h2>
-          <div className="space-y-3">
-            {insights.map((insight) => {
-              const Icon = getIcon(insight.icon);
-              const gradientColor = getIconColor(insight.type);
-              const time = new Date(insight.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-              return (
-                <div
-                  key={insight.id}
-                  className="flex gap-4 p-4 bg-white/5 border border-white/5 rounded-lg hover:bg-white/[0.07] hover:border-white/10 transition-all"
-                >
-                  <div className={`bg-gradient-to-br ${gradientColor} p-2.5 rounded-lg flex-shrink-0 h-fit`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className="text-sm font-semibold text-white">{insight.title}</h3>
-                      <span className="text-[10px] text-gray-500 ml-2">{time}</span>
-                    </div>
-                    <p className="text-xs text-gray-400 leading-relaxed mb-2">{insight.description}</p>
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
-                        insight.type === 'pattern'     ? 'bg-indigo-500/10 text-indigo-400'
-                        : insight.type === 'achievement' ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-orange-500/10 text-orange-400'
-                      }`}
-                    >
-                      {insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}
-                    </span>
-                  </div>
+        <div className="bg-[#13131a] border border-white/5 rounded-xl overflow-hidden">
+          <div className="p-5 border-b border-white/5 bg-gradient-to-r from-indigo-500/5 via-transparent to-purple-500/5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex gap-3 min-w-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20">
+                  <Sparkles className="h-5 w-5 text-white" />
                 </div>
-              );
-            })}
+                <div>
+                  <h2 className="text-base font-semibold text-white tracking-tight">Today&apos;s AI insights</h2>
+                  <p className="mt-1 text-xs text-gray-500 leading-relaxed max-w-xl">
+                    Short takeaways from your tracking data for{' '}
+                    <span className="text-gray-400 font-medium">{todayStr()}</span>. Generate a fresh batch anytime.
+                  </p>
+                  {quota && (
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      Daily generates: <span className="text-gray-300">{quota.used}/{quota.limit}</span>
+                      {' · '}
+                      Remaining: <span className="text-gray-300">{quota.remaining}</span>
+                      {quota.cooldownRemainingMinutes > 0 && (
+                        <>
+                          {' · '}
+                          Cooldown: <span className="text-gray-300">{quota.cooldownRemainingMinutes}m</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleGenerate()}
+                disabled={generating || !(quota?.canGenerate ?? true)}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-indigo-500/25 transition-all hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4" />
+                    Generate insights
+                  </>
+                )}
+              </button>
+            </div>
+            {generateError && (
+              <p className="mt-3 text-xs text-rose-300">{generateError}</p>
+            )}
+          </div>
+
+          <div className="p-5">
+            {insights.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-14 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+                  <Sparkles className="h-7 w-7 text-indigo-400/80" />
+                </div>
+                <p className="text-sm font-medium text-white">No insights for today yet</p>
+                <p className="mt-2 max-w-sm text-xs text-gray-500 leading-relaxed">
+                  We haven&apos;t saved any AI cards for this date. Use <span className="text-gray-400">Generate insights</span>{' '}
+                  above to analyze today&apos;s activity — you&apos;ll need backend + Lambda configured for it to succeed.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleGenerate()}
+                  disabled={generating || !(quota?.canGenerate ?? true)}
+                  className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-gray-200 transition-colors hover:bg-white/10 disabled:opacity-50"
+                >
+                  {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                  {generating ? 'Working…' : 'Try generate'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-gray-600 mb-1">
+                  {insights.length} insight{insights.length === 1 ? '' : 's'} · today
+                </p>
+                {insights.map((insight) => {
+                  const Icon = getIcon(insight.icon);
+                  const gradientColor = getIconColor(insight.type);
+                  const time = new Date(insight.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                  return (
+                    <div
+                      key={insight.id}
+                      className="flex gap-4 p-4 bg-white/5 border border-white/5 rounded-lg hover:bg-white/[0.07] hover:border-white/10 transition-all"
+                    >
+                      <div className={`bg-gradient-to-br ${gradientColor} p-2.5 rounded-lg flex-shrink-0 h-fit`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-1">
+                          <h3 className="text-sm font-semibold text-white">{insight.title}</h3>
+                          <span className="text-[10px] text-gray-500 ml-2 shrink-0">{time}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed mb-2">{insight.description}</p>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
+                            insight.type === 'pattern'     ? 'bg-indigo-500/10 text-indigo-400'
+                            : insight.type === 'achievement' ? 'bg-emerald-500/10 text-emerald-400'
+                            : 'bg-orange-500/10 text-orange-400'
+                          }`}
+                        >
+                          {insight.type.charAt(0).toUpperCase() + insight.type.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

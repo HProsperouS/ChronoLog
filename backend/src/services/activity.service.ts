@@ -52,13 +52,48 @@ export function getAppIconBuffer(appName: string): Buffer | null {
   }
 }
 
-function toDateString(iso: string): string {
-  return iso.slice(0, 10);
+/**
+ * Derive calendar date (YYYY-MM-DD) in the server's **local timezone**
+ * from an ISO timestamp. This keeps daily files aligned with what the user
+ * sees as \"today\" on their machine, instead of UTC.
+ */
+function toLocalDateString(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const BROWSER_APP_RE = /chrome|safari|firefox|arc|brave|edge|opera/i;
+const MERGE_GAP_MS = 15_000; // tolerate minor polling/network jitter
+
+function sessionKeyForActivity(a: Pick<Activity, 'appName' | 'windowTitle' | 'url'>): string {
+  if (BROWSER_APP_RE.test(a.appName)) {
+    if (a.url) {
+      try { return `${a.appName}|${new URL(a.url).hostname}`; } catch { /* fall through */ }
+    }
+    return a.appName;
+  }
+  return `${a.appName}|${a.windowTitle ?? ''}`;
+}
+
+function canMergeAdjacent(prev: Activity, next: Activity): boolean {
+  if (prev.category !== next.category) return false;
+  if (sessionKeyForActivity(prev) !== sessionKeyForActivity(next)) return false;
+
+  const prevEnd = new Date(prev.endTime).getTime();
+  const nextStart = new Date(next.startTime).getTime();
+  if (Number.isNaN(prevEnd) || Number.isNaN(nextStart)) return false;
+
+  return nextStart <= prevEnd + MERGE_GAP_MS;
 }
 
 export function createActivity(body: CreateActivityBody): Activity {
-  const date = toDateString(body.startTime);
-  const activities = ActivityStore.readDay(date);
+  const date = toLocalDateString(body.startTime);
+  const activities = ActivityStore
+    .readDay(date)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   const category = body.category ?? autoCategory(body.appName, body.windowTitle, body.url);
 
@@ -73,6 +108,24 @@ export function createActivity(body: CreateActivityBody): Activity {
     endTime: body.endTime,
     date,
   };
+
+  const prev = activities.at(-1);
+  if (prev && canMergeAdjacent(prev, activity)) {
+    const prevEnd = new Date(prev.endTime).getTime();
+    const nextEnd = new Date(activity.endTime).getTime();
+    const mergedEndMs = Math.max(prevEnd, nextEnd);
+    const mergedStartMs = Math.min(
+      new Date(prev.startTime).getTime(),
+      new Date(activity.startTime).getTime()
+    );
+    prev.endTime = new Date(mergedEndMs).toISOString();
+    prev.duration = Math.round(((mergedEndMs - mergedStartMs) / 60_000) * 10) / 10;
+    // Keep the latest metadata for better categorization display.
+    prev.windowTitle = activity.windowTitle ?? prev.windowTitle;
+    prev.url = activity.url ?? prev.url;
+    ActivityStore.writeDay(date, activities);
+    return prev;
+  }
 
   activities.push(activity);
   ActivityStore.writeDay(date, activities);

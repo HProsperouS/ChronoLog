@@ -5,26 +5,46 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useNavigate } from 'react-router';
 import * as api from '../api';
 import { categoryColors } from '../constants';
-import { todayStr } from '../utils';
+import { todayStr, formatDuration, addDaysYmd } from '../utils';
 import type { DailyStats } from '../types';
 
-const TODAY = todayStr();
+/** Trend badge: % change vs yesterday (higher curr = positive arrow). */
+function trendVsYesterday(curr: number, prev: number): { value: string; isPositive: boolean } | undefined {
+  const c = Number(curr);
+  const p = Number(prev);
+  if (!Number.isFinite(c) || !Number.isFinite(p)) return undefined;
+  if (c === 0 && p === 0) return undefined;
+  if (p === 0) return c > 0 ? { value: 'new', isPositive: true } : undefined;
+  const pct = ((c - p) / p) * 100;
+  if (!Number.isFinite(pct)) return undefined;
+  return { value: `${Math.abs(Math.round(pct))}%`, isPositive: pct >= 0 };
+}
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const [daily, setDaily]   = useState<DailyStats | null>(null);
-  const [weekly, setWeekly] = useState<DailyStats[]>([]);
+  const [daily, setDaily]             = useState<DailyStats | null>(null);
+  const [yesterdayDaily, setYesterdayDaily] = useState<DailyStats | null>(null);
+  const [weekly, setWeekly]           = useState<DailyStats[]>([]);
 
   useEffect(() => {
-    api.getDailyStats(TODAY).then(setDaily);
-    api.getWeeklyStats().then(setWeekly);
+    const fetch = () => {
+      const today = todayStr();
+      const yest  = addDaysYmd(today, -1);
+      void Promise.all([
+        api.getDailyStats(today),
+        api.getDailyStats(yest).catch(() => null),
+        api.getWeeklyStats(),
+      ]).then(([d, y, w]) => {
+        setDaily(d);
+        setYesterdayDaily(y);
+        setWeekly(w);
+      });
+    };
+    fetch();
+    const timer = setInterval(fetch, 30_000);
+    return () => clearInterval(timer);
   }, []);
 
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins  = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
 
   const renderPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
@@ -33,7 +53,7 @@ export function Dashboard() {
     return (
       <div style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 8px', fontSize: 12 }}>
         <div style={{ color }}>{name}</div>
-        <div style={{ color: '#e5e7eb', marginTop: 2 }}>{formatTime(value)}</div>
+        <div style={{ color: '#e5e7eb', marginTop: 2 }}>{formatDuration(value)}</div>
       </div>
     );
   };
@@ -56,6 +76,24 @@ export function Dashboard() {
 
   const productiveTime = daily.categoryTotals.Work + daily.categoryTotals.Study;
   const mostUsed = daily.topApps[0]?.appName ?? '—';
+
+  function trendWithYesterday(curr: number, prev: number) {
+    const t = trendVsYesterday(curr, prev);
+    return t ? { ...t, label: 'vs yesterday' as const } : undefined;
+  }
+
+  const productiveTrend = yesterdayDaily
+    ? trendWithYesterday(
+        productiveTime,
+        yesterdayDaily.categoryTotals.Work + yesterdayDaily.categoryTotals.Study,
+      )
+    : undefined;
+  const focusTrend = yesterdayDaily
+    ? trendWithYesterday(daily.focusScore, yesterdayDaily.focusScore)
+    : undefined;
+  const longestTrend = yesterdayDaily
+    ? trendWithYesterday(daily.longestSession, yesterdayDaily.longestSession)
+    : undefined;
 
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
@@ -83,10 +121,10 @@ export function Dashboard() {
       <div className="p-4 sm:p-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <StatCard title="Productive Time" value={formatTime(productiveTime)} icon={Clock}      trend={{ value: '12%', isPositive: true }} color="indigo"  />
-          <StatCard title="Focus Score"     value={`${daily.focusScore}%`}      icon={Target}     trend={{ value: '5%',  isPositive: true }} color="green"   />
+          <StatCard title="Productive Time" value={formatDuration(productiveTime)} icon={Clock}      trend={productiveTrend} color="indigo"  />
+          <StatCard title="Focus Score"     value={`${daily.focusScore}%`}      icon={Target}     trend={focusTrend}      color="green"   />
           <StatCard title="Most Used"       value={mostUsed}                    icon={TrendingUp}                                           color="purple"  />
-          <StatCard title="Longest Session" value={formatTime(daily.longestSession)} icon={Zap}  trend={{ value: '20m', isPositive: true }} color="orange"  />
+          <StatCard title="Longest Session" value={formatDuration(daily.longestSession)} icon={Zap}  trend={longestTrend}    color="orange"  />
         </div>
 
         {/* Charts Row */}
@@ -119,7 +157,7 @@ export function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="day" stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
                 <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => formatTime(v)}
+                <Tooltip formatter={(v: number) => formatDuration(v)}
                   contentStyle={{ backgroundColor: '#13131a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                   labelStyle={{ color: '#fff' }}
                 />
@@ -147,7 +185,7 @@ export function Dashboard() {
                       <span className="text-sm font-medium text-white">{app.appName}</span>
                       <span className="text-xs text-gray-500">{app.category}</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-400">{formatTime(app.duration)}</span>
+                    <span className="text-sm font-medium text-gray-400">{formatDuration(app.duration)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 bg-white/5 rounded-full h-1.5 overflow-hidden">

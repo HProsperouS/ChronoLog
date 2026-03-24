@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import * as api from '../api';
 import { categoryColors } from '../constants';
-import { dateStr, todayStr } from '../utils';
+import { dateStr, todayStr, formatDuration } from '../utils';
 import type { Activity } from '../types';
 
 export function ActivityTimeline() {
@@ -18,37 +18,108 @@ export function ActivityTimeline() {
     api.getAvailableDates().then((dates) => setAvailableDates(new Set(dates)));
   }, []);
 
+  // Auto-advance to the new day at midnight (for late-night workers)
   useEffect(() => {
-    api.getActivities(dateStr(selectedDate)).then(setActivities);
+    let lastToday = todayStr();
+    const timer = setInterval(() => {
+      const nowToday = todayStr();
+      if (nowToday !== lastToday) {
+        // Date rolled over — if user was viewing the old "today", move them forward
+        setSelectedDate((prev) => dateStr(prev) === lastToday ? new Date() : prev);
+        lastToday = nowToday;
+      }
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const date = dateStr(selectedDate);
+    const isToday = date === todayStr();
+
+    const refresh = async () => {
+      const nextActivities = await api.getActivities(date);
+      setActivities(nextActivities);
+      if (isToday) {
+        const dates = await api.getAvailableDates();
+        setAvailableDates(new Set(dates));
+      }
+    };
+
+    void refresh();
+    if (!isToday) return;
+    const timer = setInterval(() => { void refresh(); }, 5_000);
+    return () => clearInterval(timer);
   }, [selectedDate]);
 
   const formatTime = (date: Date) =>
     date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  const formatDuration = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
-  };
 
   const isProductive = (category: string) =>
     category === 'Work' || category === 'Study';
 
+  const getTimeWindow = () => {
+    if (activities.length === 0) return { startHour: 9, endHour: 19 };
+
+    const startHours = activities
+      .map((a) => a.startTime.getHours())
+      .filter((h) => !isNaN(h));
+
+    const endHours = activities
+      .map((a) => {
+        const h = a.endTime?.getHours?.() ?? NaN;
+        const m = a.endTime?.getMinutes?.() ?? 0;
+        const s = a.endTime?.getSeconds?.() ?? 0;
+        return isNaN(h) ? NaN : (m > 0 || s > 0 ? h + 1 : h);
+      })
+      .filter((h) => !isNaN(h));
+
+    if (startHours.length === 0) return { startHour: 9, endHour: 19 };
+
+    const startHour = Math.min(...startHours);
+    const rawEnd    = endHours.length > 0 ? Math.max(...endHours) : startHour + 1;
+    // always guarantee at least a 1-hour window to avoid division by zero
+    const endHour   = Math.max(rawEnd, startHour + 1);
+
+    return { startHour, endHour };
+  };
+
+  const { startHour, endHour } = getTimeWindow();
+
   const generateTimelineBar = () => {
-    const startHour = 9, endHour = 19;
-    const totalMins = (endHour - startHour) * 60;
+    const totalMins = Math.max((endHour - startHour) * 60, 1);
     return activities
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
       .map((activity) => {
-        const startMin = activity.startTime.getHours() * 60 + activity.startTime.getMinutes();
+        const startMin = activity.startTime.getHours() * 60
+          + activity.startTime.getMinutes()
+          + activity.startTime.getSeconds() / 60;
         const offset   = startMin - startHour * 60;
         const left     = (offset / totalMins) * 100;
         const width    = (activity.duration / totalMins) * 100;
-        return { ...activity, left: Math.max(0, left), width: Math.min(width, 100 - Math.max(0, left)), isProductive: isProductive(activity.category) };
+        return { ...activity, left: Math.max(0, left), width: Math.min(Math.max(width, 0.5), 100 - Math.max(0, left)), isProductive: isProductive(activity.category) };
       });
   };
 
   const timelineData = generateTimelineBar();
+
+  const timeLabels = (() => {
+    const windowHours = endHour - startHour;
+    const step = windowHours <= 4 ? 1 : 2;
+    const fmt = (h: number) => {
+      const suffix  = h >= 12 ? 'PM' : 'AM';
+      const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${display} ${suffix}`;
+    };
+    const labels: string[] = [];
+    for (let h = startHour; h <= endHour; h += step) {
+      labels.push(fmt(h));
+    }
+    // Always include the end label
+    const endLabel = fmt(endHour);
+    if (labels[labels.length - 1] !== endLabel) labels.push(endLabel);
+    return labels;
+  })();
   const categories   = ['All', 'Work', 'Study', 'Entertainment', 'Communication', 'Utilities'];
 
   const filteredActivities = activities
@@ -106,7 +177,7 @@ export function ActivityTimeline() {
           </div>
           <div className="relative">
             <div className="flex justify-between text-[10px] text-gray-500 mb-2">
-              {['9 AM','11 AM','1 PM','3 PM','5 PM','7 PM'].map((t) => <span key={t}>{t}</span>)}
+              {timeLabels.map((t) => <span key={t}>{t}</span>)}
             </div>
             <div className="relative h-10 bg-white/5 rounded-lg overflow-hidden">
               {timelineData.map((a) => (

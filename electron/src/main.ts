@@ -6,6 +6,7 @@ import { setupTray } from './tray';
 const isDev = !app.isPackaged;
 const useDevServer = isDev && process.env.ELECTRON_USE_DEV_SERVER !== 'false';
 const BACKEND_PORT = 3001;
+const NPX_CMD = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 // Flag used to distinguish explicit quit (from tray) vs window close
 let isQuitting = false;
@@ -34,7 +35,7 @@ function startBackend(): Promise<void> {
     };
 
     if (isDev) {
-      backendProcess = spawn('npx', ['tsx', 'src/server.ts'], {
+      backendProcess = spawn(NPX_CMD, ['tsx', 'src/server.ts'], {
         cwd: path.join(__dirname, '../../backend'),
         env,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -83,7 +84,7 @@ function startTracker(): void {
   };
 
   if (isDev) {
-    trackerProcess = spawn('npx', ['tsx', 'src/tracker.ts'], {
+    trackerProcess = spawn(NPX_CMD, ['tsx', 'src/tracker.ts'], {
       cwd: path.join(__dirname, '../../backend'),
       env,
       stdio: ['ignore', 'pipe', 'pipe'],

@@ -54,9 +54,7 @@ async function runChecks() {
     // console.log('Permission status:', Notification.permission);
     // console.log('🔔 Running notification checks...');
     // Respect the notificationsEnabled setting
-    const settingsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`).catch(() => null);
-    const settingsData = settingsRes ? await settingsRes.json().catch(() => null) : null;
-    const settings = settingsData?.settings ?? null;
+    const settings = await api.getSettings().catch(() => null);
     
     // console.log('Settings:', settings);
 

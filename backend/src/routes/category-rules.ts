@@ -50,14 +50,4 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  app.get('/settings', async (_request, reply) => {
-    return reply.send({ settings: CategoryService.getSettings() });
-  });
-
-  app.patch<{ Body: { pollIntervalSeconds?: number; idleThresholdMinutes?: number } }>('/settings', {
-    handler: async (request, reply) => {
-      const settings = CategoryService.updateSettings(request.body);
-      return reply.send({ settings });
-    },
-  });
 }

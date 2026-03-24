@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import { setupTray } from './tray';
@@ -28,6 +28,63 @@ function getNodeExec(): string {
 
 function getTsxCliPath(): string {
   return path.join(__dirname, '../../backend/node_modules/tsx/dist/cli.mjs');
+}
+
+function setupApplicationMenu(): void {
+  if (process.platform !== 'darwin') {
+    Menu.setApplicationMenu(null);
+    return;
+  }
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' },
+      ],
+    },
+  ];
+
+  if (isDev) {
+    template.push({
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'toggleDevTools' },
+      ],
+    });
+  }
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 // ─── Backend process ──────────────────────────────────────────────────────────
@@ -134,7 +191,12 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: false,
     },
+    autoHideMenuBar: process.platform !== 'darwin',
   });
+
+  if (process.platform !== 'darwin') {
+    mainWindow.removeMenu();
+  }
 
   if (useDevServer) {
     void mainWindow.loadURL('http://localhost:3000');
@@ -178,6 +240,7 @@ app.whenReady().then(async () => {
   console.log('[electron] Starting ChronoLog…');
   console.log(`[electron] isDev=${isDev}, dataDir=${getDataDir()}`);
 
+  setupApplicationMenu();
   await startBackend();
   startTracker();
   createWindow();

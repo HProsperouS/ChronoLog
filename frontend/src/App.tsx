@@ -5,8 +5,11 @@ import { ActivityTimeline } from './components/ActivityTimeline';
 import { Insights } from './components/Insights';
 import { Categories } from './components/Categories';
 import { Settings } from './components/Settings';
+import { useNotifications } from './hooks/useNotifications';
 
 export default function App() {
+  useNotifications(); // For Notificatiosn on web browser 
+
   return (
     <BrowserRouter>
       <Layout>

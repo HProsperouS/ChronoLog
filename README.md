@@ -70,13 +70,13 @@ Daily goals with color-coded progress (context switches, productive hours, enter
 - Private browsing mode respected
 
 ### Live UI refresh (frontend polling)
-The React UI **polls the backend every 30 seconds** on open pages so numbers update without a manual reload:
+The React UI polls the backend on open pages so numbers update without a manual reload:
 
 | Screen | What refreshes |
 |---|---|
-| **Dashboard** | Today’s daily stats, yesterday (for trend badges), rolling 7-day weekly stats |
-| **Insights** | AI insights list for today + 14-day stats window (summary cards & charts) |
-| **Activity** | Only when the selected calendar day is **today**; historical dates load once per selection |
+| **Dashboard** | Today’s daily stats, yesterday (for trend badges), rolling 7-day weekly stats (**30s**) |
+| **Insights** | AI insights list for today + 14-day stats window (summary cards & charts) (**30s**) |
+| **Activity** | Only when the selected calendar day is **today** (**5s**); historical dates load once per selection |
 
 The Activity screen also runs a **60-second** check for the local calendar date rolling over (so “today” advances after midnight for late-night use).
 
@@ -158,7 +158,7 @@ The tracker (`backend/src/tracker.ts`) is a lightweight background process that 
 |---|---|
 | **App name** | The name of the currently focused application (e.g. `Google Chrome`, `Cursor`, `Spotify`) |
 | **Window title** | The title bar text — e.g. `"JavaScript Tutorial - YouTube"`, `"project.ts — Cursor"` |
-| **URL** | Full URL for supported browsers (Chrome, Safari, Firefox, Arc, Brave, Edge) |
+| **URL** | Full URL for supported browsers only (Chrome, Safari, Firefox, Arc, Brave, Edge, Opera). Non-browser apps never store URL. |
 | **Duration** | Exact time spent, measured from session start to end, accurate to the second |
 | **Start / end timestamps** | ISO 8601, stored in UTC |
 | **System idle time** | OS-level time since last keyboard or mouse input |
@@ -196,7 +196,6 @@ private browsing? ──► Yes ──► record app, strip URL
       │
 same session? (see "Session grouping" below)
       ├── Yes ──► update windowTitle + URL in place
-      │          elapsed ≥ 2 min? ──► checkpoint: POST session, restart timer
       │
       └── No  ──► POST old session → start new session
 ```
@@ -216,16 +215,26 @@ Within a session, `windowTitle` and `url` are updated live on every poll. This e
 
 ---
 
-### Session checkpoints (2-minute writes)
+### Session writes and crash safety
 
-If the user stays in the same session for more than **2 minutes**, the tracker automatically:
+ChronoLog now uses **event-boundary writes** (no forced time slicing):
 
-1. Writes the current session to disk (POST to backend)
-2. Restarts the session timer from the current moment
+- A session is written when context actually changes (app/site switch), when idle starts (back-dated), or on tracker shutdown.
+- The tracker persists in-progress session state to `backend/data/tracker-state.json`.
+- On restart, it attempts to recover that state and writes a safe tail ending at restart time.
+- If recovery POST fails (e.g. backend unavailable), the state file is kept for retry on next startup.
 
-This prevents two problems:
-- **Data loss** if the tracker crashes or the machine shuts down unexpectedly
-- **Timeline gaps** — the Activity Timeline chart would show blank space for any unwritten session
+---
+
+### Backend anti-fragmentation merge
+
+To reduce accidental tiny sessions from restart/jitter edges, the backend merges adjacent activities on write when:
+
+- category is the same
+- session key is the same (browser by hostname, non-browser by app + title)
+- the time gap is very small (<= 15 seconds)
+
+This keeps context-switch metrics closer to real user behavior.
 
 ---
 
@@ -316,11 +325,38 @@ score = (productiveTime / totalTime) × 50
       + max(0, 1 − contextSwitches / 10) × 25
 ```
 
-**Longest focus block** merges consecutive Work/Study activities that are within 5 minutes of each other — so 2-minute checkpoint writes don't fragment a long session into many short pieces.
+**Longest focus block** merges consecutive Work/Study activities that are within 5 minutes of each other — so minor write jitter does not fragment a long focus session.
 
 **Examples:**
 - 3h Work, 2 context switches, longest block 90 min → ~95
 - 30 min Work, 8 context switches, longest block 15 min → ~30
+
+---
+
+### System Notifications
+
+ChronoLog passively monitors your activity and sends desktop reminders to help
+you stay aware of unproductive patterns — without interrupting your flow unnecessarily.
+
+Every **1 minute**, ChronoLog checks your current daily stats against a set of thresholds. When a threshold is exceeded, a desktop notification is fired. Each notification type has a **15-minute cooldown** to avoid repeat alerts for the same issue.
+
+Notifications respect the `notificationsEnabled` toggle in Settings — they can be disabled at any time.
+
+| Notification | Trigger | Cooldown | Basis |
+|---|---|---|---|
+| 🔀 Focus Fragmentation | Context switches exceed **8** in a day | 15 min | UC Irvine research on interruption & stress |
+| 🎮 Entertainment Check | Entertainment time exceeds **45 minutes** | 15 min | Pomodoro principle — breaks beyond 45 min become distractions |
+| 📉 Low Focus Score | Focus score drops below **40%** | 15 min | Calibrated across productive time ratio, focus block length, and switch penalty |
+| ⏰ Take a Break | Longest session exceeds **90 minutes** | 15 min | 90-min ultradian rhythm — attention drops sharply beyond this point |
+| 💡 Productivity Reminder | Less than **30%** of screen time is productive (min. 60 mins tracked) | 15 min | Below average productive ratio for university students |
+
+**Scientific basis:**
+
+- **90-minute break threshold** — Based on the ultradian rhythm cycle, focus and retention drop significantly after 90 continuous minutes of work. Information studied in a fatigued state is substantially less likely to be recalled later.
+- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog only counts meaningful category switches (Utilities and Uncategorized are excluded), making 8 a strict but fair limit for deep study work.
+- **Productive ratio threshold (30%)** — Studies of university students show that productive screen time (Work + Study) typically falls between 30–50% of total screen time. A warning fires when a student falls below this average range, indicating a genuinely off day rather than a normal one.
+
+> **Note:** Notifications are currently implemented via the browser Web Notification API (`frontend/src/hooks/useNotifications.ts`). When Electron is integrated, this will be replaced with Electron's native notification system for a cleaner desktop experience.
 
 ---
 
@@ -370,7 +406,8 @@ ChronoLog/
     │   │   └── YYYY-MM-DD.json  # One file per day
     │   ├── settings.json        # Tracker settings + privacy exclusions
     │   ├── category-rules.json  # Auto-generated on first launch from installed apps
-    │   └── insights.json        # AI-generated insights (persisted)
+    │   ├── insights.json        # AI-generated insights (persisted)
+    │   └── tracker-state.json   # Last in-progress tracker session (crash/restart recovery)
     └── src/
         ├── server.ts            # Fastify entry point (localhost:3001)
         ├── app.ts               # CORS, route registration
@@ -440,10 +477,15 @@ cp backend/.env.example backend/.env
 | `INSIGHTS_FUNCTION_URL` | — | Lambda Function URL for `POST` generate |
 | `INSIGHTS_PROXY_SECRET` | — | `Authorization: Bearer` value (same as CDK `ProxySecret`) |
 
-### 4. Run in development mode
+### 4. Run in development mode (Browser Mode)
 
 ```bash
-npm run dev
+# Frontend
+cd frontend && npm run dev
+# Backend
+cd backend && npm run dev
+# Tracker
+cd backend && npm run tracker
 ```
 
 This single command starts all three processes concurrently:

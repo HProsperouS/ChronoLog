@@ -36,14 +36,18 @@ export function ActivityTimeline() {
     const date = dateStr(selectedDate);
     const isToday = date === todayStr();
 
-    const fetch = () => {
-      api.getActivities(date).then(setActivities);
-      if (isToday) api.getAvailableDates().then((dates) => setAvailableDates(new Set(dates)));
+    const refresh = async () => {
+      const nextActivities = await api.getActivities(date);
+      setActivities(nextActivities);
+      if (isToday) {
+        const dates = await api.getAvailableDates();
+        setAvailableDates(new Set(dates));
+      }
     };
 
-    fetch();
+    void refresh();
     if (!isToday) return;
-    const timer = setInterval(fetch, 30_000);
+    const timer = setInterval(() => { void refresh(); }, 5_000);
     return () => clearInterval(timer);
   }, [selectedDate]);
 

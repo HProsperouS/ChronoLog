@@ -35,21 +35,45 @@
       {
         "from": "backend/dist",
         "to": "backend/dist",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "icon": "electron/assets/icon.icns",
       "darkModeSupport": true
     },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "electron/assets/icon.ico"
     },
     "linux": {
-      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "electron/assets/icon.png",
       "category": "Utility"
     },
@@ -59,11 +83,11 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^20.14.0",
     "concurrently": "^8.2.2",
     "electron": "^35.0.0",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.8.1",
     "typescript": "^5.4.5",
-    "wait-on": "^7.2.0",
-    "@types/node": "^20.14.0"
+    "wait-on": "^7.2.0"
   }
 }

@@ -46,7 +46,6 @@
             "react-resizable-panels": "^2.1.7",
             "react-router": "*",
             "recharts": "^2.15.2",
-            "shadcn": "^4.0.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "^3.5.0",
             "tailwindcss": "^4.2.1",
@@ -57,8 +56,8 @@
             "@types/node": "^20.10.0",
             "@types/react": "^19.2.14",
             "@types/react-dom": "^19.2.3",
-            "@vitejs/plugin-react-swc": "^3.10.2",
-            "vite": "6.3.5"
+            "@vitejs/plugin-react-swc": "^4.3.0",
+            "vite": "^7.3.1"
       },
       "scripts": {
             "dev": "vite",

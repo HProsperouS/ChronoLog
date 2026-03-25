@@ -41,6 +41,7 @@ function colorFromCategoryName(name: string): string {
 }
 
 function getCategoryColor(category: string): string {
+  if (category === 'Other') return '#9ca3af';
   return categoryColors[category] ?? colorFromCategoryName(category);
 }
 
@@ -110,7 +111,7 @@ export function Dashboard() {
   const renderPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     const { name, value } = payload[0] as { name: string; value: number };
-    const color = categoryColors[name] ?? '#e5e7eb';
+    const color = getCategoryColor(name);
     return (
       <div style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 8px', fontSize: 12 }}>
         <div style={{ color }}>{name}</div>
@@ -127,9 +128,28 @@ export function Dashboard() {
   const weekEnd = endOfWeekSunday(weekStart);
   const calendarWeekLabel = formatCalendarWeekRange(weekStart, weekEnd);
 
-  const pieData = Object.entries(daily.categoryTotals)
-    .filter(([, v]) => v > 0)
-    .map(([name, value]) => ({ name, value }));
+  const pieData = (() => {
+    const MAX_VISIBLE_CATEGORIES = 6;
+
+    const sorted = Object.entries(daily.categoryTotals)
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    const visible = sorted.slice(0, MAX_VISIBLE_CATEGORIES);
+    const hidden = sorted.slice(MAX_VISIBLE_CATEGORIES);
+
+    const otherValue = hidden.reduce((sum, [, value]) => sum + value, 0);
+
+    const combined = otherValue > 0
+      ? [...visible, ['Other', otherValue] as [string, number]]
+      : visible;
+
+    return combined.map(([name, value]) => ({
+      name,
+      value,
+      percent: daily.totalTime > 0 ? (value / daily.totalTime) * 100 : 0,
+    }));
+  })();
 
   const weeklyBarData = [...weekly]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -178,7 +198,6 @@ export function Dashboard() {
     : undefined;
 
 
-  console.log('[Dashboard] weeklyBarData', weeklyBarData);
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
@@ -214,23 +233,60 @@ export function Dashboard() {
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 sm:mb-6">
           {/* Today's Distribution */}
+          {/* Today's Distribution */}
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
             <h2 className="text-sm font-semibold text-white mb-4">Today's Distribution</h2>
             <p className="text-xs text-gray-500 mb-3">Click on a segment to view details</p>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={90} dataKey="value" stroke="none"
-                  onClick={() => navigate('/activity')} cursor="pointer"
-                >
-                  {pieData.map((entry, i) => (
-                    <Cell key={i} fill={getCategoryColor(entry.name)} className="hover:opacity-80 transition-opacity" />
-                  ))}
-                </Pie>
-                <Tooltip content={renderPieTooltip} />
-              </PieChart>
-            </ResponsiveContainer>
+
+            <div className="flex items-center gap-6 h-[280px]">
+              <div className="flex-1 h-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      label={false}
+                      labelLine={false}
+                      dataKey="value"
+                      stroke="none"
+                      onClick={() => navigate('/activity')}
+                      cursor="pointer"
+                    >
+                      {pieData.map((entry, i) => (
+                        <Cell
+                          key={i}
+                          fill={getCategoryColor(entry.name)}
+                          className="hover:opacity-80 transition-opacity"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={renderPieTooltip} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="w-56 shrink-0 space-y-2 overflow-y-auto pr-1">
+                {pieData.map((entry) => (
+                  <div key={entry.name} className="flex items-center justify-between gap-3 text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: getCategoryColor(entry.name) }}
+                      />
+                      <span className="text-gray-300 truncate">{entry.name}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-white font-medium">{Math.round(entry.percent)}%</div>
+                      <div className="text-xs text-gray-500">{formatDuration(entry.value)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Weekly Activity */}

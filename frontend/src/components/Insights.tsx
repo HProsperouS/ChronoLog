@@ -237,7 +237,7 @@ export function Insights() {
         prodCmp: formatComparison(prodC, prodP, priorDaily),
         ctxDisplay: `${ctxC}`,
         ctxCmp: formatComparison(ctxC, ctxP, priorDaily),
-        ctxHint: 'Today (exits from focus)',
+        ctxHint: 'Today (productive ↔ non-productive)',
         prodHint: 'Work + Study',
       };
     }

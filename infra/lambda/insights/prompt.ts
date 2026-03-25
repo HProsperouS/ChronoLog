@@ -3,7 +3,7 @@ import type { InsightsLambdaStatsPayload, SessionTimelineEntry } from './types';
 function formatFragmentation(stats: InsightsLambdaStatsPayload): string[] {
   const lines = [
     `  Context switches (SAME as Dashboard / Insights page — authoritative): ${stats.contextSwitches}`,
-    `    Definition: count only when leaving Work or Study to another category, after dropping Utilities & Uncategorized from the timeline (same code as focus score).`,
+    `    Definition: each time leaving Work/Study to any other category in full session order, including Utilities (same code as focus score).`,
     `  App/category hops (adjacent sessions, ANY change — NOT the dashboard "context switches" number): ${stats.appTransitionCount}`,
     `  Sessions recorded: ${stats.sessionCount}`,
     `  Short focus sessions (<3 min Work/Study): ${stats.shortFocusSessionCount}`,

@@ -302,9 +302,11 @@ Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`, 
 
 ### Context switches
 
-A **context switch** is counted when the user moves **away from a focused session** — specifically when the previous activity's category was `Work` or `Study` and the next activity's category is something else (e.g. `Entertainment`, `Communication`).
+A **context switch** is counted when the user moves **away from a focused session** — specifically when the previous activity's category was `Work` or `Study` and the next activity’s category is **not** `Work` or `Study`.
 
-Switching back into `Work`/`Study` does not count — only the interruptions that pulled the user out of focus are tracked. This gives a meaningful measure of how many times focused work was broken.
+The timeline is walked **in full session order**. Any hop from `Work`/`Study` to **any** other category counts — including `Utilities`, `Uncategorized`, `Communication`, `Entertainment`, etc. (Filtering categories out of the middle would collapse `Work → X → Work` and undercount.)
+
+Switching back into `Work`/`Study` does not count — only the interruptions that pulled the user out of focus are tracked.
 
 ---
 
@@ -353,7 +355,7 @@ Notifications respect the `notificationsEnabled` toggle in Settings — they can
 **Scientific basis:**
 
 - **90-minute break threshold** — Based on the ultradian rhythm cycle, focus and retention drop significantly after 90 continuous minutes of work. Information studied in a fatigued state is substantially less likely to be recalled later.
-- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog only counts meaningful category switches (Utilities and Uncategorized are excluded), making 8 a strict but fair limit for deep study work.
+- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog counts each time you leave `Work`/`Study` for any other category (including `Utilities` and `Uncategorized`). 8 remains a strict but fair limit for deep study work.
 - **Productive ratio threshold (30%)** — Studies of university students show that productive screen time (Work + Study) typically falls between 30–50% of total screen time. A warning fires when a student falls below this average range, indicating a genuinely off day rather than a normal one.
 
 > **Note:** Notifications are currently implemented via the browser Web Notification API (`frontend/src/hooks/useNotifications.ts`). When Electron is integrated, this will be replaced with Electron's native notification system for a cleaner desktop experience.

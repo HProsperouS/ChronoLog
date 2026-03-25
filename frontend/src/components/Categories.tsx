@@ -1,19 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FolderTree, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
-import { categoryColors } from '../constants';
+import { categoryColors, DEFAULT_CATEGORY_COLOR } from '../constants';
 import type { CategoryRule } from '../types';
 
 const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
+const CUSTOM_CATEGORY_VALUE = '__custom__';
 
 function parseKeywords(raw: string): string[] {
   return raw
     .split(',')
     .map((k) => k.trim())
     .filter(Boolean);
+}
+
+function normalizeCategoryName(value: string): string {
+  return value.trim();
+}
+
+
+function resolveDraftCategory(
+  selectedCategory: string,
+  customCategoryInput: string
+): string {
+  if (selectedCategory === CUSTOM_CATEGORY_VALUE) {
+    return normalizeCategoryName(customCategoryInput);
+  }
+
+  return normalizeCategoryName(selectedCategory);
 }
 
 export function Categories() {
@@ -25,7 +42,7 @@ export function Categories() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { messages, flash, dismiss } = useFlash();
 
-const categories = [
+const defaultCategories = [
   'Work',
   'Study',
   'Entertainment',
@@ -34,6 +51,19 @@ const categories = [
   'Uncategorized',
   'ChronoLog',
 ];
+
+
+
+const [customCategoryInput, setCustomCategoryInput] = useState('');
+
+const categories = useMemo(() => {
+  const fromRules = rules
+    .map((r) => r.category?.trim())
+    .filter(Boolean) as string[];
+
+  return Array.from(new Set([...defaultCategories, ...fromRules]));
+}, [rules]);
+
 
   useEffect(() => {
     api.getCategoryRules().then(setRules).catch(() => flash('error', 'Failed to load category rules'));
@@ -59,12 +89,18 @@ const categories = [
   function handleEdit(id: string) {
     const rule = rules.find((r) => r.id === id);
     if (!rule) return;
+    
+    const isDefaultCategory = defaultCategories.includes(rule.category);
+
     setDraft({
       appName: rule.appName,
-      category: rule.category,
+      category: isDefaultCategory ? rule.category : CUSTOM_CATEGORY_VALUE,
       keywords: rule.keywords?.join(', ') ?? '',
       isAutomatic: rule.isAutomatic,
     });
+
+    setCustomCategoryInput(isDefaultCategory ? '' : rule.category);
+
     setEditingId(id);
   }
 
@@ -78,9 +114,16 @@ const categories = [
       return;
     }
 
+    const resolvedCategory = resolveDraftCategory(draft.category, customCategoryInput);
+
+    if (!resolvedCategory) {
+      flash('warning', 'Category is required');
+      return;
+    }
+
     try {
       const patch = {
-        category: draft.category,
+        category: resolvedCategory,
         keywords: draft.isAutomatic ? [] : parsedKeywords,
         isAutomatic: draft.isAutomatic,
       };
@@ -89,6 +132,7 @@ const categories = [
       setRules((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
       setEditingId(null);
       setDraft({ ...EMPTY_DRAFT });
+      setCustomCategoryInput('');
       flash('success', 'Rule updated successfully');
     } catch {
       flash('error', 'Failed to update rule');
@@ -108,10 +152,16 @@ const categories = [
       return;
     }
 
+    const resolvedCategory = resolveDraftCategory(draft.category, customCategoryInput);
+    if (!resolvedCategory) {
+      flash('warning', 'Category is required');
+      return;
+    }
+
     try {
       const created = await api.createCategoryRule({
         appName: draft.appName.trim(),
-        category: draft.category,
+        category: resolvedCategory,
         keywords: draft.isAutomatic ? [] : parsedKeywords,
         isAutomatic: draft.isAutomatic,
       });
@@ -119,6 +169,7 @@ const categories = [
       setRules((prev) => [...prev, created]);
       setIsAdding(false);
       setDraft({ ...EMPTY_DRAFT });
+      setCustomCategoryInput('');
       flash('success', `Rule for "${created.appName}" added`);
     } catch {
       flash('error', 'Failed to add rule');
@@ -129,10 +180,12 @@ const categories = [
     setEditingId(null);
     setIsAdding(false);
     setDraft({ ...EMPTY_DRAFT });
+    setCustomCategoryInput('');
   }
 
   function handleStartAdd() {
     setDraft({ ...EMPTY_DRAFT });
+    setCustomCategoryInput('');
     setEditingId(null);
     setIsAdding(true);
   }
@@ -163,7 +216,7 @@ const categories = [
       <div className="p-4 sm:p-6">
         {/* Category Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {categories.slice(0, 6).map((category) => {
+          {categories.map((category) => {
             const count = rules.filter(r => r.category === category).length;
             return (
               <div key={category} className="bg-[#13131a] border border-white/5 rounded-xl p-5 hover:border-white/10 transition-all">
@@ -171,7 +224,7 @@ const categories = [
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-3 h-3 rounded"
-                      style={{ backgroundColor: categoryColors[category] || '#9ca3af' }}
+                      style={{ backgroundColor: categoryColors[category] ?? DEFAULT_CATEGORY_COLOR }}
                     />
                     <div>
                       <p className="text-sm font-semibold text-white">{category}</p>
@@ -225,15 +278,35 @@ const categories = [
                       />
                     </td>
                     <td className="px-5 py-3">
-                      <select
-                        value={draft.category}
-                        onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
-                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
+                      <div className="space-y-2">
+                        <select
+                          value={draft.category}
+                          onChange={(e) =>
+                            setDraft((d) => ({
+                              ...d,
+                              category: e.target.value as CategoryRule['category'],
+                            }))
+                          }
+                          className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                          <option value={CUSTOM_CATEGORY_VALUE}>+ Create new category</option>
+                        </select>
+
+                        {draft.category === CUSTOM_CATEGORY_VALUE && (
+                          <input
+                            type="text"
+                            placeholder="Enter new category name"
+                            value={customCategoryInput}
+                            onChange={(e) => setCustomCategoryInput(e.target.value)}
+                            className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                          />
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3">
                       <input
@@ -294,20 +367,40 @@ const categories = [
                       </td>
                       <td className="px-5 py-3">
                         {isEditing ? (
-                          <select
-                            value={draft.category}
-                            onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
-                            className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                          >
-                            {categories.map((cat) => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
+                          <div className="space-y-2">
+                            <select
+                              value={draft.category}
+                              onChange={(e) =>
+                                setDraft((d) => ({
+                                  ...d,
+                                  category: e.target.value as CategoryRule['category'],
+                                }))
+                              }
+                              className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                              <option value={CUSTOM_CATEGORY_VALUE}>+ Create new category</option>
+                            </select>
+
+                            {draft.category === CUSTOM_CATEGORY_VALUE && (
+                              <input
+                                type="text"
+                                placeholder="Enter new category name"
+                                value={customCategoryInput}
+                                onChange={(e) => setCustomCategoryInput(e.target.value)}
+                                className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                              />
+                            )}
+                          </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <div
                               className="w-2 h-2 rounded"
-                              style={{ backgroundColor: categoryColors[rule.category] }}
+                              style={{ backgroundColor: categoryColors[rule.category] ?? DEFAULT_CATEGORY_COLOR }}
                             />
                             <span className="text-xs text-white">{rule.category}</span>
                           </div>

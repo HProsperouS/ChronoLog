@@ -1,10 +1,4 @@
-export type Category =
-  | 'Work'
-  | 'Study'
-  | 'Entertainment'
-  | 'Communication'
-  | 'Utilities'
-  | 'Uncategorized';
+export type Category = string;
 
 // Activity as used inside components (startTime/endTime are Date objects for easy formatting)
 export interface Activity {
@@ -39,7 +33,7 @@ export interface Insight {
 
 export interface DailyStats {
   date: string;
-  categoryTotals: Record<Category, number>;
+  categoryTotals: Record<string, number>;
   totalTime: number;
   focusScore: number;
   contextSwitches: number;

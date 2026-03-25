@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify';
 import * as CategoryService from '../services/category.service';
 import type { CreateCategoryRuleBody, UpdateCategoryRuleBody } from '../types';
 
-const CATEGORY_ENUM = ['Work', 'Study', 'Entertainment', 'Other', 'Uncategorized'];
 
 function normalizeKeywords(values?: string[]): string[] {
   return (values ?? []).map((v) => v.trim()).filter(Boolean);
@@ -23,7 +22,7 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
           additionalProperties: false,
           properties: {
             appName: { type: 'string', minLength: 1 },
-            category: { type: 'string', enum: CATEGORY_ENUM },
+            category: { type: 'string', minLength: 1 },
             isAutomatic: { type: 'boolean' },
             keywords: {
               type: 'array',
@@ -78,7 +77,7 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
           type: 'object',
           additionalProperties: false,
           properties: {
-            category: { type: 'string', enum: CATEGORY_ENUM },
+            category: { type: 'string', minLength: 1 },
             isAutomatic: { type: 'boolean' },
             keywords: {
               type: 'array',

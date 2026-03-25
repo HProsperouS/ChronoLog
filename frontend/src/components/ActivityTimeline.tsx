@@ -34,6 +34,7 @@ export function ActivityTimeline() {
     if (saved !== null) return Number(saved);
     return getDefaultWindow().end;
   });
+
   
   const [contextSwitchMode, setContextSwitchMode] = useState<'all' | 'productivity-only'>(() => {
     const saved = localStorage.getItem('timelineContextSwitchMode');
@@ -143,55 +144,149 @@ const generateTimelineBar = () => {
     }>;
 };
 
-  const timelineData = generateTimelineBar();
-  
-  // Markers for context switches (activities that start after the first one)
-  const contextSwitchMarkers = timelineData
-    .map((activity, index) => {
-      if (index === 0) return null;
+const timelineDataRaw = generateTimelineBar();
+const contextSwitchMinMinutes = 1; // if a context switch segment is shorter than 1 minute and it is just noise for the chosen switch interpretation, merge it into the surrounding context for the overview
 
-      const prev = timelineData[index - 1];
+type TimelineBar = Activity & {
+  left: number;
+  width: number;
+  isProductive: boolean;
+  visibleDuration: number;
+};
 
-      const isSwitch =
-        contextSwitchMode === 'all'
-          ? true
-          : prev.isProductive !== activity.isProductive;
+const shouldMergeForOverview = (
+  prev: TimelineBar,
+  current: TimelineBar,
+  next: TimelineBar | undefined
+) => {
+  if (!next) return false;
+  if (current.visibleDuration >= contextSwitchMinMinutes) return false;
 
-      if (!isSwitch) return null;
+  // Keep bar segmentation stable:
+  // only merge away very short interruptions when the surrounding bars
+  // have the same productive / non-productive status.
+  return prev.isProductive === next.isProductive;
+};
 
-      return {
-        id: activity.id,
-        left: activity.left,
-      };
-    })
-    .filter((marker): marker is NonNullable<typeof marker> => marker !== null);
-  
-  const contextSwitchCount = contextSwitchMarkers.length;
+const mergeTimelineForOverview = (items: TimelineBar[]): TimelineBar[] => {
+  if (items.length <= 1) return items;
 
-  const quarterHourTicks = Array.from(
-    { length: (endHour - startHour) * 4 + 1 },
-    (_, i) => {
-      const totalMinutes = startHour * 60 + i * 15;
-      const hour = Math.floor(totalMinutes / 60);
-      const minute = totalMinutes % 60;
-      const left =
-        ((totalMinutes - startHour * 60) / ((endHour - startHour) * 60)) * 100;
+  let working = [...items];
+  let changed = true;
 
-      const label =
-        minute === 0
-          ? hour === 0
-            ? '12 AM'
-            : hour < 12
-            ? `${hour} AM`
-            : hour === 12
-            ? '12 PM'
-            : `${hour - 12} PM`
-          : `${minute.toString().padStart(2, '0')}`;
+  while (changed) {
+    changed = false;
+    const nextPass: TimelineBar[] = [];
 
-      return { left, label, minute };
+    for (let i = 0; i < working.length; i++) {
+      const prev = nextPass[nextPass.length - 1];
+      const current = working[i];
+      const next = working[i + 1];
+
+      if (!prev || !next) {
+        nextPass.push(current);
+        continue;
+      }
+
+      if (shouldMergeForOverview(prev, current, next)) {
+        const mergedDuration = prev.visibleDuration + current.visibleDuration + next.visibleDuration;
+        const mergedLeft = prev.left;
+        const mergedWidth = next.left + next.width - prev.left;
+
+        nextPass[nextPass.length - 1] = {
+          ...prev,
+          appName: prev.appName,
+          windowTitle: prev.windowTitle,
+          url: prev.url,
+          duration: prev.duration + current.duration + next.duration,
+          endTime: next.endTime,
+          visibleDuration: mergedDuration,
+          left: mergedLeft,
+          width: mergedWidth,
+          isProductive: prev.isProductive,
+        };
+
+        i += 1; // consume `next` as well
+        changed = true;
+      } else {
+        nextPass.push(current);
+      }
     }
-  );
 
+    working = nextPass;
+  }
+
+  return working;
+};
+
+const timelineData = mergeTimelineForOverview(timelineDataRaw);
+
+const contextSwitchMarkers = timelineData
+  .map((activity, index) => {
+    if (index === 0) return null;
+
+    const prev = timelineData[index - 1];
+
+    const isSwitch =
+      contextSwitchMode === 'all'
+        ? true
+        : prev.isProductive !== activity.isProductive;
+
+    if (!isSwitch) return null;
+
+    return {
+      id: activity.id,
+      left: activity.left,
+    };
+  })
+  .filter((marker) => marker !== null);
+
+const contextSwitchCount = contextSwitchMarkers.length;
+
+const windowHours = endHour - startHour;
+
+const contextMarkerWidth =
+  windowHours <= 3 ? 3 :
+  windowHours <= 8 ? 2 :
+  1;
+
+const tickStepMinutes =
+  windowHours <= 3
+    ? 15
+    : windowHours <= 8
+    ? 30
+    : windowHours <= 16
+    ? 60
+    : 120;
+
+const timeTicks = Array.from(
+  { length: Math.floor((windowHours * 60) / tickStepMinutes) + 1 },
+  (_, i) => {
+    const totalMinutes = startHour * 60 + i * tickStepMinutes;
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    const left =
+      ((totalMinutes - startHour * 60) / (windowHours * 60)) * 100;
+
+    const label =
+      minute === 0
+        ? hour === 0
+          ? '12 AM'
+          : hour < 12
+          ? `${hour} AM`
+          : hour === 12
+          ? '12 PM'
+          : `${hour - 12} PM`
+        : `${minute.toString().padStart(2, '0')}`;
+
+    return {
+      left,
+      label,
+      minute,
+      isMajor: minute === 0,
+    };
+  }
+);
 
   const categories   = ['All', 'Work', 'Study', 'Entertainment', 'Communication', 'Utilities'];
 
@@ -350,7 +445,7 @@ const generateTimelineBar = () => {
 
           <div className="relative">
             <div className="relative mb-2 h-4">
-              {quarterHourTicks.map((tick, idx) => (
+              {timeTicks.map((tick, idx) => (
                 <div
                   key={`${tick.left}-${idx}`}
                   className="absolute -translate-x-1/2 text-[10px] text-gray-500"
@@ -362,7 +457,7 @@ const generateTimelineBar = () => {
             </div>
 
             <div className="relative h-8 bg-white/5 rounded-lg overflow-visible">
-              {quarterHourTicks.map((tick, idx) => (
+              {timeTicks.map((tick, idx) => (
                 <div
                   key={`grid-${idx}`}
                   className={`absolute top-0 h-full pointer-events-none ${
@@ -375,7 +470,7 @@ const generateTimelineBar = () => {
               {timelineData.map((a) => (
                 <div
                   key={a.id}
-                  className="absolute top-0 h-full hover:opacity-80 cursor-pointer group"
+                  className="absolute top-0 h-full cursor-pointer group transition-all duration-75 hover:brightness-125 hover:shadow-[inset_0_0_0_2px_rgba(255,255,255,0.8)] hover:z-10"
                   style={{
                     left: `${a.left}%`,
                     width: `${a.width}%`,
@@ -390,8 +485,12 @@ const generateTimelineBar = () => {
               {contextSwitchMarkers.map((marker) => (
                 <div
                   key={`switch-${marker.id}`}
-                  className="absolute -top-1 -bottom-1 w-[2px] bg-slate-200/85 pointer-events-none z-20 rounded-full shadow-[0_0_4px_rgba(226,232,240,0.25)]"
-                  style={{ left: `${marker.left}%`, transform: 'translateX(-50%)' }}
+                  className="absolute -top-1 -bottom-1 bg-slate-200/100 pointer-events-none z-20 rounded-full shadow-[0_0_6px_rgba(103,232,249,0.45)]"
+                  style={{
+                    left: `${marker.left}%`,
+                    transform: 'translateX(-50%)',
+                    width: `${contextMarkerWidth}px`,
+                  }}
                 />
               ))}
             </div>

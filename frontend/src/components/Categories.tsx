@@ -109,7 +109,7 @@ export function Categories() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-white">Category Rules</h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-white mt-0.5">
               Manage application categorization
             </p>
           </div>
@@ -139,10 +139,10 @@ export function Categories() {
                     />
                     <div>
                       <p className="text-sm font-semibold text-white">{category}</p>
-                      <p className="text-xs text-gray-500">{count} rules</p>
+                      <p className="text-xs text-white">{count} rules</p>
                     </div>
                   </div>
-                  <FolderTree className="w-4 h-4 text-gray-600" />
+                  <FolderTree className="w-4 h-4 text-white" />
                 </div>
               </div>
             );
@@ -159,19 +159,19 @@ export function Categories() {
             <table className="w-full">
               <thead className="bg-white/5 border-b border-white/5">
                 <tr>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Application
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Keywords
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -192,7 +192,7 @@ export function Categories() {
                       <select
                         value={draft.category}
                         onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
-                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                       >
                         {categories.map((cat) => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -205,14 +205,14 @@ export function Categories() {
                         placeholder="keyword1, keyword2"
                         value={draft.keywords}
                         onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
-                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                       />
                     </td>
                     <td className="px-5 py-3">
                       <select
                         value={draft.isAutomatic ? 'auto' : 'manual'}
                         onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
-                        className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
+                        className="px-2 py-0.5 bg-black border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
                       >
                         <option value="auto">Automatic</option>
                         <option value="manual">Manual</option>
@@ -262,7 +262,7 @@ export function Categories() {
                               className="w-2 h-2 rounded"
                               style={{ backgroundColor: categoryColors[rule.category] }}
                             />
-                            <span className="text-xs text-gray-400">{rule.category}</span>
+                            <span className="text-xs text-white">{rule.category}</span>
                           </div>
                         )}
                       </td>
@@ -276,7 +276,7 @@ export function Categories() {
                             className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                           />
                         ) : (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-white">
                             {rule.keywords?.join(', ') || '—'}
                           </span>
                         )}
@@ -296,7 +296,7 @@ export function Categories() {
                             className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                               rule.isAutomatic
                                 ? 'bg-emerald-500/10 text-emerald-400'
-                                : 'bg-gray-500/10 text-gray-400'
+                                : 'bg-gray-500/10 text-white'
                             }`}
                           >
                             {rule.isAutomatic ? 'Automatic' : 'Manual'}
@@ -352,7 +352,7 @@ export function Categories() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-white mb-1">How Category Rules Work</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-xs -text-white leading-relaxed">
                 <strong className="text-white">Automatic rules</strong> are applied based on the application name alone.
                 <strong className="text-white"> Manual rules</strong> use keywords to categorize based on window titles or URLs
                 (useful for browsers). ChronoLog will automatically learn your preferences over time
@@ -368,7 +368,7 @@ export function Categories() {
         <DialogContent className="bg-[#111827] border border-red-500/30">
           <DialogHeader>
             <DialogTitle className="text-sm text-red-400">Delete rule?</DialogTitle>
-            <DialogDescription className="text-xs text-gray-400">
+            <DialogDescription className="text-xs text-white">
               This will permanently remove the rule for{' '}
               <span className="text-white font-medium">
                 {rules.find((r) => r.id === deletingId)?.appName ?? ''}

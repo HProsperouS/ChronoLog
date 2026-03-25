@@ -64,20 +64,18 @@ export function setupTray(window: BrowserWindow): void {
 }
 
 function resolveIconPath(): string {
-  // Production: icon lives next to the packaged resources
-  const prodIcon = path.join(
-    __dirname,
-    '../assets',
-    process.platform === 'darwin' ? 'tray-icon.png' : 'tray-icon.png'
-  );
-
-  // Dev: resolve relative to this file
-  const devIcon = path.join(__dirname, '../../electron/assets/tray-icon.png');
-
   const fs = require('fs') as typeof import('fs');
+
+  const fileName =
+    process.platform === 'darwin'
+      ? 'tray-iconTemplate.png'
+      : 'tray-icon.png';
+
+  const prodIcon = path.join(process.resourcesPath, 'assets', fileName);
+  const devIcon = path.join(__dirname, '../../electron/assets', fileName);
+
   if (fs.existsSync(prodIcon)) return prodIcon;
   if (fs.existsSync(devIcon)) return devIcon;
 
-  // Last resort: return an empty image (Electron accepts it)
   return '';
 }

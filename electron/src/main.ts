@@ -15,6 +15,22 @@ let mainWindow: BrowserWindow | null = null;
 let backendProcess: ChildProcess | null = null;
 let trackerProcess: ChildProcess | null = null;
 
+// ─── Window/Tray Icons ───────────────────────────────────────────────────────────
+function resolveWindowIconPath(): string {
+  if (app.isPackaged) {
+    if (process.platform === 'win32') {
+      return path.join(process.resourcesPath, 'assets', 'icon.ico');
+    }
+    return path.join(process.resourcesPath, 'assets', 'icon.png');
+  }
+
+  if (process.platform === 'win32') {
+    return path.join(__dirname, '../../electron/assets/icon.ico');
+  }
+  return path.join(__dirname, '../../electron/assets/icon.png');
+}
+
+
 // ─── Data directory ───────────────────────────────────────────────────────────
 
 function getDataDir(): string {
@@ -197,6 +213,7 @@ function createWindow(): void {
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#0a0a0f',
     show: false, // show after ready-to-show
+    icon: process.platform === 'darwin' ? undefined : resolveWindowIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

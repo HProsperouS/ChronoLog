@@ -3,6 +3,7 @@ import path from 'path';
 import { readSettings, writeSettings, type PrivacyExclusions, type SettingsConfig } from '../store/settings.store';
 import { readRules } from '../store/category-rules.store';
 import { readInsights } from '../store/config.store';
+import * as ActivityStore from '../store/activity.store';
 import type { Activity, CategoryRule, Insight } from '../types';
 
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
@@ -125,4 +126,54 @@ export function exportAllData(): ExportPayload {
   }
 
   return { settings, categoryRules, activities, insights };
+}
+
+function isYmd(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+function normalizeImportedActivity(raw: any, date: string): Activity | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const a = raw as Record<string, unknown>;
+  if (typeof a.id !== 'number') return null;
+  if (typeof a.appName !== 'string' || a.appName.trim().length === 0) return null;
+  if (typeof a.duration !== 'number' || !Number.isFinite(a.duration) || a.duration < 0) return null;
+  if (typeof a.startTime !== 'string' || typeof a.endTime !== 'string') return null;
+  if (typeof a.category !== 'string' || a.category.trim().length === 0) return null;
+
+  return {
+    id: a.id,
+    appName: a.appName,
+    windowTitle: typeof a.windowTitle === 'string' ? a.windowTitle : undefined,
+    url: typeof a.url === 'string' ? a.url : undefined,
+    category: a.category as any,
+    duration: a.duration,
+    startTime: a.startTime,
+    endTime: a.endTime,
+    date,
+    excludeFromAnalytics: typeof a.excludeFromAnalytics === 'boolean' ? a.excludeFromAnalytics : undefined,
+  };
+}
+
+export function importActivities(payload: { activitiesByDate: Record<string, unknown> }): DataSummary {
+  const out: Record<string, Activity[]> = {};
+  const entries = Object.entries(payload.activitiesByDate ?? {});
+
+  for (const [date, rows] of entries) {
+    if (!isYmd(date)) continue;
+    if (!Array.isArray(rows)) continue;
+    const normalized: Activity[] = [];
+    for (const r of rows) {
+      const a = normalizeImportedActivity(r, date);
+      if (a) normalized.push(a);
+    }
+    out[date] = normalized;
+  }
+
+  // Write each day file (overwrite).
+  for (const [date, rows] of Object.entries(out)) {
+    ActivityStore.writeDay(date, rows);
+  }
+
+  return getDataSummary();
 }

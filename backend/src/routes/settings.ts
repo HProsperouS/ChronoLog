@@ -51,4 +51,25 @@ export default async function settingsRoutes(app: FastifyInstance) {
       .header('Content-Type', 'application/json')
       .send(payload);
   });
+
+  app.post<{ Body: { activitiesByDate: Record<string, unknown> } }>(
+    '/data/import-activities',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['activitiesByDate'],
+          properties: {
+            activitiesByDate: { type: 'object' },
+          },
+        },
+      },
+      handler: async (request, reply) => {
+        const summary = SettingsService.importActivities({
+          activitiesByDate: request.body.activitiesByDate,
+        });
+        return reply.send({ summary });
+      },
+    },
+  );
 }

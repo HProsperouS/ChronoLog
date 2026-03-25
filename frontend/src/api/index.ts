@@ -223,3 +223,14 @@ export interface ExportPayload {
 export async function exportAllData(): Promise<ExportPayload> {
   return await apiFetch<ExportPayload>('/api/settings/data/export');
 }
+
+export async function importActivities(
+  activitiesByDate: Record<string, unknown>,
+): Promise<DataSummary> {
+  const data = await apiFetch<{ summary: DataSummary }>('/api/settings/data/import-activities', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ activitiesByDate }),
+  });
+  return data.summary;
+}

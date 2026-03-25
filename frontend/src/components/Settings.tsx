@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
+import JSZip from 'jszip';
 
 // ─── App icon card helpers ────────────────────────────────────────────────────
 
@@ -108,6 +109,7 @@ export function Settings() {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const [isAddAppDialogOpen, setIsAddAppDialogOpen] = useState(false);
   const [appSearch, setAppSearch] = useState('');
@@ -234,20 +236,71 @@ export function Settings() {
     try {
       setIsExporting(true);
       const payload = await api.exportAllData();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: 'application/json',
+      const zip = new JSZip();
+      const folder = zip.folder('activities') ?? zip;
+      const dates = Object.keys(payload.activities ?? {}).sort();
+      for (const ymd of dates) {
+        const rows = payload.activities[ymd] ?? [];
+        folder.file(`${ymd}.json`, JSON.stringify(rows, null, 2));
+      }
+
+      const blob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
       });
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const date = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `chronolog-export-${date}.json`;
+      a.download = `chronolog-activities-${date}.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  async function handleImportActivitiesZip(file: File) {
+    setIsImporting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(buf);
+
+      // Expect structure: activities/YYYY-MM-DD.json
+      const activitiesByDate: Record<string, unknown> = {};
+      const ymdRe = /^activities\/(\d{4}-\d{2}-\d{2})\.json$/;
+
+      const fileNames = Object.keys(zip.files);
+      for (const name of fileNames) {
+        const m = name.match(ymdRe);
+        if (!m) continue;
+        const ymd = m[1];
+        const text = await zip.file(name)!.async('text');
+        try {
+          activitiesByDate[ymd] = JSON.parse(text) as unknown;
+        } catch {
+          // skip malformed day file
+        }
+      }
+
+      const importedDays = Object.keys(activitiesByDate).length;
+      if (importedDays === 0) {
+        flash('error', 'No valid activities/*.json files found in ZIP');
+        return;
+      }
+
+      const summary = await api.importActivities(activitiesByDate);
+      setDatabaseSize(formatBytes(summary.totalBytes));
+      flash('success', `Imported ${importedDays} day(s) of activities`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Import failed';
+      flash('error', msg);
+    } finally {
+      setIsImporting(false);
     }
   }
 
@@ -424,6 +477,30 @@ export function Settings() {
           <div className="flex items-center gap-2 mb-5">
             <Database className="w-4 h-4 text-gray-500" />
             <h2 className="text-sm font-semibold text-white">Data Management</h2>
+            <div className="ml-auto flex items-center gap-2">
+              <input
+                id="import-activities-zip"
+                type="file"
+                accept=".zip,application/zip"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  // allow re-selecting same file
+                  e.currentTarget.value = '';
+                  if (!f) return;
+                  void handleImportActivitiesZip(f);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 px-3 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 hover:text-emerald-300"
+                onClick={() => document.getElementById('import-activities-zip')?.click()}
+                disabled={isImporting || isExporting}
+              >
+                {isImporting ? 'Importing…' : 'Import Data'}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -460,7 +537,7 @@ export function Settings() {
                 onClick={handleExportAllData}
                 disabled={isExporting}
               >
-                {isExporting ? 'Exporting…' : 'Export All Data (JSON)'}
+                {isExporting ? 'Exporting…' : 'Export Activities (ZIP)'}
               </Button>
 
               <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>

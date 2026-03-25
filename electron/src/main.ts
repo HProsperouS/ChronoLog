@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, Notification } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import { setupTray } from './tray';
 
@@ -15,19 +16,31 @@ let mainWindow: BrowserWindow | null = null;
 let backendProcess: ChildProcess | null = null;
 let trackerProcess: ChildProcess | null = null;
 
-// ─── Window/Tray Icons ───────────────────────────────────────────────────────────
-function resolveWindowIconPath(): string {
-  if (app.isPackaged) {
-    if (process.platform === 'win32') {
-      return path.join(process.resourcesPath, 'assets', 'icon.ico');
-    }
-    return path.join(process.resourcesPath, 'assets', 'icon.png');
-  }
+// ─── Icons (dev & packaged: main lives in electron/dist, assets in electron/assets) ─
+function resolveAssetsFile(name: string): string {
+  return path.join(__dirname, '../assets', name);
+}
 
+function resolveWindowIconPath(): string {
   if (process.platform === 'win32') {
-    return path.join(__dirname, '../../electron/assets/icon.ico');
+    return resolveAssetsFile('icon.ico');
   }
-  return path.join(__dirname, '../../electron/assets/icon.png');
+  if (process.platform === 'darwin') {
+    const icns = resolveAssetsFile('icon.icns');
+    if (fs.existsSync(icns)) return icns;
+  }
+  // Fallback: we ship icon-512.png, not icon.png.
+  return resolveAssetsFile('icon-512.png');
+}
+
+function resolveNotificationIconPath(): string {
+  // macOS Notification `icon` is most reliably a PNG.
+  const candidates = ['icon-512.png', 'icon.png', 'icon.ico', 'icon.icns'];
+  for (const name of candidates) {
+    const p = resolveAssetsFile(name);
+    if (fs.existsSync(p)) return p;
+  }
+  return resolveWindowIconPath();
 }
 
 
@@ -205,6 +218,7 @@ function startTracker(): void {
 // ─── Main window ──────────────────────────────────────────────────────────────
 
 function createWindow(): void {
+  const winIcon = resolveWindowIconPath();
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -213,7 +227,7 @@ function createWindow(): void {
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#0a0a0f',
     show: false, // show after ready-to-show
-    icon: process.platform === 'darwin' ? undefined : resolveWindowIconPath(),
+    icon: fs.existsSync(winIcon) ? winIcon : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -261,6 +275,21 @@ ipcMain.handle('get-backend-port', () => BACKEND_PORT);
 
 ipcMain.handle('get-platform', () => process.platform);
 
+/** Desktop: one icon via native notification; avoids macOS Web Notification (Electron left + icon right). */
+ipcMain.handle('show-notification', (_event, title: string, body: string) => {
+  if (!Notification.isSupported()) return false;
+  try {
+    // Intentionally omit `icon` so macOS notification UI does not show a secondary
+    // right-side image (you only get the app-level icon on the left).
+    const n = new Notification({ title, body });
+    n.show();
+    return true;
+  } catch (err) {
+    console.error('[electron] show-notification failed:', err);
+    return false;
+  }
+});
+
 ipcMain.on('show-window', () => mainWindow?.show());
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
@@ -279,6 +308,17 @@ app.on('second-instance', () => {
 app.whenReady().then(async () => {
   console.log('[electron] Starting ChronoLog…');
   console.log(`[electron] isDev=${isDev}, dataDir=${getDataDir()}`);
+
+  if (process.platform === 'darwin' && app.dock) {
+    const dockPath = resolveWindowIconPath();
+    if (fs.existsSync(dockPath)) {
+      try {
+        app.dock.setIcon(dockPath);
+      } catch (e) {
+        console.warn('[electron] dock.setIcon failed:', e);
+      }
+    }
+  }
 
   setupApplicationMenu();
   await startBackend();

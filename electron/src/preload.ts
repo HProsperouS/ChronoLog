@@ -15,4 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** Bring the main window to the front (e.g. from a notification click) */
   showWindow: (): void => ipcRenderer.send('show-window'),
+
+  /** Native OS notification (correct app icon on macOS vs Web Notification quirks) */
+  showNotification: (title: string, body: string): Promise<boolean> =>
+    ipcRenderer.invoke('show-notification', title, body),
 });

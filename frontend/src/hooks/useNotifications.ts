@@ -37,13 +37,17 @@ function canFire(key: string): boolean {
   return false;
 }
 
-// ─── Show a browser notification ─────────────────────────────────────────────
-function notify(title: string, body: string) {
-//   console.log('🔔 Firing notification:', title, body);
+// ─── Show notification ────────────────────────────────────────────────────────
+async function notify(title: string, body: string) {
+  // Electron: main-process Notification uses app/dock branding; Web Notification on macOS
+  // shows the host (Electron) on the left and `icon` as a secondary image on the right.
+  if (window.electronAPI?.showNotification) {
+    await window.electronAPI.showNotification(title, body);
+    return;
+  }
   if (Notification.permission === 'granted') {
     new Notification(title, {
       body,
-      icon: `${import.meta.env.BASE_URL}Logo_Alone.png`,
     });
   }
 }

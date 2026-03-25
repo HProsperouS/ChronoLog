@@ -325,10 +325,21 @@ function createWindow(options?: { startHidden?: boolean }): void {
 
   // Hide to tray instead of closing
   mainWindow.on('close', (event) => {
-    if (!isQuitting) {
-      event.preventDefault();
-      mainWindow?.hide();
+    if (isQuitting) return;
+
+    // Respect the user's preference at the moment of close.
+    // If "Run in Background" is OFF, closing the window should fully quit
+    // (and stop backend/tracker child processes in before-quit).
+    const { runInBackground } = readAppSettingsFromFile();
+    if (runInBackground === false) {
+      isQuitting = true;
+      // Ensure we don't leave a hidden background process running.
+      app.quit();
+      return;
     }
+
+    event.preventDefault();
+    mainWindow?.hide();
   });
 
   // Open external links in the system browser
@@ -360,6 +371,32 @@ ipcMain.handle('show-notification', (_event, title: string, body: string) => {
 });
 
 ipcMain.on('show-window', () => mainWindow?.show());
+
+ipcMain.handle(
+  'set-launch-at-startup',
+  (_event, enabled: boolean, openAsHidden?: boolean): boolean => {
+    if (!app.setLoginItemSettings) return false;
+    if (process.platform !== 'darwin' && process.platform !== 'win32') return false;
+    if (typeof enabled !== 'boolean') return false;
+
+    try {
+      if (process.platform === 'darwin') {
+        app.setLoginItemSettings({
+          openAtLogin: enabled,
+          openAsHidden: Boolean(openAsHidden),
+          args: ['--started-at-login'],
+        });
+      } else {
+        app.setLoginItemSettings({ openAtLogin: enabled });
+      }
+      console.log(`[electron] setLaunchAtStartup (ipc) → ${enabled}`);
+      return true;
+    } catch (err) {
+      console.warn('[electron] setLaunchAtStartup (ipc) failed:', (err as Error).message);
+      return false;
+    }
+  },
+);
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 

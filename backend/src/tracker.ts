@@ -31,6 +31,32 @@ let config: TrackerConfig = {
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
+// ─── macOS permission prompt backoff ──────────────────────────────────────────
+// If the app lacks Screen Recording / Accessibility permissions, querying the
+// active window can trigger repeated OS permission prompts. When we detect a
+// likely permissions error, back off for a while to avoid spamming the user.
+let macPermissionBackoffUntilMs = 0;
+let macPermissionWarnedAtMs = 0;
+
+function isLikelyMacPermissionsError(err: unknown): boolean {
+  if (process.platform !== 'darwin') return false;
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  return /screen\s*recording|tcc|not\s+authorized|not\s+permitted|permission|accessibility/i.test(msg);
+}
+
+function enterMacPermissionBackoff(nowMs: number, err: unknown): void {
+  // Back off long enough that the user can act, but not forever.
+  const BACKOFF_MS = 10 * 60_000;
+  macPermissionBackoffUntilMs = Math.max(macPermissionBackoffUntilMs, nowMs + BACKOFF_MS);
+
+  // Log at most once per minute to keep logs readable.
+  if (nowMs - macPermissionWarnedAtMs > 60_000) {
+    macPermissionWarnedAtMs = nowMs;
+    const msg = err instanceof Error ? err.message : String(err ?? 'permission error');
+    console.warn(`[tracker] macOS permissions likely missing; backing off ${BACKOFF_MS / 60_000}m. Error: ${msg}`);
+  }
+}
+
 async function fetchConfig(): Promise<void> {
   try {
     const [sRes, pRes] = await Promise.all([
@@ -248,6 +274,20 @@ function isChronoLogSelfActivity(
 // ─── Main poll ────────────────────────────────────────────────────────────────
 
 async function poll(): Promise<void> {
+  // macOS permissions backoff: avoid repeatedly triggering OS prompts.
+  if (process.platform === 'darwin') {
+    const now = Date.now();
+    if (now < macPermissionBackoffUntilMs) {
+      // If we were tracking something, flush it so we don't attribute idle time incorrectly.
+      if (current) {
+        await postActivity(current, new Date());
+        current = null;
+        saveTrackerState(null);
+      }
+      return;
+    }
+  }
+
   // 1. Tracking disabled — flush and do nothing
   if (!config.trackingEnabled) {
     if (current) {
@@ -282,6 +322,9 @@ async function poll(): Promise<void> {
     win = (await activeWin()) ?? undefined;
   } catch (err) {
     console.error('[tracker] activeWin failed:', err);
+    if (isLikelyMacPermissionsError(err)) {
+      enterMacPermissionBackoff(Date.now(), err);
+    }
     return; // locked screen / UAC dialog — skip silently
   }
 

@@ -157,6 +157,7 @@ export function Settings() {
   function handleLaunchAtStartupToggle(enabled: boolean) {
     setLaunchAtStartup(enabled);
     void api.updateSettings({ launchAtStartup: enabled });
+    void window.electronAPI?.setLaunchAtStartup(enabled, runInBackground);
   }
 
   function handleRunInBackgroundToggle(enabled: boolean) {

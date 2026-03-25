@@ -155,7 +155,14 @@ export function Insights() {
       return {
         focusDisplay: `${focusC}`,
         focusCmp: formatComparison(focusC, focusP, priorDaily),
-        prodDisplay: `${prodC.toFixed(1)}h`,
+        prodDisplay: (() => {
+          const totalMinutes = Math.round(prodC * 60);
+          if (totalMinutes < 60) return `${totalMinutes}m`;
+
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+          return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+        })(),
         prodCmp: formatComparison(prodC, prodP, priorDaily),
         ctxDisplay: `${ctxC}`,
         ctxCmp: formatComparison(ctxC, ctxP, priorDaily),
@@ -186,7 +193,14 @@ export function Insights() {
     return {
       focusDisplay: `${focusC}`,
       focusCmp: hasPrev ? formatComparison(focusC, focusP, priorWeekly) : needPrevMsg,
-      prodDisplay: `${prodC.toFixed(1)}h`,
+      prodDisplay: (() => {
+        const totalMinutes = Math.round(prodC * 60);
+        if (totalMinutes < 60) return `${totalMinutes}m`;
+
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+      })(),
       prodCmp: hasPrev ? formatComparison(prodC, prodP, priorWeekly) : needPrevMsg,
       ctxDisplay: ctxAvgC.toFixed(1),
       ctxCmp: hasPrev ? formatComparison(ctxAvgC, ctxAvgP, priorWeekly) : needPrevMsg,
@@ -324,7 +338,7 @@ export function Insights() {
           </div>
           <div className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 rounded-xl p-5">
             <Trophy className="w-6 h-6 text-emerald-400 mb-3" />
-            <p className="text-xs text-gray-500 mb-1">Productive Hours</p>
+            <p className="text-xs text-gray-500 mb-1">Total Productive Time</p>
             <p className="text-2xl font-semibold text-white">{summary.prodDisplay}</p>
             <p className="text-[10px] text-gray-600 mt-1">{summary.prodHint}</p>
             <p className="text-xs text-emerald-400 mt-2">{summary.prodCmp}</p>

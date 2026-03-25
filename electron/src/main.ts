@@ -281,7 +281,11 @@ app.whenReady().then(async () => {
   console.log(`[electron] isDev=${isDev}, dataDir=${getDataDir()}`);
 
   setupApplicationMenu();
-  await startBackend();
+
+  if (!isDev) {
+    await startBackend();
+  }
+
   startTracker();
   createWindow();
 

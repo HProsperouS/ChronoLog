@@ -59,5 +59,6 @@ import path from 'path';
     server: {
       port: 3000,
       open: true,
+      strictPort: true,
     },
   });

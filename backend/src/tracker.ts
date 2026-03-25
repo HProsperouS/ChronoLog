@@ -77,27 +77,36 @@ function getSystemIdleSeconds(): number {
     }
 
     if (process.platform === 'win32') {
-      // GetLastInputInfo via inline PowerShell
       const ps = [
         "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices;",
-        "public class IdleTimer {",
-        "  [DllImport(\"user32.dll\")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO i);",
+        "public static class IdleTimer {",
+        "  [StructLayout(LayoutKind.Sequential)]",
         "  public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }",
+        "  [DllImport(\"user32.dll\")]",
+        "  public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);",
         "}'",
-        "$i = New-Object IdleTimer+LASTINPUTINFO; $i.cbSize = 8;",
-        "[IdleTimer]::GetLastInputInfo([ref]$i) | Out-Null;",
-        "[Math]::Floor(([Environment]::TickCount - $i.dwTime) / 1000)",
-      ].join(' ');
+        "$i = New-Object IdleTimer+LASTINPUTINFO",
+        "$i.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($i)",
+        "$ok = [IdleTimer]::GetLastInputInfo([ref]$i)",
+        "if (-not $ok) { Write-Output 0; exit }",
+        "$tick = [Environment]::TickCount64",
+        "$last = [int64][uint32]$i.dwTime",
+        "$idleMs = $tick - $last",
+        "if ($idleMs -lt 0 -or $idleMs -gt 86400000) { Write-Output 0; exit }",
+        "[Math]::Floor($idleMs / 1000)"
+      ].join('; ');
+
       const out = execSync(`powershell -NoProfile -Command "${ps}"`, {
         timeout: 3_000,
         stdio: ['ignore', 'pipe', 'ignore'],
       }).toString().trim();
+
       return parseInt(out, 10) || 0;
     }
-
   } catch {
     return 0; // fallback: assume not idle
   }
+
   return 0;
 }
 
@@ -175,27 +184,36 @@ function loadTrackerState(): Session | null {
 
 async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   const durationMs = endTime.getTime() - session.startTime.getTime();
-  if (durationMs / 1_000 < MIN_DURATION_SECONDS) return true;
+  const durationSeconds = durationMs / 1_000;
+
+  if (durationSeconds < MIN_DURATION_SECONDS) {
+    console.log(
+      `[tracker] skipping short session (${durationSeconds.toFixed(1)}s) for ${session.appName}`
+    );
+    return true;
+  }
 
   const body = {
-    appName:     session.appName,
+    appName: session.appName,
     windowTitle: session.windowTitle,
-    url:         session.url,
-    duration:    Math.round((durationMs / 1_000 / 60) * 10) / 10,
-    startTime:   session.startTime.toISOString(),
-    endTime:     endTime.toISOString(),
+    url: session.url,
+    duration: Math.round((durationMs / 1_000 / 60) * 10) / 10,
+    startTime: session.startTime.toISOString(),
+    endTime: endTime.toISOString(),
   };
 
   try {
     const res = await fetch(`${API_URL}/api/activities`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body),
+      body: JSON.stringify(body),
     });
+
     if (!res.ok) {
       console.error(`[tracker] POST failed: ${res.status}`);
       return false;
     }
+
     return true;
   } catch (err) {
     console.error('[tracker] Could not reach backend:', (err as Error).message);
@@ -225,14 +243,15 @@ async function poll(): Promise<void> {
   if (config.idleDetectionEnabled) {
     const idleSecs = getSystemIdleSeconds();
     const thresholdSecs = config.idleThresholdMinutes * 60;
-    if (idleSecs >= thresholdSecs) {
+
+    // Ignore suspicious readings instead of blocking tracking forever
+    if (idleSecs >= 0 && idleSecs <= 86400 && idleSecs >= thresholdSecs) {
       if (current) {
         // Back-date the end time to when idle actually started
         const endTime = new Date(Date.now() - idleSecs * 1_000);
         await postActivity(current, endTime);
         current = null;
         saveTrackerState(null);
-        console.log(`[tracker] Idle ${idleSecs}s ≥ ${thresholdSecs}s — session closed`);
       }
       return;
     }
@@ -242,7 +261,8 @@ async function poll(): Promise<void> {
   let win: activeWin.Result | undefined;
   try {
     win = (await activeWin()) ?? undefined;
-  } catch {
+  } catch (err) {
+    console.error('[tracker] activeWin failed:', err);
     return; // locked screen / UAC dialog — skip silently
   }
 
@@ -276,15 +296,11 @@ async function poll(): Promise<void> {
     : url;
 
   // 6. Session tracking
-  // For browsers, group by URL hostname so that title changes (e.g. YouTube
-  // switching videos) don't fragment the session into many tiny pieces.
   const sessionKey = (app: string, title: string | undefined, u: string | undefined) => {
     if (isBrowserApp(app)) {
       if (u) {
-        try { return app + '|' + new URL(u).hostname; } catch { /* fall through */ }
+        try { return app + '|' + new URL(u).hostname; } catch {}
       }
-      // URL may be unavailable in some browser privacy/permission states.
-      // Using only app name avoids fragmenting one browsing period by tab title.
       return app;
     }
     return app + '|' + (title ?? '');

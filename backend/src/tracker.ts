@@ -24,7 +24,7 @@ let config: TrackerConfig = {
   trackingEnabled:        true,
   idleDetectionEnabled:   true,
   idleThresholdMinutes:   5,
-  pollIntervalMs:         5_000,
+  pollIntervalMs:         1_000,
   excludedApps:           new Set(),
   respectPrivateBrowsing: true,
 };
@@ -315,15 +315,43 @@ async function poll(): Promise<void> {
     : url;
 
   // 6. Session tracking
+  const normalizeBrowserUrl = (rawUrl: string): string => {
+    try {
+      const parsed = new URL(rawUrl);
+
+      // Ignore in-page anchors like #section
+      parsed.hash = '';
+
+      // Remove common tracking parameters
+      parsed.searchParams.delete('utm_source');
+      parsed.searchParams.delete('utm_medium');
+      parsed.searchParams.delete('utm_campaign');
+      parsed.searchParams.delete('utm_term');
+      parsed.searchParams.delete('utm_content');
+      parsed.searchParams.delete('utm_id');
+      parsed.searchParams.delete('utm_name');
+
+      // Normalize trailing slash for non-root paths
+      if (parsed.pathname.length > 1 && parsed.pathname.endsWith('/')) {
+        parsed.pathname = parsed.pathname.slice(0, -1);
+      }
+
+      return parsed.toString();
+    } catch {
+      return rawUrl;
+    }
+  };
+
   const sessionKey = (app: string, title: string | undefined, u: string | undefined) => {
     if (isBrowserApp(app)) {
-      if (u) {
-        try { return app + '|' + new URL(u).hostname; } catch {}
-      }
-      return app;
+      if (u) return app + '|' + normalizeBrowserUrl(u);
+      return app + '|' + (title ?? '');
     }
     return app + '|' + (title ?? '');
   };
+
+
+
 
   const sameWindow =
     current &&
@@ -338,7 +366,7 @@ async function poll(): Promise<void> {
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
     saveTrackerState(current);
   } else {
-    // Same session — keep title/url up to date so category rules stay accurate
+    // Same session — refresh metadata for the current activity
     current.windowTitle = windowTitle;
     current.url = recordUrl;
     saveTrackerState(current);

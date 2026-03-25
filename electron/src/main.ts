@@ -395,6 +395,7 @@ app.whenReady().then(async () => {
   // Ensure the OS-level auto-start matches the user's setting.
   syncLaunchAtStartupFromSettingsFile();
 
+
   startTracker();
   createWindow({ startHidden: shouldStartHidden() });
 

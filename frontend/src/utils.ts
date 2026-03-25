@@ -55,13 +55,29 @@ export function formatCalendarWeekRange(weekStartYmd: string, weekEndYmd: string
 }
 
 /**
- * Formats a duration in minutes to a human-readable string with exactly 2 decimal places.
- * Examples: 5.2 → "5.20m", 65.71 → "1h 5.71m", 120 → "2h 0.00m"
+ * Formats a duration in minutes to a compact human-readable string.
+ * Examples:
+ *   0      -> "0m"
+ *   0.4    -> "0m"
+ *   5.2    -> "5m"
+ *   11.4   -> "11m"
+ *   59.6   -> "1h"
+ *   65.71  -> "1h 6m"
+ *   120    -> "2h"
  */
 export function formatDuration(minutes: number): string {
-  const total = Math.round(minutes * 100) / 100;
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  if (h > 0 && m === 0) return `${h}h`;
-  return h > 0 ? `${h}h ${m.toFixed(1)}m` : `${m.toFixed(1)}m`;
+  const totalMinutes = Math.max(0, Math.round(minutes));
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (m === 0) {
+    return `${h}h`;
+  }
+
+  return `${h}h ${m}m`;
 }

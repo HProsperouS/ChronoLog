@@ -14,6 +14,44 @@ export function ActivityTimeline() {
   const [activities, setActivities]             = useState<Activity[]>([]);
   const [availableDates, setAvailableDates]     = useState<Set<string>>(new Set());
 
+  const getDefaultWindow = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    return {
+      start: currentHour,
+      end: Math.min(currentHour + 1, 24),
+    };
+  };
+
+  const [windowStartHour, setWindowStartHour] = useState<number>(() => {
+    const saved = localStorage.getItem('timelineWindowStartHour');
+    if (saved !== null) return Number(saved);
+    return getDefaultWindow().start;
+  });
+
+  const [windowEndHour, setWindowEndHour] = useState<number>(() => {
+    const saved = localStorage.getItem('timelineWindowEndHour');
+    if (saved !== null) return Number(saved);
+    return getDefaultWindow().end;
+  });
+  
+  const [contextSwitchMode, setContextSwitchMode] = useState<'all' | 'productivity-only'>(() => {
+    const saved = localStorage.getItem('timelineContextSwitchMode');
+    return saved === 'all' ? 'all' : 'productivity-only';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('timelineWindowStartHour', String(windowStartHour));
+  }, [windowStartHour]);
+
+  useEffect(() => {
+    localStorage.setItem('timelineWindowEndHour', String(windowEndHour));
+  }, [windowEndHour]);
+
+  useEffect(() => {
+  localStorage.setItem('timelineContextSwitchMode', contextSwitchMode);
+  }, [contextSwitchMode]);
+  
   useEffect(() => {
     api.getAvailableDates().then((dates) => setAvailableDates(new Set(dates)));
   }, []);
@@ -58,68 +96,103 @@ export function ActivityTimeline() {
   const isProductive = (category: string) =>
     category === 'Work' || category === 'Study';
 
-  const getTimeWindow = () => {
-    if (activities.length === 0) return { startHour: 9, endHour: 19 };
+  const startHour = windowStartHour;
+  const endHour = windowEndHour;
 
-    const startHours = activities
-      .map((a) => a.startTime.getHours())
-      .filter((h) => !isNaN(h));
+const generateTimelineBar = () => {
+  const windowStartMin = startHour * 60;
+  const windowEndMin = endHour * 60;
+  const totalMins = Math.max(windowEndMin - windowStartMin, 1);
 
-    const endHours = activities
-      .map((a) => {
-        const h = a.endTime?.getHours?.() ?? NaN;
-        const m = a.endTime?.getMinutes?.() ?? 0;
-        const s = a.endTime?.getSeconds?.() ?? 0;
-        return isNaN(h) ? NaN : (m > 0 || s > 0 ? h + 1 : h);
-      })
-      .filter((h) => !isNaN(h));
+  return activities
+    .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+    .map((activity) => {
+      const activityStartMin =
+        activity.startTime.getHours() * 60 +
+        activity.startTime.getMinutes() +
+        activity.startTime.getSeconds() / 60;
 
-    if (startHours.length === 0) return { startHour: 9, endHour: 19 };
+      const activityEndMin =
+        activity.endTime.getHours() * 60 +
+        activity.endTime.getMinutes() +
+        activity.endTime.getSeconds() / 60;
 
-    const startHour = Math.min(...startHours);
-    const rawEnd    = endHours.length > 0 ? Math.max(...endHours) : startHour + 1;
-    // always guarantee at least a 1-hour window to avoid division by zero
-    const endHour   = Math.max(rawEnd, startHour + 1);
+      const clippedStart = Math.max(activityStartMin, windowStartMin);
+      const clippedEnd = Math.min(activityEndMin, windowEndMin);
 
-    return { startHour, endHour };
-  };
+      if (clippedEnd <= clippedStart) return null;
 
-  const { startHour, endHour } = getTimeWindow();
+      const offset = clippedStart - windowStartMin;
+      const durationInWindow = clippedEnd - clippedStart;
+      const left = (offset / totalMins) * 100;
+      const width = (durationInWindow / totalMins) * 100;
 
-  const generateTimelineBar = () => {
-    const totalMins = Math.max((endHour - startHour) * 60, 1);
-    return activities
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
-      .map((activity) => {
-        const startMin = activity.startTime.getHours() * 60
-          + activity.startTime.getMinutes()
-          + activity.startTime.getSeconds() / 60;
-        const offset   = startMin - startHour * 60;
-        const left     = (offset / totalMins) * 100;
-        const width    = (activity.duration / totalMins) * 100;
-        return { ...activity, left: Math.max(0, left), width: Math.min(Math.max(width, 0.5), 100 - Math.max(0, left)), isProductive: isProductive(activity.category) };
-      });
-  };
+      return {
+        ...activity,
+        left: Math.max(0, left),
+        width: Math.min(Math.max(width, 0.5), 100 - Math.max(0, left)),
+        isProductive: isProductive(activity.category),
+        visibleDuration: durationInWindow,
+      };
+    })
+    .filter(Boolean) as Array<Activity & {
+      left: number;
+      width: number;
+      isProductive: boolean;
+      visibleDuration: number;
+    }>;
+};
 
   const timelineData = generateTimelineBar();
+  
+  // Markers for context switches (activities that start after the first one)
+  const contextSwitchMarkers = timelineData
+    .map((activity, index) => {
+      if (index === 0) return null;
 
-  const timeLabels = (() => {
-    const windowHours = endHour - startHour;
-    const step = windowHours <= 4 ? 1 : 2;
-    const fmt = (h: number) => {
-      const suffix  = h >= 12 ? 'PM' : 'AM';
-      const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      return `${display} ${suffix}`;
-    };
-    const labels: string[] = [];
-    for (let h = startHour; h <= endHour; h += step) {
-      labels.push(fmt(h));
+      const prev = timelineData[index - 1];
+
+      const isSwitch =
+        contextSwitchMode === 'all'
+          ? true
+          : prev.isProductive !== activity.isProductive;
+
+      if (!isSwitch) return null;
+
+      return {
+        id: activity.id,
+        left: activity.left,
+      };
+    })
+    .filter((marker): marker is NonNullable<typeof marker> => marker !== null);
+  
+  const contextSwitchCount = contextSwitchMarkers.length;
+
+  const quarterHourTicks = Array.from(
+    { length: (endHour - startHour) * 4 + 1 },
+    (_, i) => {
+      const totalMinutes = startHour * 60 + i * 15;
+      const hour = Math.floor(totalMinutes / 60);
+      const minute = totalMinutes % 60;
+      const left =
+        ((totalMinutes - startHour * 60) / ((endHour - startHour) * 60)) * 100;
+
+      const label =
+        minute === 0
+          ? hour === 0
+            ? '12 AM'
+            : hour < 12
+            ? `${hour} AM`
+            : hour === 12
+            ? '12 PM'
+            : `${hour - 12} PM`
+          : `${minute.toString().padStart(2, '0')}`;
+
+      return { left, label, minute };
     }
-    // Always include the end label
-    const endLabel = fmt(endHour);
-    if (labels[labels.length - 1] !== endLabel) labels.push(endLabel);
-    return labels;
-  })();
+  );
+
+
   const categories   = ['All', 'Work', 'Study', 'Entertainment', 'Communication', 'Utilities'];
 
   const filteredActivities = activities
@@ -168,38 +241,183 @@ export function ActivityTimeline() {
       <div className="p-4 sm:p-6">
         {/* Productivity Timeline Bar */}
         <div className="bg-[#13131a] border border-white/5 rounded-xl p-5 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-white">Daily Productivity Overview</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h2 className="text-sm font-semibold text-white">Hourly Productivity Overview</h2>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500" /><span className="text-xs text-gray-400">Productive</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-orange-500" /><span className="text-xs text-gray-400">Non-Productive</span></div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-emerald-500" />
+                <span className="text-xs text-gray-400">Productive</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-orange-400" />
+                <span className="text-xs text-gray-400">Non-Productive</span>
+              </div>
             </div>
           </div>
-          <div className="relative">
-            <div className="flex justify-between text-[10px] text-gray-500 mb-2">
-              {timeLabels.map((t) => <span key={t}>{t}</span>)}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-gray-400">Start Hour</label>
+                <span className="text-xs text-white font-medium">
+                  {windowStartHour === 0 ? '12 AM' : windowStartHour < 12 ? `${windowStartHour} AM` : windowStartHour === 12 ? '12 PM' : `${windowStartHour - 12} PM`}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={23}
+                step={1}
+                value={windowStartHour}
+                onChange={(e) => {
+                  const nextStart = Number(e.target.value);
+                  setWindowStartHour(nextStart);
+                  if (windowEndHour <= nextStart) {
+                    setWindowEndHour(Math.min(nextStart + 1, 24));
+                  }
+                }}
+                className="w-full accent-indigo-500"
+              />
             </div>
-            <div className="relative h-10 bg-white/5 rounded-lg overflow-hidden">
-              {timelineData.map((a) => (
-                <div key={a.id} className="absolute top-0 h-full hover:opacity-80 cursor-pointer group transition-all"
-                  style={{ left: `${a.left}%`, width: `${a.width}%`, backgroundColor: a.isProductive ? '#10b981' : '#f59e0b' }}
-                  title={`${a.appName} - ${formatDuration(a.duration)}`}
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-gray-400">End Hour</label>
+                <span className="text-xs text-white font-medium">
+                  {windowEndHour === 24 ? '12 AM' : windowEndHour < 12 ? `${windowEndHour} AM` : windowEndHour === 12 ? '12 PM' : `${windowEndHour - 12} PM`}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={24}
+                step={1}
+                value={windowEndHour}
+                onChange={(e) => {
+                  const nextEnd = Number(e.target.value);
+                  setWindowEndHour(nextEnd <= windowStartHour ? windowStartHour + 1 : nextEnd);
+                }}
+                className="w-full accent-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-xs text-gray-400">Context switch definition</span>
+
+            <button
+              type="button"
+              onClick={() => setContextSwitchMode('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                contextSwitchMode === 'all'
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                  : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              Any app change
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setContextSwitchMode('productivity-only')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                contextSwitchMode === 'productivity-only'
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                  : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              Productive ↔ Non-Productive only
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <p className="text-xs text-gray-400">
+              Window:{' '}
+              <span className="text-white font-medium">
+                {windowStartHour === 0 ? '12 AM' : windowStartHour < 12 ? `${windowStartHour} AM` : windowStartHour === 12 ? '12 PM' : `${windowStartHour - 12} PM`}
+                {' '}to{' '}
+                {windowEndHour === 24 ? '12 AM' : windowEndHour < 12 ? `${windowEndHour} AM` : windowEndHour === 12 ? '12 PM' : `${windowEndHour - 12} PM`}
+              </span>
+            </p>
+
+            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">
+                {contextSwitchMode === 'all' ? 'Context Switches' : 'Productivity Switches'}
+              </p>
+              <p className="text-sm font-semibold text-white">{contextSwitchCount}</p>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="relative mb-2 h-4">
+              {quarterHourTicks.map((tick, idx) => (
+                <div
+                  key={`${tick.left}-${idx}`}
+                  className="absolute -translate-x-1/2 text-[10px] text-gray-500"
+                  style={{ left: `${tick.left}%` }}
                 >
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    {a.appName} • {formatDuration(a.duration)}
-                  </div>
+                  {tick.label}
                 </div>
               ))}
             </div>
+
+            <div className="relative h-8 bg-white/5 rounded-lg overflow-visible">
+              {quarterHourTicks.map((tick, idx) => (
+                <div
+                  key={`grid-${idx}`}
+                  className={`absolute top-0 h-full pointer-events-none ${
+                    tick.minute === 0 ? 'bg-white/12 w-px' : 'bg-white/6 w-px'
+                  }`}
+                  style={{ left: `${tick.left}%`, transform: 'translateX(-50%)' }}
+                />
+              ))}
+
+              {timelineData.map((a) => (
+                <div
+                  key={a.id}
+                  className="absolute top-0 h-full hover:opacity-80 cursor-pointer group"
+                  style={{
+                    left: `${a.left}%`,
+                    width: `${a.width}%`,
+                    backgroundColor: a.isProductive ? '#10b981' : '#f59e0b',
+                  }}
+                >
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-30">
+                    {a.appName} • {formatDuration(a.visibleDuration)}
+                  </div>
+                </div>
+              ))}
+              {contextSwitchMarkers.map((marker) => (
+                <div
+                  key={`switch-${marker.id}`}
+                  className="absolute -top-1 -bottom-1 w-[2px] bg-slate-200/85 pointer-events-none z-20 rounded-full shadow-[0_0_4px_rgba(226,232,240,0.25)]"
+                  style={{ left: `${marker.left}%`, transform: 'translateX(-50%)' }}
+                />
+              ))}
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
               <p className="text-[10px] text-emerald-400 font-medium mb-1">PRODUCTIVE TIME</p>
-              <p className="text-lg font-semibold text-white">{formatDuration(timelineData.filter((a) => a.isProductive).reduce((s, a) => s + a.duration, 0))}</p>
+              <p className="text-lg font-semibold text-white">
+                {formatDuration(
+                  timelineData
+                    .filter((a) => a.isProductive)
+                    .reduce((s, a) => s + a.visibleDuration, 0)
+                )}
+              </p>
             </div>
-            <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3">
+
+            <div className="bg-orange-400/10 border border-orange-400/20 rounded-lg p-3">
               <p className="text-[10px] text-orange-400 font-medium mb-1">NON-PRODUCTIVE TIME</p>
-              <p className="text-lg font-semibold text-white">{formatDuration(timelineData.filter((a) => !a.isProductive).reduce((s, a) => s + a.duration, 0))}</p>
+              <p className="text-lg font-semibold text-white">
+                {formatDuration(
+                  timelineData
+                    .filter((a) => !a.isProductive)
+                    .reduce((s, a) => s + a.visibleDuration, 0)
+                )}
+              </p>
             </div>
           </div>
         </div>

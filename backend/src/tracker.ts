@@ -44,7 +44,7 @@ async function fetchConfig(): Promise<void> {
       config.idleDetectionEnabled = (settings.idleDetectionEnabled as boolean) ?? true;
       config.idleThresholdMinutes = (settings.idleThresholdMinutes as number)  ?? 5;
 
-      const newPollMs = ((settings.pollIntervalSeconds as number) ?? 5) * 1_000;
+      const newPollMs = ((settings.pollIntervalSeconds as number) ?? 1) * 1_000;
       if (newPollMs !== config.pollIntervalMs) {
         config.pollIntervalMs = newPollMs;
         reschedulePoller();
@@ -344,8 +344,9 @@ async function poll(): Promise<void> {
 
   const sessionKey = (app: string, title: string | undefined, u: string | undefined) => {
     if (isBrowserApp(app)) {
-      if (u) return app + '|' + normalizeBrowserUrl(u);
-      return app + '|' + (title ?? '');
+      const normalizedUrl = u ? normalizeBrowserUrl(u) : '';
+      const normalizedTitle = (title ?? '').trim();
+      return app + '|' + normalizedUrl + '|' + normalizedTitle;
     }
     return app + '|' + (title ?? '');
   };

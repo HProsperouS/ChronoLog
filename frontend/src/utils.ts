@@ -66,7 +66,14 @@ export function formatCalendarWeekRange(weekStartYmd: string, weekEndYmd: string
  *   120    -> "2h"
  */
 export function formatDuration(minutes: number): string {
-  const totalMinutes = Math.max(0, Math.round(minutes));
+  const safeMinutes = Math.max(0, minutes);
+
+  if (safeMinutes < 1) {
+    const totalSeconds = Math.max(1, Math.round(safeMinutes * 60));
+    return `${totalSeconds}s`;
+  }
+
+  const totalMinutes = Math.round(safeMinutes);
 
   if (totalMinutes < 60) {
     return `${totalMinutes}m`;

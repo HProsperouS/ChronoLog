@@ -16,20 +16,33 @@ function emptyTotals(): Record<Category, number> {
   return Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>;
 }
 
+/** Local calendar step for YYYY-MM-DD (matches frontend `addDaysYmd`; avoids UTC `toISOString` day shifts). */
+function addDaysYmd(ymd: string, deltaDays: number): string {
+  const d = new Date(`${ymd}T12:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 const FOCUS: Category[] = ['Work', 'Study'];
 
 /**
  * Same definition everywhere: Dashboard, Insights UI, GET /api/stats, and
  * InsightsLambdaStatsPayload.contextSwitches sent to Lambda.
+ *
+ * Walk the full session timeline in time order. Count each edge where the user
+ * leaves Work/Study for any other category (including Utilities, Uncategorized,
+ * Entertainment, Communication). We do not strip categories from the middle —
+ * that would collapse Work→X→Work and undercount.
  */
 function countContextSwitches(activities: Activity[]): number {
   const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
-  const IGNORE: Category[] = ['Utilities', 'Uncategorized'];
-  const relevant = sorted.filter((a) => !IGNORE.includes(a.category));
   let switches = 0;
-  for (let i = 1; i < relevant.length; i++) {
-    const prev = relevant[i - 1].category;
-    const curr = relevant[i].category;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1].category;
+    const curr = sorted[i].category;
     if (FOCUS.includes(prev) && !FOCUS.includes(curr)) switches++;
   }
   return switches;
@@ -228,15 +241,11 @@ export function getWeeklyStats(from: string, to: string): DailyStats[] {
   }
 
   const result: DailyStats[] = [];
-  const current = new Date(from);
-  const end = new Date(to);
-
-  while (current <= end) {
-    const dateStr = current.toISOString().slice(0, 10);
-    const dayActivities = byDate.get(dateStr) ?? [];
-    result.push(buildDailyStats(dateStr, dayActivities, 3));
-
-    current.setDate(current.getDate() + 1);
+  let cur = from;
+  while (cur <= to) {
+    const dayActivities = byDate.get(cur) ?? [];
+    result.push(buildDailyStats(cur, dayActivities, 3));
+    cur = addDaysYmd(cur, 1);
   }
 
   return result;

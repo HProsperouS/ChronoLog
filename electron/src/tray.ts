@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron';
+import fs from 'fs';
 import path from 'path';
 
 let tray: Tray | null = null;
@@ -10,14 +11,25 @@ let tray: Tray | null = null;
  */
 export function setupTray(window: BrowserWindow): void {
   const iconPath = resolveIconPath();
-  const icon = nativeImage.createFromPath(iconPath);
+  if (!iconPath || !fs.existsSync(iconPath)) {
+    console.error('[tray] Missing tray icon file. Add electron/assets/tray-icon.png (or tray-iconTemplate.png on macOS).');
+    return;
+  }
 
-  // Resize for high-DPI trays on macOS (template image = auto dark/light mode)
+  const icon = nativeImage.createFromPath(iconPath);
+  if (icon.isEmpty()) {
+    console.error('[tray] Could not load tray image:', iconPath);
+    return;
+  }
+
+  // Resize for high-DPI trays on macOS
   const trayIcon = process.platform === 'darwin'
-    ? icon.resize({ width: 16, height: 16 })
+    ? icon.resize({ width: 18, height: 18 })
     : icon.resize({ width: 32, height: 32 });
 
-  if (process.platform === 'darwin') {
+  // Template images must be monochrome (alpha); colorful PNGs look invisible if marked template
+  const base = path.basename(iconPath);
+  if (process.platform === 'darwin' && /template/i.test(base)) {
     trayIcon.setTemplateImage(true);
   }
 
@@ -64,18 +76,15 @@ export function setupTray(window: BrowserWindow): void {
 }
 
 function resolveIconPath(): string {
-  const fs = require('fs') as typeof import('fs');
-
-  const fileName =
+  const assetsDir = path.join(__dirname, '../assets');
+  const tryNames =
     process.platform === 'darwin'
-      ? 'tray-iconTemplate.png'
-      : 'tray-icon.png';
+      ? ['tray-iconTemplate.png', 'tray-icon.png', 'tray-icon-18.png', 'tray-icon-16.png']
+      : ['tray-icon.png', 'tray-icon-32.png'];
 
-  const prodIcon = path.join(process.resourcesPath, 'assets', fileName);
-  const devIcon = path.join(__dirname, '../../electron/assets', fileName);
-
-  if (fs.existsSync(prodIcon)) return prodIcon;
-  if (fs.existsSync(devIcon)) return devIcon;
-
+  for (const name of tryNames) {
+    const p = path.join(assetsDir, name);
+    if (fs.existsSync(p)) return p;
+  }
   return '';
 }

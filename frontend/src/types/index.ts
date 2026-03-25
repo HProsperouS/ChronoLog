@@ -11,6 +11,7 @@ export interface Activity {
   startTime: Date;
   endTime: Date;
   date: string;       // YYYY-MM-DD
+  excludeFromAnalytics?: boolean;
 }
 
 export interface CategoryRule {

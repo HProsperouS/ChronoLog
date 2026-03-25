@@ -99,13 +99,14 @@ export function ActivityTimeline() {
 
   const startHour = windowStartHour;
   const endHour = windowEndHour;
+  const analyticsActivities = activities.filter((activity) => !activity.excludeFromAnalytics);
 
 const generateTimelineBar = () => {
   const windowStartMin = startHour * 60;
   const windowEndMin = endHour * 60;
   const totalMins = Math.max(windowEndMin - windowStartMin, 1);
 
-  return activities
+  return analyticsActivities
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
     .map((activity) => {
       const activityStartMin =

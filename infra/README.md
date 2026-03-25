@@ -31,6 +31,10 @@ INSIGHTS_PROXY_SECRET=<same value as CDK ProxySecret>
 
 `POST /api/insights/generate` builds an **extended insights-only payload** (`InsightsLambdaStatsPayload` = public daily stats + fragmentation metrics) and a **sanitized `sessionTimeline`** (up to 120 rows; no window titles or URLs), sends both to this URL, then saves the response into `insights.json`. **`GET /api/stats/*` JSON shape is unchanged** (plain `DailyStats`).
 
+Notes:
+- `Category` labels may be user-defined; Lambda treats categories as free-form strings.
+- `contextSwitches` is an authoritative value computed by the backend (productive ↔ non-productive flips; productive = Work/Study).
+
 ### Subsequent deploys
 
 CDK will remember parameters in `cdk.context.json` **only if** you use context — for `CfnParameter`, you may need to pass them again or use `--parameters` file. To avoid retyping, use AWS Console → CloudFormation → stack → **Update** and reuse stored values, or pass the same CLI flags again.

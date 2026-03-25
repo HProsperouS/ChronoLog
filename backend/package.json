@@ -7,7 +7,8 @@
     "dev": "tsx watch src/server.ts",
     "tracker": "tsx src/tracker.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed:demo": "tsx src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",

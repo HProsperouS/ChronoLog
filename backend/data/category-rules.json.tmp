@@ -404,5 +404,12 @@
     "category": "Utilities",
     "isAutomatic": true,
     "keywords": []
+  },
+  {
+    "id": "1774441322280",
+    "appName": "ChronoLog",
+    "category": "ChronoLog",
+    "isAutomatic": true,
+    "keywords": []
   }
 ]

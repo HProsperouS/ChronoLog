@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Sparkles, Calendar, Trophy, TrendingDown, AlertCircle, TrendingUp, Shuffle, Target, CheckCircle2, Loader2, Wand2 } from 'lucide-react';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, Legend } from 'recharts';
 import * as api from '../api';
 import {
   todayStr,
@@ -10,6 +10,7 @@ import {
   endOfWeekSunday,
   formatCalendarWeekRange,
 } from '../utils';
+import { categoryColors } from '../constants';
 import type { Insight, DailyStats } from '../types';
 
 type SummaryMode = 'daily' | 'weekly';
@@ -25,6 +26,33 @@ function formatComparison(curr: number, prev: number, priorLabel: string): strin
   const arrow = pct >= 0 ? '↑' : '↓';
   return `${arrow} ${Math.abs(Math.round(pct))}% vs ${priorLabel}`;
 }
+
+const BUILT_IN_CATEGORY_ORDER = [
+  'Work',
+  'Study',
+  'Entertainment',
+  'Communication',
+  'Utilities',
+  'ChronoLog',
+  'Uncategorized',
+] as const;
+
+const DEFAULT_DYNAMIC_CATEGORY_COLOR = '#9ca3af';
+
+function colorFromCategoryName(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 60% 55%)`;
+}
+
+function getCategoryColor(category: string): string {
+  return categoryColors[category] ?? colorFromCategoryName(category) ?? DEFAULT_DYNAMIC_CATEGORY_COLOR;
+}
+
 
 export function Insights() {
   const [insights, setInsights]   = useState<Insight[]>([]);
@@ -119,20 +147,63 @@ export function Insights() {
     [chartStats],
   );
 
+  const weeklyDistributionMeta = useMemo(() => {
+    const totals = new Map<string, number>();
+
+    for (const day of chartStats) {
+      for (const [category, minutes] of Object.entries(day.categoryTotals ?? {})) {
+        const safeMinutes = minutes ?? 0;
+        totals.set(category, (totals.get(category) ?? 0) + safeMinutes);
+      }
+    }
+
+    const sortedCategories = Array.from(totals.entries())
+      .filter(([, minutes]) => minutes > 0)
+      .sort((a, b) => {
+        const aBuiltInIndex = BUILT_IN_CATEGORY_ORDER.indexOf(a[0] as (typeof BUILT_IN_CATEGORY_ORDER)[number]);
+        const bBuiltInIndex = BUILT_IN_CATEGORY_ORDER.indexOf(b[0] as (typeof BUILT_IN_CATEGORY_ORDER)[number]);
+
+        const aIsBuiltIn = aBuiltInIndex !== -1;
+        const bIsBuiltIn = bBuiltInIndex !== -1;
+
+        if (aIsBuiltIn && bIsBuiltIn) return aBuiltInIndex - bBuiltInIndex;
+        if (aIsBuiltIn) return -1;
+        if (bIsBuiltIn) return 1;
+
+        return b[1] - a[1];
+      });
+
+    const MAX_VISIBLE_CATEGORIES = 8;
+    const visibleCategories = sortedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(([category]) => category);
+    const hiddenCategories = sortedCategories.slice(MAX_VISIBLE_CATEGORIES).map(([category]) => category);
+
+    return {
+      visibleCategories,
+      hiddenCategories,
+    };
+  }, [chartStats]);
+
   const timeDistributionTrend = useMemo(
     () =>
       chartStats.map((d) => {
-        const productive = d.categoryTotals.Work + d.categoryTotals.Study;
-        const unproductive = d.categoryTotals.Entertainment;
-        const neutral = d.totalTime - productive - unproductive;
-        return {
+        const row: Record<string, string | number> = {
           day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-          productive,
-          neutral,
-          unproductive,
         };
+
+        for (const category of weeklyDistributionMeta.visibleCategories) {
+          row[category] = d.categoryTotals?.[category] ?? 0;
+        }
+
+        if (weeklyDistributionMeta.hiddenCategories.length > 0) {
+          row.Other = weeklyDistributionMeta.hiddenCategories.reduce(
+            (sum, category) => sum + (d.categoryTotals?.[category] ?? 0),
+            0
+          );
+        }
+
+        return row;
       }),
-    [chartStats],
+    [chartStats, weeklyDistributionMeta],
   );
 
   // ─── Summary cards: Daily = today vs yesterday; Weekly = last 7 vs prior 7 ───
@@ -178,7 +249,7 @@ export function Insights() {
     const avgFocus = (days: DailyStats[]) =>
       days.length ? days.reduce((s, d) => s + d.focusScore, 0) / days.length : 0;
     const sumProdMin = (days: DailyStats[]) =>
-      days.reduce((s, d) => s + d.categoryTotals.Work + d.categoryTotals.Study, 0);
+      days.reduce((s, d) => s + (d.categoryTotals.Work ?? 0) + (d.categoryTotals.Study ?? 0), 0);
     const sumCtx = (days: DailyStats[]) => days.reduce((s, d) => s + d.contextSwitches, 0);
 
     const focusC = Math.round(avgFocus(curr7));
@@ -237,8 +308,8 @@ export function Insights() {
   function buildHabitDays() {
     if (!chartStats.length) return [];
     return chartStats.map((d) => {
-      const productiveMinutes = d.categoryTotals.Work + d.categoryTotals.Study;
-      const entertainmentMinutes = d.categoryTotals.Entertainment;
+      const productiveMinutes = (d.categoryTotals.Work ?? 0) + (d.categoryTotals.Study ?? 0);
+      const entertainmentMinutes = d.categoryTotals.Entertainment ?? 0;
       return {
         date: d.date,
         label: weekdayLabel(d.date),
@@ -405,6 +476,11 @@ export function Insights() {
             <h2 className="text-sm font-semibold text-white mb-4">Weekly Distribution</h2>
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={timeDistributionTrend}>
+              <Legend
+                wrapperStyle={{ fontSize: '12px' }}
+                iconType="circle"
+              />
+
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis 
                   dataKey="day" 
@@ -428,30 +504,28 @@ export function Insights() {
                   }}
                   labelStyle={{ color: '#fff' }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="productive"
-                  stackId="1"
-                  stroke="none"
-                  fill="#10b981"
-                  fillOpacity={0.8}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="neutral"
-                  stackId="1"
-                  stroke="none"
-                  fill="#6b7280"
-                  fillOpacity={0.6}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="unproductive"
-                  stackId="1"
-                  stroke="none"
-                  fill="#f59e0b"
-                  fillOpacity={0.8}
-                />
+                {weeklyDistributionMeta.visibleCategories.map((category) => (
+                  <Area
+                    key={category}
+                    type="monotone"
+                    dataKey={category}
+                    stackId="1"
+                    stroke="none"
+                    fill={getCategoryColor(category)}
+                    fillOpacity={0.85}
+                  />
+                ))}
+
+                {weeklyDistributionMeta.hiddenCategories.length > 0 && (
+                  <Area
+                    type="monotone"
+                    dataKey="Other"
+                    stackId="1"
+                    stroke="none"
+                    fill="#9ca3af"
+                    fillOpacity={0.7}
+                  />
+                )}
               </AreaChart>
             </ResponsiveContainer>
           </div>

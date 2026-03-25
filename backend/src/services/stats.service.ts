@@ -32,18 +32,83 @@ const FOCUS: Category[] = ['Work', 'Study'];
  * Same definition everywhere: Dashboard, Insights UI, GET /api/stats, and
  * InsightsLambdaStatsPayload.contextSwitches sent to Lambda.
  *
- * Walk the full session timeline in time order. Count each edge where the user
- * leaves Work/Study for any other category (including Utilities, Uncategorized,
- * Entertainment, Communication). We do not strip categories from the middle —
- * that would collapse Work→X→Work and undercount.
+ * Align with the Activity page "Productive ↔ Non-Productive only" mode:
+ * - Sort the full timeline by start time.
+ * - Optionally merge away very short (<1 min) interruptions when the surrounding
+ *   segments have the same productive/non-productive status (noise reduction).
+ * - Count each boundary where productive status flips (bidirectional).
  */
 function countContextSwitches(activities: Activity[]): number {
   const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  const isProductive = (category: Category) => FOCUS.includes(category);
+
+  // Mirror the Activity page overview merge to avoid over-counting tiny blips.
+  const contextSwitchMinMinutes = 1;
+  type TimelineBar = Activity & { isProductive: boolean; visibleDuration: number };
+
+  const timelineRaw: TimelineBar[] = sorted.map((a) => ({
+    ...a,
+    isProductive: isProductive(a.category),
+    visibleDuration: a.duration,
+  }));
+
+  const shouldMergeForOverview = (
+    prev: TimelineBar,
+    current: TimelineBar,
+    next: TimelineBar | undefined,
+  ) => {
+    if (!next) return false;
+    if (current.visibleDuration >= contextSwitchMinMinutes) return false;
+    return prev.isProductive === next.isProductive;
+  };
+
+  const mergeTimelineForOverview = (items: TimelineBar[]): TimelineBar[] => {
+    if (items.length <= 1) return items;
+    let working = [...items];
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      const nextPass: TimelineBar[] = [];
+
+      for (let i = 0; i < working.length; i++) {
+        const prev = nextPass[nextPass.length - 1];
+        const current = working[i];
+        const next = working[i + 1];
+
+        if (!prev || !next) {
+          nextPass.push(current);
+          continue;
+        }
+
+        if (shouldMergeForOverview(prev, current, next)) {
+          nextPass[nextPass.length - 1] = {
+            ...prev,
+            // Keep category/appName stable (use prev), just extend duration.
+            duration: prev.duration + current.duration + next.duration,
+            visibleDuration: prev.visibleDuration + current.visibleDuration + next.visibleDuration,
+          };
+          i += 1; // consume `next` as well
+          changed = true;
+        } else {
+          nextPass.push(current);
+        }
+      }
+
+      working = nextPass;
+    }
+
+    return working;
+  };
+
+  const timeline = mergeTimelineForOverview(timelineRaw);
+
   let switches = 0;
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = sorted[i - 1].category;
-    const curr = sorted[i].category;
-    if (FOCUS.includes(prev) && !FOCUS.includes(curr)) switches++;
+  for (let i = 1; i < timeline.length; i++) {
+    const prev = timeline[i - 1];
+    const curr = timeline[i];
+    if (prev.isProductive !== curr.isProductive) switches++;
   }
   return switches;
 }

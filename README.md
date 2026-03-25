@@ -121,7 +121,8 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 │  │   tracker.ts     │      │   backend  (localhost:3001)    │   │
 │  │                  │      │                                │   │
 │  │  Polls every     │      │  Fastify API                   │   │
-│  │  5 s via         │ POST │  ├── routes/                   │   │
+│  │  ~5 s (default)  │ POST │  ├── routes/                   │   │
+│  │  configurable    │      │  ├── routes/                   │   │
 │  │  active-win  ────┼─────►│  ├── services/                 │   │
 │  │                  │      │  └── store/ → data/ (JSON)     │   │
 │  └──────────────────┘      │       ├── activities/          │   │
@@ -302,11 +303,14 @@ Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`, 
 
 ### Context switches
 
-A **context switch** is counted when the user moves **away from a focused session** — specifically when the previous activity's category was `Work` or `Study` and the next activity’s category is **not** `Work` or `Study`.
+A **context switch** is counted when the user's **productive state flips** between:
 
-The timeline is walked **in full session order**. Any hop from `Work`/`Study` to **any** other category counts — including `Utilities`, `Uncategorized`, `Communication`, `Entertainment`, etc. (Filtering categories out of the middle would collapse `Work → X → Work` and undercount.)
+- **Productive**: `Work` or `Study`
+- **Non-productive**: any other category
 
-Switching back into `Work`/`Study` does not count — only the interruptions that pulled the user out of focus are tracked.
+We walk the activity timeline **in full session order** and count each boundary where productive ↔ non-productive changes (bidirectional).
+
+To avoid over-counting tiny “blips” (e.g. a quick <1-minute interruption that immediately returns to the same state), the stats logic merges away very short segments when the surrounding segments have the same productive/non-productive status (matching the Activity page “Productive ↔ Non-Productive only” view).
 
 ---
 
@@ -318,7 +322,7 @@ The Focus Score combines three dimensions to reflect both **how much** and **how
 |---|---|---|
 | **Productive time ratio** | 50% | All tracked time is Work or Study |
 | **Longest focus block** | 25% | Longest continuous Work/Study block ≥ 90 minutes |
-| **Context-switch penalty** | 25% | 0 switches away from focus; 10+ switches = 0 |
+| **Context-switch penalty** | 25% | 0 productive↔non-productive switches; 10+ switches = 0 |
 
 **Formula:**
 ```
@@ -355,7 +359,7 @@ Notifications respect the `notificationsEnabled` toggle in Settings — they can
 **Scientific basis:**
 
 - **90-minute break threshold** — Based on the ultradian rhythm cycle, focus and retention drop significantly after 90 continuous minutes of work. Information studied in a fatigued state is substantially less likely to be recalled later.
-- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog counts each time you leave `Work`/`Study` for any other category (including `Utilities` and `Uncategorized`). 8 remains a strict but fair limit for deep study work.
+- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog counts productive ↔ non-productive switches (Work/Study vs everything else), with short (<1-minute) blips merged to avoid noise. 8 remains a strict but fair limit for deep study work.
 - **Productive ratio threshold (30%)** — Studies of university students show that productive screen time (Work + Study) typically falls between 30–50% of total screen time. A warning fires when a student falls below this average range, indicating a genuinely off day rather than a normal one.
 
 > **Note:** Notifications are currently implemented via the browser Web Notification API (`frontend/src/hooks/useNotifications.ts`). When Electron is integrated, this will be replaced with Electron's native notification system for a cleaner desktop experience.

@@ -230,5 +230,21 @@
     "appName": "zoom.us",
     "category": "Communication",
     "isAutomatic": true
+  },
+  {
+    "id": "1774432715033",
+    "appName": "Firefox",
+    "category": "Entertainment",
+    "isAutomatic": true,
+    "keywords": []
+  },
+  {
+    "id": "1774432759895",
+    "appName": "Firefox",
+    "category": "Work",
+    "isAutomatic": false,
+    "keywords": [
+      "ChatGPT"
+    ]
   }
 ]

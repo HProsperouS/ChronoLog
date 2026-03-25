@@ -6,7 +6,21 @@ import * as ActivityStore from '../store/activity.store';
 import { autoCategory } from './category.service';
 import type { Activity, CreateActivityBody } from '../types';
 
+
 const iconCache = new Map<string, Buffer | null>();
+
+function isChronoLogSelfActivity(
+  appName: string,
+  windowTitle?: string
+): boolean {
+  const app = (appName ?? '').trim().toLowerCase();
+  const title = (windowTitle ?? '').trim().toLowerCase();
+
+  if (app === 'chronolog') return true;
+  if (app === 'electron' && title.includes('chronolog')) return true;
+
+  return false;
+}
 
 export function getAppIconBuffer(appName: string): Buffer | null {
   if (iconCache.has(appName)) return iconCache.get(appName) ?? null;
@@ -90,12 +104,20 @@ function canMergeAdjacent(prev: Activity, next: Activity): boolean {
 }
 
 export function createActivity(body: CreateActivityBody): Activity {
+  const excludeFromAnalytics =
+  body.excludeFromAnalytics ??
+  isChronoLogSelfActivity(body.appName, body.windowTitle);
+
   const date = toLocalDateString(body.startTime);
   const activities = ActivityStore
     .readDay(date)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const category = body.category ?? autoCategory(body.appName, body.windowTitle, body.url);
+  const category =
+  body.category ??
+  (excludeFromAnalytics
+    ? 'ChronoLog'
+    : autoCategory(body.appName, body.windowTitle, body.url));
 
   const activity: Activity = {
     id: ActivityStore.nextActivityId(activities),
@@ -107,6 +129,7 @@ export function createActivity(body: CreateActivityBody): Activity {
     startTime: body.startTime,
     endTime: body.endTime,
     date,
+    excludeFromAnalytics,
   };
 
   const prev = activities.at(-1);
@@ -123,6 +146,8 @@ export function createActivity(body: CreateActivityBody): Activity {
     // Keep the latest metadata for better categorization display.
     prev.windowTitle = activity.windowTitle ?? prev.windowTitle;
     prev.url = activity.url ?? prev.url;
+    prev.excludeFromAnalytics =
+    prev.excludeFromAnalytics || activity.excludeFromAnalytics;
     ActivityStore.writeDay(date, activities);
     return prev;
   }

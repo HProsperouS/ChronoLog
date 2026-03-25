@@ -149,13 +149,17 @@ function saveTrackerState(session: Session | null): void {
     try { fs.unlinkSync(TRACKER_STATE_FILE); } catch { /* state file may not exist */ }
     return;
   }
+
+  const isSelfActivity = isChronoLogSelfActivity(session.appName, session.windowTitle);
+
   const payload = {
-    appName: session.appName,
+    appName: isSelfActivity ? 'ChronoLog' : session.appName,
     windowTitle: session.windowTitle,
     url: session.url,
     startTime: session.startTime.toISOString(),
     savedAt: new Date().toISOString(),
   };
+
   fs.writeFileSync(TRACKER_STATE_FILE, JSON.stringify(payload, null, 2), 'utf8');
 }
 
@@ -183,6 +187,7 @@ function loadTrackerState(): Session | null {
 }
 
 async function postActivity(session: Session, endTime: Date): Promise<boolean> {
+  const isSelfActivity = isChronoLogSelfActivity(session.appName, session.windowTitle);
   const durationMs = endTime.getTime() - session.startTime.getTime();
   const durationSeconds = durationMs / 1_000;
 
@@ -194,12 +199,13 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   }
 
   const body = {
-    appName: session.appName,
+    appName: isSelfActivity ? 'ChronoLog' : session.appName,
     windowTitle: session.windowTitle,
     url: session.url,
     duration: Math.round((durationMs / 1_000 / 60) * 10) / 10,
     startTime: session.startTime.toISOString(),
     endTime: endTime.toISOString(),
+    excludeFromAnalytics: isSelfActivity,
   };
 
   try {
@@ -224,6 +230,19 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
 function extractUrl(win: activeWin.Result): string | undefined {
   if ('url' in win && typeof win.url === 'string') return win.url;
   return undefined;
+}
+
+function isChronoLogSelfActivity(
+  appName: string,
+  windowTitle?: string
+): boolean {
+  const app = (appName ?? '').trim().toLowerCase();
+  const title = (windowTitle ?? '').trim().toLowerCase();
+
+  if (app === 'chronolog') return true;
+  if (app === 'electron' && title.includes('chronolog')) return true;
+
+  return false;
 }
 
 // ─── Main poll ────────────────────────────────────────────────────────────────

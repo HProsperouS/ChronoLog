@@ -5,4 +5,5 @@ export const categoryColors: Record<string, string> = {
   Communication: '#a855f7',
   Utilities:     '#6b7280',
   Uncategorized: '#9ca3af',
+  ChronoLog: '#1E3A8A',
 };

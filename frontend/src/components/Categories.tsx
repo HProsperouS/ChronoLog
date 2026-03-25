@@ -9,6 +9,13 @@ import type { CategoryRule } from '../types';
 
 const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
 
+function parseKeywords(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
+}
+
 export function Categories() {
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -18,11 +25,21 @@ export function Categories() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { messages, flash, dismiss } = useFlash();
 
+const categories = [
+  'Work',
+  'Study',
+  'Entertainment',
+  'Communication',
+  'Utilities',
+  'Uncategorized',
+  'ChronoLog',
+];
+
   useEffect(() => {
     api.getCategoryRules().then(setRules).catch(() => flash('error', 'Failed to load category rules'));
   }, []);
 
-  const categories = ['Work', 'Study', 'Entertainment', 'Communication', 'Utilities', 'Uncategorized'];
+ 
 
   async function confirmDelete() {
     if (!deletingId) return;
@@ -53,15 +70,25 @@ export function Categories() {
 
   async function handleSaveEdit() {
     if (!editingId) return;
+
+    const parsedKeywords = parseKeywords(draft.keywords);
+
+    if (!draft.isAutomatic && parsedKeywords.length === 0) {
+      flash('warning', 'Manual rules must include at least one keyword');
+      return;
+    }
+
     try {
       const patch = {
         category: draft.category,
-        keywords: draft.keywords ? draft.keywords.split(',').map((k) => k.trim()).filter(Boolean) : [],
+        keywords: draft.isAutomatic ? [] : parsedKeywords,
         isAutomatic: draft.isAutomatic,
       };
+
       const updated = await api.updateCategoryRule(editingId, patch);
       setRules((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
       setEditingId(null);
+      setDraft({ ...EMPTY_DRAFT });
       flash('success', 'Rule updated successfully');
     } catch {
       flash('error', 'Failed to update rule');
@@ -73,13 +100,22 @@ export function Categories() {
       flash('warning', 'Application name is required');
       return;
     }
+
+    const parsedKeywords = parseKeywords(draft.keywords);
+
+    if (!draft.isAutomatic && parsedKeywords.length === 0) {
+      flash('warning', 'Manual rules must include at least one keyword');
+      return;
+    }
+
     try {
       const created = await api.createCategoryRule({
         appName: draft.appName.trim(),
         category: draft.category,
-        keywords: draft.keywords ? draft.keywords.split(',').map((k) => k.trim()).filter(Boolean) : [],
+        keywords: draft.isAutomatic ? [] : parsedKeywords,
         isAutomatic: draft.isAutomatic,
       });
+
       setRules((prev) => [...prev, created]);
       setIsAdding(false);
       setDraft({ ...EMPTY_DRAFT });
@@ -185,7 +221,7 @@ export function Categories() {
                         placeholder="Application name"
                         value={draft.appName}
                         onChange={(e) => setDraft((d) => ({ ...d, appName: e.target.value }))}
-                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                       />
                     </td>
                     <td className="px-5 py-3">
@@ -202,16 +238,27 @@ export function Categories() {
                     <td className="px-5 py-3">
                       <input
                         type="text"
-                        placeholder="keyword1, keyword2"
+                        placeholder={draft.isAutomatic ? 'Not used for automatic rules' : 'e.g. googledocs, youtube'}
                         value={draft.keywords}
                         onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
-                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                        disabled={draft.isAutomatic}
+                        className={`w-full px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:border-indigo-500 ${
+                          draft.isAutomatic
+                            ? 'bg-white/5 border-white/5 text-gray-500 placeholder-gray-600 cursor-not-allowed'
+                            : 'bg-black border-white/10 text-white placeholder-gray-600'
+                        }`}
                       />
                     </td>
                     <td className="px-5 py-3">
                       <select
                         value={draft.isAutomatic ? 'auto' : 'manual'}
-                        onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            isAutomatic: e.target.value === 'auto',
+                            keywords: e.target.value === 'auto' ? '' : d.keywords,
+                          }))
+                        }
                         className="px-2 py-0.5 bg-black border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
                       >
                         <option value="auto">Automatic</option>
@@ -272,8 +319,13 @@ export function Categories() {
                             type="text"
                             value={draft.keywords}
                             onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
-                            placeholder="keyword1, keyword2"
-                            className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                            placeholder={draft.isAutomatic ? 'Not used for automatic rules' : 'e.g. googledocs, youtube'}
+                            disabled={draft.isAutomatic}
+                            className={`w-full px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:border-indigo-500 ${
+                              draft.isAutomatic
+                                ? 'bg-white/5 border-white/5 text-gray-500 placeholder-gray-600 cursor-not-allowed'
+                                : 'bg-white/5 border-white/10 text-white placeholder-gray-600'
+                            }`}
                           />
                         ) : (
                           <span className="text-xs text-white">
@@ -285,7 +337,13 @@ export function Categories() {
                         {isEditing ? (
                           <select
                             value={draft.isAutomatic ? 'auto' : 'manual'}
-                            onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
+                            onChange={(e) =>
+                              setDraft((d) => ({
+                                ...d,
+                                isAutomatic: e.target.value === 'auto',
+                                keywords: e.target.value === 'auto' ? '' : d.keywords,
+                              }))
+                            }
                             className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
                           >
                             <option value="auto">Automatic</option>
@@ -352,11 +410,11 @@ export function Categories() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-white mb-1">How Category Rules Work</h3>
-              <p className="text-xs -text-white leading-relaxed">
-                <strong className="text-white">Automatic rules</strong> are applied based on the application name alone.
-                <strong className="text-white"> Manual rules</strong> use keywords to categorize based on window titles or URLs
-                (useful for browsers). ChronoLog will automatically learn your preferences over time
-                and suggest new rules based on your usage patterns.
+              <p className="text-xs text-white leading-relaxed">
+                <strong className="text-white">Automatic rules</strong> set the default category for an application.
+                <strong className="text-white"> Manual rules</strong> act as overrides for that application when keywords match the
+                page title, URL, or site name. For example, you can set Firefox to Entertainment by default, but use a manual
+                keyword like <span className="text-white">googledocs</span> to classify Google Docs as Work.
               </p>
             </div>
           </div>

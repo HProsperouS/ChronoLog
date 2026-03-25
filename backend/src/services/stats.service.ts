@@ -16,6 +16,10 @@ function emptyTotals(): Record<Category, number> {
   return Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>;
 }
 
+function analyticsOnly(activities: Activity[]): Activity[] {
+  return activities.filter((a) => !a.excludeFromAnalytics);
+}
+
 /** Local calendar step for YYYY-MM-DD (matches frontend `addDaysYmd`; avoids UTC `toISOString` day shifts). */
 function addDaysYmd(ymd: string, deltaDays: number): string {
   const d = new Date(`${ymd}T12:00:00`);
@@ -220,19 +224,19 @@ function buildDailyStats(date: string, activities: Activity[], topAppsLimit = 6)
 }
 
 export function getDailyStats(date: string): DailyStats {
-  const activities = readRange(date, date);
+  const activities = analyticsOnly(readRange(date, date));
   return buildDailyStats(date, activities);
 }
 
 /** Full stats + fragmentation for insights Lambda only (not exposed on `/api/stats`). */
 export function getInsightsLambdaStats(date: string): InsightsLambdaStatsPayload {
-  const activities = readRange(date, date);
+  const activities = analyticsOnly(readRange(date, date));
   const base = buildDailyStats(date, activities);
   return { ...base, ...computeInsightMetrics(activities) };
 }
 
 export function getWeeklyStats(from: string, to: string): DailyStats[] {
-  const activities = readRange(from, to);
+  const activities = analyticsOnly(readRange(from, to));
 
   const byDate = new Map<string, Activity[]>();
   for (const a of activities) {

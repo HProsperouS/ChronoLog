@@ -52,6 +52,54 @@ function getDataDir(): string {
     : path.join(app.getPath('userData'), 'data');
 }
 
+type AppSettings = {
+  launchAtStartup?: boolean;
+  runInBackground?: boolean;
+};
+
+function readAppSettingsFromFile(): AppSettings {
+  try {
+    const settingsPath = path.join(getDataDir(), 'settings.json');
+    const raw = fs.readFileSync(settingsPath, 'utf8');
+    const parsed = JSON.parse(raw) as { settings?: AppSettings };
+    return parsed?.settings ?? {};
+  } catch (err) {
+    console.warn('[electron] readAppSettingsFromFile failed:', (err as Error).message);
+    return {};
+  }
+}
+
+function syncLaunchAtStartupFromSettingsFile(): void {
+  // Electron login-item control is OS-level (Login Items / Startup).
+  // We read the same backend settings.json that the UI toggles so the
+  // switch actually takes effect.
+  if (!app.setLoginItemSettings) return;
+  if (process.platform !== 'darwin' && process.platform !== 'win32') return;
+
+  try {
+    const { launchAtStartup, runInBackground } = readAppSettingsFromFile();
+    const enabled = launchAtStartup;
+    if (typeof enabled !== 'boolean') return;
+
+    if (process.platform === 'darwin') {
+      app.setLoginItemSettings({
+        openAtLogin: enabled,
+        // If user wants background mode, also prefer a hidden login launch.
+        openAsHidden: Boolean(runInBackground),
+        // Mark login launches so we can decide whether to show the window.
+        args: ['--started-at-login'],
+      });
+    } else {
+      app.setLoginItemSettings({
+        openAtLogin: enabled,
+      });
+    }
+    console.log(`[electron] launchAtStartup sync → ${enabled}`);
+  } catch (err) {
+    console.warn('[electron] syncLaunchAtStartup failed:', (err as Error).message);
+  }
+}
+
 function getNodeExec(): string {
   return process.env.npm_node_execpath || 'node';
 }
@@ -217,8 +265,27 @@ function startTracker(): void {
 
 // ─── Main window ──────────────────────────────────────────────────────────────
 
-function createWindow(): void {
+function shouldStartHidden(): boolean {
+  if (process.platform !== 'darwin') return false;
+
+  const { runInBackground } = readAppSettingsFromFile();
+  if (!runInBackground) return false;
+
+  // Prefer explicit argv marker; fallback to OS-provided flag.
+  if (process.argv.includes('--started-at-login')) return true;
+  try {
+    if (typeof app.getLoginItemSettings === 'function') {
+      return Boolean(app.getLoginItemSettings().wasOpenedAtLogin);
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+function createWindow(options?: { startHidden?: boolean }): void {
   const winIcon = resolveWindowIconPath();
+  const startHidden = Boolean(options?.startHidden);
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -226,7 +293,7 @@ function createWindow(): void {
     minHeight: 640,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#0a0a0f',
-    show: false, // show after ready-to-show
+    show: false, // show after ready-to-show (unless we want hidden startup)
     icon: fs.existsSync(winIcon) ? winIcon : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -251,7 +318,9 @@ function createWindow(): void {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
+    if (!startHidden) {
+      mainWindow?.show();
+    }
   });
 
   // Hide to tray instead of closing
@@ -322,8 +391,12 @@ app.whenReady().then(async () => {
 
   setupApplicationMenu();
   await startBackend();
+
+  // Ensure the OS-level auto-start matches the user's setting.
+  syncLaunchAtStartupFromSettingsFile();
+
   startTracker();
-  createWindow();
+  createWindow({ startHidden: shouldStartHidden() });
 
   if (mainWindow) setupTray(mainWindow);
 

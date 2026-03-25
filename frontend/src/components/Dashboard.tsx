@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useNavigate } from 'react-router';
 import * as api from '../api';
 import { categoryColors } from '../constants';
-import { todayStr, formatDuration, addDaysYmd } from '../utils';
+import { todayStr, formatDuration, addDaysYmd, startOfWeekMonday, endOfWeekSunday, formatCalendarWeekRange } from '../utils';
 import type { DailyStats } from '../types';
 
 /** Trend badge: % change vs yesterday (higher curr = positive arrow). */
@@ -30,10 +30,12 @@ export function Dashboard() {
     const fetch = () => {
       const today = todayStr();
       const yest  = addDaysYmd(today, -1);
+      const weekStart = startOfWeekMonday(today);
+      const weekEnd = endOfWeekSunday(weekStart);
       void Promise.all([
         api.getDailyStats(today),
         api.getDailyStats(yest).catch(() => null),
-        api.getWeeklyStats(),
+        api.getWeeklyStatsRange(weekStart, weekEnd),
       ]).then(([d, y, w]) => {
         setDaily(d);
         setYesterdayDaily(y);
@@ -62,17 +64,23 @@ export function Dashboard() {
     return <div className="flex-1 bg-[#0a0a0f] flex items-center justify-center"><p className="text-gray-500 text-sm">Loading...</p></div>;
   }
 
+  const weekStart = startOfWeekMonday(todayStr());
+  const weekEnd = endOfWeekSunday(weekStart);
+  const calendarWeekLabel = formatCalendarWeekRange(weekStart, weekEnd);
+
   const pieData = Object.entries(daily.categoryTotals)
     .filter(([, v]) => v > 0)
     .map(([name, value]) => ({ name, value }));
 
-  const weeklyBarData = weekly.map((d) => ({
-    day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-    Work:          d.categoryTotals.Work,
-    Study:         d.categoryTotals.Study,
-    Entertainment: d.categoryTotals.Entertainment,
-    Communication: d.categoryTotals.Communication,
-  }));
+  const weeklyBarData = [...weekly]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((d) => ({
+      day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+      Work:          d.categoryTotals.Work,
+      Study:         d.categoryTotals.Study,
+      Entertainment: d.categoryTotals.Entertainment,
+      Communication: d.categoryTotals.Communication,
+    }));
 
   const productiveTime = daily.categoryTotals.Work + daily.categoryTotals.Study;
   const mostUsed = daily.topApps[0]?.appName ?? '—';
@@ -151,7 +159,8 @@ export function Dashboard() {
 
           {/* Weekly Activity */}
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-white mb-4">Weekly Activity</h2>
+            <h2 className="text-sm font-semibold text-white mb-1">Weekly Activity</h2>
+            <p className="text-xs text-gray-500 mb-4">{calendarWeekLabel}</p>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={weeklyBarData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />

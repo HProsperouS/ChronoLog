@@ -84,25 +84,6 @@ export function Sidebar({ className = '', collapsed = false, onToggle, onMobileC
           })}
         </ul>
       </nav>
-
-      {/* Footer - User profile */}
-      {!collapsed && (
-        <div className="p-4 border-t border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[11px] font-semibold text-white">
-              U
-            </div>
-            <div className="min-w-0">
-              <p className="text-[12px] font-semibold text-white truncate">
-                User Name
-              </p>
-              <p className="text-[11px] text-gray-500 truncate">
-                user@example.com
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -8,12 +8,8 @@ import type {
   InsightsLambdaStatsPayload,
 } from '../types';
 
-const CATEGORIES: Category[] = [
-  'Work', 'Study', 'Entertainment', 'Communication', 'Utilities', 'Uncategorized',
-];
-
-function emptyTotals(): Record<Category, number> {
-  return Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>;
+function emptyTotals(): Record<string, number> {
+  return {};
 }
 
 function analyticsOnly(activities: Activity[]): Activity[] {
@@ -200,17 +196,30 @@ function computeInsightMetrics(activities: Activity[]): {
 }
 
 function buildDailyStats(date: string, activities: Activity[], topAppsLimit = 6): DailyStats {
-  const categoryTotals = emptyTotals();
+  const categoryTotals: Record<string, number> = emptyTotals();
   let longestSession = 0;
+
   for (const a of activities) {
-    categoryTotals[a.category] += a.duration;
+    categoryTotals[a.category] = (categoryTotals[a.category] ?? 0) + a.duration;
     if (a.duration > longestSession) longestSession = a.duration;
   }
 
   const totalTime = Object.values(categoryTotals).reduce((s, v) => s + v, 0);
-  const productiveTime = categoryTotals.Work + categoryTotals.Study;
+  const productiveTime = (categoryTotals.Work ?? 0) + (categoryTotals.Study ?? 0);
   const switches = countContextSwitches(activities);
   const focusScore = calcFocusScore(productiveTime, totalTime, switches, longestFocusBlockMins(activities));
+
+
+  // console.log('[stats] buildDailyStats', {
+  //   date,
+  //   activities: activities.map((a) => ({
+  //     date: a.date,
+  //     appName: a.appName,
+  //     category: a.category,
+  //     duration: a.duration,
+  //   })),
+  //   categoryTotals,
+  // });
 
   return {
     date,
@@ -252,5 +261,14 @@ export function getWeeklyStats(from: string, to: string): DailyStats[] {
     cur = addDaysYmd(cur, 1);
   }
 
+  // console.log('[stats] getWeeklyStats', {
+  //   from,
+  //   to,
+  //   byDateKeys: [...byDate.keys()],
+  //   result: result.map((r) => ({
+  //     date: r.date,
+  //     categoryTotals: r.categoryTotals,
+  //   })),
+  // });
   return result;
 }

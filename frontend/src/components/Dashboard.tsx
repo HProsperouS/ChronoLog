@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Clock, TrendingUp, Target, Zap } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -18,6 +18,30 @@ function trendVsYesterday(curr: number, prev: number): { value: string; isPositi
   const pct = ((c - p) / p) * 100;
   if (!Number.isFinite(pct)) return undefined;
   return { value: `${Math.abs(Math.round(pct))}%`, isPositive: pct >= 0 };
+}
+
+const BUILT_IN_CATEGORY_ORDER = [
+  'Work',
+  'Study',
+  'Entertainment',
+  'Communication',
+  'Utilities',
+  'ChronoLog',
+  'Uncategorized',
+] as const;
+
+function colorFromCategoryName(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 60% 55%)`;
+}
+
+function getCategoryColor(category: string): string {
+  return categoryColors[category] ?? colorFromCategoryName(category);
 }
 
 export function Dashboard() {
@@ -47,6 +71,41 @@ export function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
+    const weeklyCategoryMeta = useMemo(() => {
+      const totals = new Map<string, number>();
+
+      for (const day of weekly) {
+        for (const [category, minutes] of Object.entries(day.categoryTotals ?? {})) {
+          const safeMinutes = minutes ?? 0;
+          totals.set(category, (totals.get(category) ?? 0) + safeMinutes);
+        }
+      }
+
+    const sortedCategories = Array.from(totals.entries())
+      .filter(([, minutes]) => minutes > 0)
+      .sort((a, b) => {
+        const aBuiltInIndex = BUILT_IN_CATEGORY_ORDER.indexOf(a[0] as (typeof BUILT_IN_CATEGORY_ORDER)[number]);
+        const bBuiltInIndex = BUILT_IN_CATEGORY_ORDER.indexOf(b[0] as (typeof BUILT_IN_CATEGORY_ORDER)[number]);
+
+        const aIsBuiltIn = aBuiltInIndex !== -1;
+        const bIsBuiltIn = bBuiltInIndex !== -1;
+
+        if (aIsBuiltIn && bIsBuiltIn) return aBuiltInIndex - bBuiltInIndex;
+        if (aIsBuiltIn) return -1;
+        if (bIsBuiltIn) return 1;
+
+        return b[1] - a[1];
+      });
+
+    const MAX_VISIBLE_CATEGORIES = 6;
+    const visibleCategories = sortedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(([category]) => category);
+    const hiddenCategories = sortedCategories.slice(MAX_VISIBLE_CATEGORIES).map(([category]) => category);
+
+    return {
+      visibleCategories,
+      hiddenCategories,
+    };
+  }, [weekly]);
 
   const renderPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
@@ -74,15 +133,30 @@ export function Dashboard() {
 
   const weeklyBarData = [...weekly]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((d) => ({
-      day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
-      Work:          d.categoryTotals.Work,
-      Study:         d.categoryTotals.Study,
-      Entertainment: d.categoryTotals.Entertainment,
-      Communication: d.categoryTotals.Communication,
-    }));
+    .map((d) => {
+      const row: Record<string, string | number> = {
+        day: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+      };
 
-  const productiveTime = daily.categoryTotals.Work + daily.categoryTotals.Study;
+      for (const category of weeklyCategoryMeta.visibleCategories) {
+        row[category] = d.categoryTotals?.[category] ?? 0;
+      }
+
+      if (weeklyCategoryMeta.hiddenCategories.length > 0) {
+        row.Other = weeklyCategoryMeta.hiddenCategories.reduce(
+          (sum, category) => sum + (d.categoryTotals?.[category] ?? 0),
+          0
+        );
+      }
+
+      return row;
+    });
+
+  console.log('[Dashboard] weekly', weekly);
+  console.log('[Dashboard] weeklyCategoryMeta', weeklyCategoryMeta);
+  console.log('[Dashboard] weeklyBarData', weeklyBarData);
+
+  const productiveTime = (daily.categoryTotals.Work ?? 0) + (daily.categoryTotals.Study ?? 0);
   const mostUsed = daily.topApps[0]?.appName ?? '—';
 
   function trendWithYesterday(curr: number, prev: number) {
@@ -93,7 +167,7 @@ export function Dashboard() {
   const productiveTrend = yesterdayDaily
     ? trendWithYesterday(
         productiveTime,
-        yesterdayDaily.categoryTotals.Work + yesterdayDaily.categoryTotals.Study,
+        (yesterdayDaily.categoryTotals.Work ?? 0) + (yesterdayDaily.categoryTotals.Study ?? 0),
       )
     : undefined;
   const focusTrend = yesterdayDaily
@@ -103,6 +177,8 @@ export function Dashboard() {
     ? trendWithYesterday(daily.longestSession, yesterdayDaily.longestSession)
     : undefined;
 
+
+  console.log('[Dashboard] weeklyBarData', weeklyBarData);
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       {/* Header */}
@@ -149,7 +225,7 @@ export function Dashboard() {
                   onClick={() => navigate('/activity')} cursor="pointer"
                 >
                   {pieData.map((entry, i) => (
-                    <Cell key={i} fill={categoryColors[entry.name]} className="hover:opacity-80 transition-opacity" />
+                    <Cell key={i} fill={getCategoryColor(entry.name)} className="hover:opacity-80 transition-opacity" />
                   ))}
                 </Pie>
                 <Tooltip content={renderPieTooltip} />
@@ -166,15 +242,59 @@ export function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="day" stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
                 <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => formatDuration(v)}
-                  contentStyle={{ backgroundColor: '#13131a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                  labelStyle={{ color: '#fff' }}
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+
+                    console.log('[Dashboard][Weekly Tooltip]', {
+                      label,
+                      payload: payload.map((p) => ({
+                        name: p.name,
+                        dataKey: p.dataKey,
+                        value: p.value,
+                        color: p.color,
+                        payload: p.payload,
+                      })),
+                    });
+
+                    return (
+                      <div className="bg-[#111827] border border-white/10 rounded-lg px-3 py-2 text-xs text-white shadow-lg">
+                        <div className="font-semibold mb-2">{label}</div>
+                        {payload.map((p, i) => (
+                          <div key={i} className="flex items-center justify-between gap-4">
+                            <span>{String(p.name)}</span>
+                            <span>{formatDuration(Number(p.value ?? 0))}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} iconType="circle" />
-                <Bar dataKey="Work"          stackId="a" fill={categoryColors.Work}          radius={[0,0,0,0]} />
-                <Bar dataKey="Study"         stackId="a" fill={categoryColors.Study}         radius={[0,0,0,0]} />
-                <Bar dataKey="Entertainment" stackId="a" fill={categoryColors.Entertainment} radius={[0,0,0,0]} />
-                <Bar dataKey="Communication" stackId="a" fill={categoryColors.Communication} radius={[4,4,0,0]} />
+                {weeklyCategoryMeta.visibleCategories.map((category, index) => {
+                  const isLastVisible =
+                    index === weeklyCategoryMeta.visibleCategories.length - 1 &&
+                    weeklyCategoryMeta.hiddenCategories.length === 0;
+
+                  return (
+                    <Bar
+                      key={category}
+                      dataKey={category}
+                      stackId="a"
+                      fill={getCategoryColor(category)}
+                      radius={isLastVisible ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    />
+                  );
+                })}
+
+                {weeklyCategoryMeta.hiddenCategories.length > 0 && (
+                  <Bar
+                    dataKey="Other"
+                    stackId="a"
+                    fill="#9ca3af"
+                    radius={[4, 4, 0, 0]}
+                  />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -190,7 +310,7 @@ export function Dashboard() {
                 <div key={i} className="group">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: categoryColors[app.category] }} />
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(app.category) }} />
                       <span className="text-sm font-medium text-white">{app.appName}</span>
                       <span className="text-xs text-gray-500">{app.category}</span>
                     </div>
@@ -198,7 +318,7 @@ export function Dashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 bg-white/5 rounded-full h-1.5 overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${percentage}%`, backgroundColor: categoryColors[app.category] }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${percentage}%`, backgroundColor: getCategoryColor(app.category) }} />
                     </div>
                     <span className="text-xs text-gray-600 w-10 text-right">{percentage.toFixed(0)}%</span>
                   </div>

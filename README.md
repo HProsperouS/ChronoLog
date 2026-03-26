@@ -659,7 +659,7 @@ Singapore market indicator: 140,000+ tertiary students, 86% rely on laptops/desk
 - Orvin Wirawan
 - JiaJun Liu
 - Jeremy Tan
-- Steven Nathenial
+- Steven Nathaniel
 
 ---
 

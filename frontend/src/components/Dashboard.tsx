@@ -4,7 +4,7 @@ import { StatCard } from './StatCard';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router';
 import * as api from '../api';
-import { categoryColors } from '../constants';
+import { getCategoryColor } from '../constants';
 import { todayStr, formatDuration, addDaysYmd, startOfWeekMonday, endOfWeekSunday, formatCalendarWeekRange } from '../utils';
 import type { DailyStats } from '../types';
 
@@ -40,9 +40,10 @@ function colorFromCategoryName(name: string): string {
   return `hsl(${hue} 60% 55%)`;
 }
 
-function getCategoryColor(category: string): string {
+function getDashboardCategoryColor(category: string): string {
   if (category === 'Other') return '#9ca3af';
-  return categoryColors[category] ?? colorFromCategoryName(category);
+  const resolved = getCategoryColor(category);
+  return resolved ?? colorFromCategoryName(category);
 }
 
 export function Dashboard() {
@@ -111,7 +112,7 @@ export function Dashboard() {
   const renderPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     const { name, value } = payload[0] as { name: string; value: number };
-    const color = getCategoryColor(name);
+    const color = getDashboardCategoryColor(name);
     return (
       <div style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 8px', fontSize: 12 }}>
         <div style={{ color }}>{name}</div>
@@ -259,7 +260,7 @@ export function Dashboard() {
                       {pieData.map((entry, i) => (
                         <Cell
                           key={i}
-                          fill={getCategoryColor(entry.name)}
+                          fill={getDashboardCategoryColor(entry.name)}
                           className="hover:opacity-80 transition-opacity"
                         />
                       ))}
@@ -275,7 +276,7 @@ export function Dashboard() {
                     <div className="flex items-center gap-2 min-w-0">
                       <span
                         className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: getCategoryColor(entry.name) }}
+                        style={{ backgroundColor: getDashboardCategoryColor(entry.name) }}
                       />
                       <span className="text-gray-300 truncate">{entry.name}</span>
                     </div>
@@ -337,7 +338,7 @@ export function Dashboard() {
                       key={category}
                       dataKey={category}
                       stackId="a"
-                      fill={getCategoryColor(category)}
+                      fill={getDashboardCategoryColor(category)}
                       radius={isLastVisible ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                     />
                   );
@@ -366,7 +367,7 @@ export function Dashboard() {
                 <div key={i} className="group">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(app.category) }} />
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getDashboardCategoryColor(app.category) }} />
                       <span className="text-sm font-medium text-white">{app.appName}</span>
                       <span className="text-xs text-gray-500">{app.category}</span>
                     </div>
@@ -374,7 +375,7 @@ export function Dashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 bg-white/5 rounded-full h-1.5 overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${percentage}%`, backgroundColor: getCategoryColor(app.category) }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${percentage}%`, backgroundColor: getDashboardCategoryColor(app.category) }} />
                     </div>
                     <span className="text-xs text-gray-600 w-10 text-right">{percentage.toFixed(0)}%</span>
                   </div>

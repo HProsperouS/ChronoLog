@@ -89,6 +89,7 @@ export function listRules(): CategoryRule[] {
   return readRules();
 }
 
+// Rules CRUD
 export function createRule(body: CreateCategoryRuleBody): CategoryRule {
   const rules = readRules();
 

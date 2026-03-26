@@ -287,5 +287,14 @@
       "zoom",
       "weekly sync"
     ]
+  },
+  {
+    "id": "1774513901971",
+    "appName": "Test",
+    "category": "test",
+    "isAutomatic": false,
+    "keywords": [
+      "test"
+    ]
   }
 ]

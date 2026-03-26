@@ -3,7 +3,7 @@ import { Calendar, Clock, Filter } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import * as api from '../api';
-import { categoryColors } from '../constants';
+import { getCategoryColor } from '../constants';
 import { dateStr, todayStr, formatDuration } from '../utils';
 import type { Activity } from '../types';
 
@@ -557,7 +557,7 @@ const timeTicks = Array.from(
             {filteredActivities.map((activity, index) => (
               <div key={activity.id} className="flex gap-4">
                 <div className="flex flex-col items-center pt-1">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categoryColors[activity.category] }} />
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getCategoryColor(activity.category) }} />
                   {index < filteredActivities.length - 1 && <div className="w-px flex-1 bg-white/5 my-1" style={{ minHeight: '50px' }} />}
                 </div>
                 <div className="flex-1 pb-5">
@@ -566,7 +566,7 @@ const timeTicks = Array.from(
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-sm font-semibold text-white">{activity.appName}</h3>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-medium text-white" style={{ backgroundColor: categoryColors[activity.category] }}>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-medium text-white" style={{ backgroundColor: getCategoryColor(activity.category) }}>
                             {activity.category}
                           </span>
                         </div>
@@ -579,7 +579,7 @@ const timeTicks = Array.from(
                     </div>
                     <div className="mt-3">
                       <div className="bg-white/5 rounded-full h-1 overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${(activity.duration / maxDuration) * 100}%`, backgroundColor: categoryColors[activity.category] }} />
+                        <div className="h-full rounded-full transition-all" style={{ width: `${(activity.duration / maxDuration) * 100}%`, backgroundColor: getCategoryColor(activity.category) }} />
                       </div>
                     </div>
                   </div>

@@ -10,7 +10,7 @@ import {
   endOfWeekSunday,
   formatCalendarWeekRange,
 } from '../utils';
-import { categoryColors } from '../constants';
+import { getCategoryColor } from '../constants';
 import type { Insight, DailyStats } from '../types';
 
 type SummaryMode = 'daily' | 'weekly';
@@ -49,8 +49,8 @@ function colorFromCategoryName(name: string): string {
   return `hsl(${hue} 60% 55%)`;
 }
 
-function getCategoryColor(category: string): string {
-  return categoryColors[category] ?? colorFromCategoryName(category) ?? DEFAULT_DYNAMIC_CATEGORY_COLOR;
+function getInsightCategoryColor(category: string): string {
+  return getCategoryColor(category) ?? colorFromCategoryName(category) ?? DEFAULT_DYNAMIC_CATEGORY_COLOR;
 }
 
 
@@ -511,7 +511,7 @@ export function Insights() {
                     dataKey={category}
                     stackId="1"
                     stroke="none"
-                    fill={getCategoryColor(category)}
+                    fill={getInsightCategoryColor(category)}
                     fillOpacity={0.85}
                   />
                 ))}

@@ -4,10 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
-import { categoryColors, DEFAULT_CATEGORY_COLOR } from '../constants';
+import { getCategoryColor, setCategoryColor, DEFAULT_CATEGORY_COLOR } from '../constants';
 import type { CategoryRule } from '../types';
 
-const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
+const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false, color: DEFAULT_CATEGORY_COLOR };
 const CUSTOM_CATEGORY_VALUE = '__custom__';
 
 function parseKeywords(raw: string): string[] {
@@ -38,6 +38,7 @@ export function Categories() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
+  const [draftColor, setDraftColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { messages, flash, dismiss } = useFlash();
@@ -97,8 +98,10 @@ const categories = useMemo(() => {
       category: isDefaultCategory ? rule.category : CUSTOM_CATEGORY_VALUE,
       keywords: rule.keywords?.join(', ') ?? '',
       isAutomatic: rule.isAutomatic,
+      color: getCategoryColor(rule.category),
     });
 
+    setDraftColor(getCategoryColor(rule.category));
     setCustomCategoryInput(isDefaultCategory ? '' : rule.category);
 
     setEditingId(id);
@@ -128,10 +131,15 @@ const categories = useMemo(() => {
         isAutomatic: draft.isAutomatic,
       };
 
+      if (draftColor) {
+        setCategoryColor(resolvedCategory, draftColor);
+      }
+
       const updated = await api.updateCategoryRule(editingId, patch);
       setRules((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
       setEditingId(null);
       setDraft({ ...EMPTY_DRAFT });
+      setDraftColor(DEFAULT_CATEGORY_COLOR);
       setCustomCategoryInput('');
       flash('success', 'Rule updated successfully');
     } catch {
@@ -159,6 +167,10 @@ const categories = useMemo(() => {
     }
 
     try {
+      if (draftColor) {
+        setCategoryColor(resolvedCategory, draftColor);
+      }
+
       const created = await api.createCategoryRule({
         appName: draft.appName.trim(),
         category: resolvedCategory,
@@ -169,6 +181,7 @@ const categories = useMemo(() => {
       setRules((prev) => [...prev, created]);
       setIsAdding(false);
       setDraft({ ...EMPTY_DRAFT });
+      setDraftColor(DEFAULT_CATEGORY_COLOR);
       setCustomCategoryInput('');
       flash('success', `Rule for "${created.appName}" added`);
     } catch {
@@ -180,11 +193,13 @@ const categories = useMemo(() => {
     setEditingId(null);
     setIsAdding(false);
     setDraft({ ...EMPTY_DRAFT });
+    setDraftColor(DEFAULT_CATEGORY_COLOR);
     setCustomCategoryInput('');
   }
 
   function handleStartAdd() {
     setDraft({ ...EMPTY_DRAFT });
+    setDraftColor(getCategoryColor(EMPTY_DRAFT.category));
     setCustomCategoryInput('');
     setEditingId(null);
     setIsAdding(true);
@@ -224,7 +239,7 @@ const categories = useMemo(() => {
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-3 h-3 rounded"
-                      style={{ backgroundColor: categoryColors[category] ?? DEFAULT_CATEGORY_COLOR }}
+                      style={{ backgroundColor: getCategoryColor(category) }}
                     />
                     <div>
                       <p className="text-sm font-semibold text-white">{category}</p>
@@ -281,12 +296,18 @@ const categories = useMemo(() => {
                       <div className="space-y-2">
                         <select
                           value={draft.category}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = e.target.value as CategoryRule['category'];
                             setDraft((d) => ({
                               ...d,
-                              category: e.target.value as CategoryRule['category'],
-                            }))
-                          }
+                              category: value,
+                            }));
+                            if (value === CUSTOM_CATEGORY_VALUE) {
+                              setDraftColor(DEFAULT_CATEGORY_COLOR);
+                            } else {
+                              setDraftColor(getCategoryColor(value));
+                            }
+                          }}
                           className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                         >
                           {categories.map((cat) => (
@@ -306,6 +327,22 @@ const categories = useMemo(() => {
                             className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                           />
                         )}
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={draftColor}
+                            onChange={(e) => setDraftColor(e.target.value)}
+                            className="w-8 h-8 rounded-lg border border-white/20"
+                          />
+                          <input
+                            type="text"
+                            value={draftColor}
+                            onChange={(e) => setDraftColor(e.target.value)}
+                            className="w-24 px-2 py-1 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none"
+                          />
+                          <span className="text-xs text-gray-300">Category color</span>
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-3">
@@ -370,12 +407,18 @@ const categories = useMemo(() => {
                           <div className="space-y-2">
                             <select
                               value={draft.category}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const value = e.target.value as CategoryRule['category'];
                                 setDraft((d) => ({
                                   ...d,
-                                  category: e.target.value as CategoryRule['category'],
-                                }))
-                              }
+                                  category: value,
+                                }));
+                                if (value === CUSTOM_CATEGORY_VALUE) {
+                                  setDraftColor(DEFAULT_CATEGORY_COLOR);
+                                } else {
+                                  setDraftColor(getCategoryColor(value));
+                                }
+                              }}
                               className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
                             >
                               {categories.map((cat) => (
@@ -395,12 +438,28 @@ const categories = useMemo(() => {
                                 className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                               />
                             )}
+
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={draftColor}
+                                onChange={(e) => setDraftColor(e.target.value)}
+                                className="w-8 h-8 rounded-lg border border-white/20"
+                              />
+                              <input
+                                type="text"
+                                value={draftColor}
+                                onChange={(e) => setDraftColor(e.target.value)}
+                                className="w-24 px-2 py-1 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none"
+                              />
+                              <span className="text-xs text-gray-300">Category color</span>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <div
                               className="w-2 h-2 rounded"
-                              style={{ backgroundColor: categoryColors[rule.category] ?? DEFAULT_CATEGORY_COLOR }}
+                              style={{ backgroundColor: getCategoryColor(rule.category) }}
                             />
                             <span className="text-xs text-white">{rule.category}</span>
                           </div>

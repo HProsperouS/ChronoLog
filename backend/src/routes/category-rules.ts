@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import * as CategoryService from '../services/category.service';
-import type { CreateCategoryRuleBody, UpdateCategoryRuleBody } from '../types';
+import type { Category, CreateCategoryRuleBody, UpdateCategoryRuleBody } from '../types';
 
 
 function normalizeKeywords(values?: string[]): string[] {

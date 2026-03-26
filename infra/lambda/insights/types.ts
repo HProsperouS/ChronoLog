@@ -1,13 +1,7 @@
 /**
  * Keep in sync with backend insights payload — NOT the public DailyStats API shape.
  */
-export type Category =
-  | 'Work'
-  | 'Study'
-  | 'Entertainment'
-  | 'Communication'
-  | 'Utilities'
-  | 'Uncategorized';
+export type Category = string;
 
 export interface BusiestSwitchWindow {
   windowStartLocal: string;
@@ -26,7 +20,7 @@ export interface FocusSwitchSample {
 /** Public daily stats + fragmentation — same as backend InsightsLambdaStatsPayload */
 export interface InsightsLambdaStatsPayload {
   date: string;
-  categoryTotals: Record<Category, number>;
+  categoryTotals: Record<string, number>;
   totalTime: number;
   focusScore: number;
   contextSwitches: number;

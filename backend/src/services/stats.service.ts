@@ -8,12 +8,22 @@ import type {
   InsightsLambdaStatsPayload,
 } from '../types';
 
-const CATEGORIES: Category[] = [
-  'Work', 'Study', 'Entertainment', 'Communication', 'Utilities', 'Uncategorized',
-];
+function emptyTotals(): Record<string, number> {
+  return {};
+}
 
-function emptyTotals(): Record<Category, number> {
-  return Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>;
+function analyticsOnly(activities: Activity[]): Activity[] {
+  return activities.filter((a) => !a.excludeFromAnalytics);
+}
+
+/** Local calendar step for YYYY-MM-DD (matches frontend `addDaysYmd`; avoids UTC `toISOString` day shifts). */
+function addDaysYmd(ymd: string, deltaDays: number): string {
+  const d = new Date(`${ymd}T12:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 const FOCUS: Category[] = ['Work', 'Study'];
@@ -21,16 +31,84 @@ const FOCUS: Category[] = ['Work', 'Study'];
 /**
  * Same definition everywhere: Dashboard, Insights UI, GET /api/stats, and
  * InsightsLambdaStatsPayload.contextSwitches sent to Lambda.
+ *
+ * Align with the Activity page "Productive ↔ Non-Productive only" mode:
+ * - Sort the full timeline by start time.
+ * - Optionally merge away very short (<1 min) interruptions when the surrounding
+ *   segments have the same productive/non-productive status (noise reduction).
+ * - Count each boundary where productive status flips (bidirectional).
  */
 function countContextSwitches(activities: Activity[]): number {
   const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
-  const IGNORE: Category[] = ['Utilities', 'Uncategorized'];
-  const relevant = sorted.filter((a) => !IGNORE.includes(a.category));
+
+  const isProductive = (category: Category) => FOCUS.includes(category);
+
+  // Mirror the Activity page overview merge to avoid over-counting tiny blips.
+  const contextSwitchMinMinutes = 1;
+  type TimelineBar = Activity & { isProductive: boolean; visibleDuration: number };
+
+  const timelineRaw: TimelineBar[] = sorted.map((a) => ({
+    ...a,
+    isProductive: isProductive(a.category),
+    visibleDuration: a.duration,
+  }));
+
+  const shouldMergeForOverview = (
+    prev: TimelineBar,
+    current: TimelineBar,
+    next: TimelineBar | undefined,
+  ) => {
+    if (!next) return false;
+    if (current.visibleDuration >= contextSwitchMinMinutes) return false;
+    return prev.isProductive === next.isProductive;
+  };
+
+  const mergeTimelineForOverview = (items: TimelineBar[]): TimelineBar[] => {
+    if (items.length <= 1) return items;
+    let working = [...items];
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      const nextPass: TimelineBar[] = [];
+
+      for (let i = 0; i < working.length; i++) {
+        const prev = nextPass[nextPass.length - 1];
+        const current = working[i];
+        const next = working[i + 1];
+
+        if (!prev || !next) {
+          nextPass.push(current);
+          continue;
+        }
+
+        if (shouldMergeForOverview(prev, current, next)) {
+          nextPass[nextPass.length - 1] = {
+            ...prev,
+            // Keep category/appName stable (use prev), just extend duration.
+            duration: prev.duration + current.duration + next.duration,
+            visibleDuration: prev.visibleDuration + current.visibleDuration + next.visibleDuration,
+          };
+          i += 1; // consume `next` as well
+          changed = true;
+        } else {
+          nextPass.push(current);
+        }
+      }
+
+      working = nextPass;
+    }
+
+    return working;
+  };
+
+  const timeline = mergeTimelineForOverview(timelineRaw);
+
   let switches = 0;
-  for (let i = 1; i < relevant.length; i++) {
-    const prev = relevant[i - 1].category;
-    const curr = relevant[i].category;
-    if (FOCUS.includes(prev) && !FOCUS.includes(curr)) switches++;
+  for (let i = 1; i < timeline.length; i++) {
+    const prev = timeline[i - 1];
+    const curr = timeline[i];
+    if (prev.isProductive !== curr.isProductive) switches++;
   }
   return switches;
 }
@@ -183,17 +261,30 @@ function computeInsightMetrics(activities: Activity[]): {
 }
 
 function buildDailyStats(date: string, activities: Activity[], topAppsLimit = 6): DailyStats {
-  const categoryTotals = emptyTotals();
+  const categoryTotals: Record<string, number> = emptyTotals();
   let longestSession = 0;
+
   for (const a of activities) {
-    categoryTotals[a.category] += a.duration;
+    categoryTotals[a.category] = (categoryTotals[a.category] ?? 0) + a.duration;
     if (a.duration > longestSession) longestSession = a.duration;
   }
 
   const totalTime = Object.values(categoryTotals).reduce((s, v) => s + v, 0);
-  const productiveTime = categoryTotals.Work + categoryTotals.Study;
+  const productiveTime = (categoryTotals.Work ?? 0) + (categoryTotals.Study ?? 0);
   const switches = countContextSwitches(activities);
   const focusScore = calcFocusScore(productiveTime, totalTime, switches, longestFocusBlockMins(activities));
+
+
+  // console.log('[stats] buildDailyStats', {
+  //   date,
+  //   activities: activities.map((a) => ({
+  //     date: a.date,
+  //     appName: a.appName,
+  //     category: a.category,
+  //     duration: a.duration,
+  //   })),
+  //   categoryTotals,
+  // });
 
   return {
     date,
@@ -207,19 +298,19 @@ function buildDailyStats(date: string, activities: Activity[], topAppsLimit = 6)
 }
 
 export function getDailyStats(date: string): DailyStats {
-  const activities = readRange(date, date);
+  const activities = analyticsOnly(readRange(date, date));
   return buildDailyStats(date, activities);
 }
 
 /** Full stats + fragmentation for insights Lambda only (not exposed on `/api/stats`). */
 export function getInsightsLambdaStats(date: string): InsightsLambdaStatsPayload {
-  const activities = readRange(date, date);
+  const activities = analyticsOnly(readRange(date, date));
   const base = buildDailyStats(date, activities);
   return { ...base, ...computeInsightMetrics(activities) };
 }
 
 export function getWeeklyStats(from: string, to: string): DailyStats[] {
-  const activities = readRange(from, to);
+  const activities = analyticsOnly(readRange(from, to));
 
   const byDate = new Map<string, Activity[]>();
   for (const a of activities) {
@@ -228,16 +319,21 @@ export function getWeeklyStats(from: string, to: string): DailyStats[] {
   }
 
   const result: DailyStats[] = [];
-  const current = new Date(from);
-  const end = new Date(to);
-
-  while (current <= end) {
-    const dateStr = current.toISOString().slice(0, 10);
-    const dayActivities = byDate.get(dateStr) ?? [];
-    result.push(buildDailyStats(dateStr, dayActivities, 3));
-
-    current.setDate(current.getDate() + 1);
+  let cur = from;
+  while (cur <= to) {
+    const dayActivities = byDate.get(cur) ?? [];
+    result.push(buildDailyStats(cur, dayActivities, 3));
+    cur = addDaysYmd(cur, 1);
   }
 
+  // console.log('[stats] getWeeklyStats', {
+  //   from,
+  //   to,
+  //   byDateKeys: [...byDate.keys()],
+  //   result: result.map((r) => ({
+  //     date: r.date,
+  //     categoryTotals: r.categoryTotals,
+  //   })),
+  // });
   return result;
 }

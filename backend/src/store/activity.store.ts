@@ -5,6 +5,8 @@ import type { Activity } from '../types';
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const ACTIVITIES_DIR = path.join(DATA_DIR, 'activities');
 
+console.log('[store path]', ACTIVITIES_DIR);
+
 function ensureDir() {
   if (!fs.existsSync(ACTIVITIES_DIR)) {
     fs.mkdirSync(ACTIVITIES_DIR, { recursive: true });
@@ -15,10 +17,38 @@ function filePath(date: string): string {
   return path.join(ACTIVITIES_DIR, `${date}.json`);
 }
 
-function atomicWrite(file: string, data: Activity[]): void {
+function sleepMs(ms: number): void {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    // busy wait
+  }
+}
+
+function atomicWrite(file: string, data: unknown): void {
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-  fs.renameSync(tmp, file);
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      if (fs.existsSync(file)) {
+        try {
+          fs.rmSync(file, { force: true });
+        } catch {
+          // ignore and let rename try anyway
+        }
+      }
+
+      fs.renameSync(tmp, file);
+      return;
+    } catch (err) {
+      lastError = err;
+      sleepMs(100);
+    }
+  }
+
+  throw lastError;
 }
 
 export function readDay(date: string): Activity[] {

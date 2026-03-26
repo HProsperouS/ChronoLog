@@ -4,7 +4,8 @@ export type Category =
   | 'Entertainment'
   | 'Communication'
   | 'Utilities'
-  | 'Uncategorized';
+  | 'Uncategorized'
+  | 'ChronoLog';
 
 export interface Activity {
   id: number;
@@ -16,14 +17,15 @@ export interface Activity {
   startTime: string;  // ISO string
   endTime: string;    // ISO string
   date: string;       // YYYY-MM-DD  for file indexing
+  excludeFromAnalytics?: boolean;
 }
 
 export interface CategoryRule {
   id: string;
   appName: string;
   category: Category;
-  keywords?: string[];
   isAutomatic: boolean;
+  keywords?: string[];
 }
 
 export interface Insight {
@@ -104,17 +106,18 @@ export interface CreateActivityBody {
   duration: number;
   startTime: string;
   endTime: string;
+  excludeFromAnalytics?: boolean;
 }
 
 export interface CreateCategoryRuleBody {
   appName: string;
   category: Category;
-  keywords?: string[];
   isAutomatic: boolean;
+  keywords?: string[];
 }
 
 export interface UpdateCategoryRuleBody {
   category?: Category;
-  keywords?: string[];
   isAutomatic?: boolean;
+  keywords?: string[];
 }

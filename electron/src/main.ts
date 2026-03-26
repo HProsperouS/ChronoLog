@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, Notification } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import { setupTray } from './tray';
 
@@ -15,12 +16,88 @@ let mainWindow: BrowserWindow | null = null;
 let backendProcess: ChildProcess | null = null;
 let trackerProcess: ChildProcess | null = null;
 
+// ─── Icons (dev & packaged: main lives in electron/dist, assets in electron/assets) ─
+function resolveAssetsFile(name: string): string {
+  return path.join(__dirname, '../assets', name);
+}
+
+function resolveWindowIconPath(): string {
+  if (process.platform === 'win32') {
+    return resolveAssetsFile('icon.ico');
+  }
+  if (process.platform === 'darwin') {
+    const icns = resolveAssetsFile('icon.icns');
+    if (fs.existsSync(icns)) return icns;
+  }
+  // Fallback: we ship icon-512.png, not icon.png.
+  return resolveAssetsFile('icon-512.png');
+}
+
+function resolveNotificationIconPath(): string {
+  // macOS Notification `icon` is most reliably a PNG.
+  const candidates = ['icon-512.png', 'icon.png', 'icon.ico', 'icon.icns'];
+  for (const name of candidates) {
+    const p = resolveAssetsFile(name);
+    if (fs.existsSync(p)) return p;
+  }
+  return resolveWindowIconPath();
+}
+
+
 // ─── Data directory ───────────────────────────────────────────────────────────
 
 function getDataDir(): string {
   return isDev
     ? path.join(__dirname, '../../backend/data')
     : path.join(app.getPath('userData'), 'data');
+}
+
+type AppSettings = {
+  launchAtStartup?: boolean;
+  runInBackground?: boolean;
+};
+
+function readAppSettingsFromFile(): AppSettings {
+  try {
+    const settingsPath = path.join(getDataDir(), 'settings.json');
+    const raw = fs.readFileSync(settingsPath, 'utf8');
+    const parsed = JSON.parse(raw) as { settings?: AppSettings };
+    return parsed?.settings ?? {};
+  } catch (err) {
+    console.warn('[electron] readAppSettingsFromFile failed:', (err as Error).message);
+    return {};
+  }
+}
+
+function syncLaunchAtStartupFromSettingsFile(): void {
+  // Electron login-item control is OS-level (Login Items / Startup).
+  // We read the same backend settings.json that the UI toggles so the
+  // switch actually takes effect.
+  if (!app.setLoginItemSettings) return;
+  if (process.platform !== 'darwin' && process.platform !== 'win32') return;
+
+  try {
+    const { launchAtStartup, runInBackground } = readAppSettingsFromFile();
+    const enabled = launchAtStartup;
+    if (typeof enabled !== 'boolean') return;
+
+    if (process.platform === 'darwin') {
+      app.setLoginItemSettings({
+        openAtLogin: enabled,
+        // If user wants background mode, also prefer a hidden login launch.
+        openAsHidden: Boolean(runInBackground),
+        // Mark login launches so we can decide whether to show the window.
+        args: ['--started-at-login'],
+      });
+    } else {
+      app.setLoginItemSettings({
+        openAtLogin: enabled,
+      });
+    }
+    console.log(`[electron] launchAtStartup sync → ${enabled}`);
+  } catch (err) {
+    console.warn('[electron] syncLaunchAtStartup failed:', (err as Error).message);
+  }
 }
 
 function getNodeExec(): string {
@@ -188,7 +265,27 @@ function startTracker(): void {
 
 // ─── Main window ──────────────────────────────────────────────────────────────
 
-function createWindow(): void {
+function shouldStartHidden(): boolean {
+  if (process.platform !== 'darwin') return false;
+
+  const { runInBackground } = readAppSettingsFromFile();
+  if (!runInBackground) return false;
+
+  // Prefer explicit argv marker; fallback to OS-provided flag.
+  if (process.argv.includes('--started-at-login')) return true;
+  try {
+    if (typeof app.getLoginItemSettings === 'function') {
+      return Boolean(app.getLoginItemSettings().wasOpenedAtLogin);
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+function createWindow(options?: { startHidden?: boolean }): void {
+  const winIcon = resolveWindowIconPath();
+  const startHidden = Boolean(options?.startHidden);
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -196,7 +293,8 @@ function createWindow(): void {
     minHeight: 640,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#0a0a0f',
-    show: false, // show after ready-to-show
+    show: false, // show after ready-to-show (unless we want hidden startup)
+    icon: fs.existsSync(winIcon) ? winIcon : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -220,15 +318,28 @@ function createWindow(): void {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
+    if (!startHidden) {
+      mainWindow?.show();
+    }
   });
 
   // Hide to tray instead of closing
   mainWindow.on('close', (event) => {
-    if (!isQuitting) {
-      event.preventDefault();
-      mainWindow?.hide();
+    if (isQuitting) return;
+
+    // Respect the user's preference at the moment of close.
+    // If "Run in Background" is OFF, closing the window should fully quit
+    // (and stop backend/tracker child processes in before-quit).
+    const { runInBackground } = readAppSettingsFromFile();
+    if (runInBackground === false) {
+      isQuitting = true;
+      // Ensure we don't leave a hidden background process running.
+      app.quit();
+      return;
     }
+
+    event.preventDefault();
+    mainWindow?.hide();
   });
 
   // Open external links in the system browser
@@ -244,7 +355,48 @@ ipcMain.handle('get-backend-port', () => BACKEND_PORT);
 
 ipcMain.handle('get-platform', () => process.platform);
 
+/** Desktop: one icon via native notification; avoids macOS Web Notification (Electron left + icon right). */
+ipcMain.handle('show-notification', (_event, title: string, body: string) => {
+  if (!Notification.isSupported()) return false;
+  try {
+    // Intentionally omit `icon` so macOS notification UI does not show a secondary
+    // right-side image (you only get the app-level icon on the left).
+    const n = new Notification({ title, body });
+    n.show();
+    return true;
+  } catch (err) {
+    console.error('[electron] show-notification failed:', err);
+    return false;
+  }
+});
+
 ipcMain.on('show-window', () => mainWindow?.show());
+
+ipcMain.handle(
+  'set-launch-at-startup',
+  (_event, enabled: boolean, openAsHidden?: boolean): boolean => {
+    if (!app.setLoginItemSettings) return false;
+    if (process.platform !== 'darwin' && process.platform !== 'win32') return false;
+    if (typeof enabled !== 'boolean') return false;
+
+    try {
+      if (process.platform === 'darwin') {
+        app.setLoginItemSettings({
+          openAtLogin: enabled,
+          openAsHidden: Boolean(openAsHidden),
+          args: ['--started-at-login'],
+        });
+      } else {
+        app.setLoginItemSettings({ openAtLogin: enabled });
+      }
+      console.log(`[electron] setLaunchAtStartup (ipc) → ${enabled}`);
+      return true;
+    } catch (err) {
+      console.warn('[electron] setLaunchAtStartup (ipc) failed:', (err as Error).message);
+      return false;
+    }
+  },
+);
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
@@ -263,10 +415,26 @@ app.whenReady().then(async () => {
   console.log('[electron] Starting ChronoLog…');
   console.log(`[electron] isDev=${isDev}, dataDir=${getDataDir()}`);
 
+  if (process.platform === 'darwin' && app.dock) {
+    const dockPath = resolveWindowIconPath();
+    if (fs.existsSync(dockPath)) {
+      try {
+        app.dock.setIcon(dockPath);
+      } catch (e) {
+        console.warn('[electron] dock.setIcon failed:', e);
+      }
+    }
+  }
+
   setupApplicationMenu();
   await startBackend();
+
+  // Ensure the OS-level auto-start matches the user's setting.
+  syncLaunchAtStartupFromSettingsFile();
+
+
   startTracker();
-  createWindow();
+  createWindow({ startHidden: shouldStartHidden() });
 
   if (mainWindow) setupTray(mainWindow);
 

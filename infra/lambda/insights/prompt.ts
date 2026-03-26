@@ -3,7 +3,7 @@ import type { InsightsLambdaStatsPayload, SessionTimelineEntry } from './types';
 function formatFragmentation(stats: InsightsLambdaStatsPayload): string[] {
   const lines = [
     `  Context switches (SAME as Dashboard / Insights page — authoritative): ${stats.contextSwitches}`,
-    `    Definition: count only when leaving Work or Study to another category, after dropping Utilities & Uncategorized from the timeline (same code as focus score).`,
+    `    Definition: productive ↔ non-productive flips across the full timeline (productive = Work/Study; non-productive = any other category). Very short (<1 min) blips may be merged to reduce noise. Treat this number as authoritative; do not recompute it from raw categories here.`,
     `  App/category hops (adjacent sessions, ANY change — NOT the dashboard "context switches" number): ${stats.appTransitionCount}`,
     `  Sessions recorded: ${stats.sessionCount}`,
     `  Short focus sessions (<3 min Work/Study): ${stats.shortFocusSessionCount}`,
@@ -64,6 +64,7 @@ Rules:
 - For time-of-day stories (e.g. "morning", "10:00–12:00"), use only times that appear in the session log or in the busiest-window / sample-hop lines. Do not invent clock times.
 - CONSISTENCY: The field "contextSwitches" is identical to the in-app "Context Switches" / focus-score input. When you mention "context switches" in relation to user goals (e.g. staying under 20), cite ONLY contextSwitches. Never label appTransitionCount or timeline hops as "context switches".
 - appTransitionCount and the session log describe app/category hopping and fragmentation; use different wording (e.g. "switched apps often", "fragmented blocks") so it is not confused with contextSwitches.
+- Categories may be user-defined. Do not assume a fixed set of category names; use the labels provided.
 - If data is very sparse, say so briefly — still return at least 1 insight.
 - Tone: supportive, specific, not preachy. Do not say you are an AI.
 

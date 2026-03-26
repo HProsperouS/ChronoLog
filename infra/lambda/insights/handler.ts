@@ -38,17 +38,8 @@ function extractBearer(headers: Record<string, string | undefined> | undefined):
   return m ? m[1].trim() : null;
 }
 
-const CATEGORIES = new Set<string>([
-  'Work',
-  'Study',
-  'Entertainment',
-  'Communication',
-  'Utilities',
-  'Uncategorized',
-]);
-
 function isCategory(x: unknown): x is Category {
-  return typeof x === 'string' && CATEGORIES.has(x);
+  return typeof x === 'string' && x.trim().length > 0;
 }
 
 function isBusiestWindowVal(x: unknown): boolean {

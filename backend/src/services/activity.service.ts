@@ -6,7 +6,21 @@ import * as ActivityStore from '../store/activity.store';
 import { autoCategory } from './category.service';
 import type { Activity, CreateActivityBody } from '../types';
 
+
 const iconCache = new Map<string, Buffer | null>();
+
+function isChronoLogSelfActivity(
+  appName: string,
+  windowTitle?: string
+): boolean {
+  const app = (appName ?? '').trim().toLowerCase();
+  const title = (windowTitle ?? '').trim().toLowerCase();
+
+  if (app === 'chronolog') return true;
+  if (app === 'electron' && title.includes('chronolog')) return true;
+
+  return false;
+}
 
 export function getAppIconBuffer(appName: string): Buffer | null {
   if (iconCache.has(appName)) return iconCache.get(appName) ?? null;
@@ -68,13 +82,36 @@ function toLocalDateString(iso: string): string {
 const BROWSER_APP_RE = /chrome|safari|firefox|arc|brave|edge|opera/i;
 const MERGE_GAP_MS = 15_000; // tolerate minor polling/network jitter
 
+function normalizeBrowserUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+
+    parsed.hash = '';
+    parsed.searchParams.delete('utm_source');
+    parsed.searchParams.delete('utm_medium');
+    parsed.searchParams.delete('utm_campaign');
+    parsed.searchParams.delete('utm_term');
+    parsed.searchParams.delete('utm_content');
+    parsed.searchParams.delete('utm_id');
+    parsed.searchParams.delete('utm_name');
+
+    if (parsed.pathname.length > 1 && parsed.pathname.endsWith('/')) {
+      parsed.pathname = parsed.pathname.slice(0, -1);
+    }
+
+    return parsed.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
 function sessionKeyForActivity(a: Pick<Activity, 'appName' | 'windowTitle' | 'url'>): string {
   if (BROWSER_APP_RE.test(a.appName)) {
-    if (a.url) {
-      try { return `${a.appName}|${new URL(a.url).hostname}`; } catch { /* fall through */ }
-    }
-    return a.appName;
+    const normalizedUrl = a.url ? normalizeBrowserUrl(a.url) : '';
+    const normalizedTitle = (a.windowTitle ?? '').trim();
+    return `${a.appName}|${normalizedUrl}|${normalizedTitle}`;
   }
+
   return `${a.appName}|${a.windowTitle ?? ''}`;
 }
 
@@ -90,12 +127,20 @@ function canMergeAdjacent(prev: Activity, next: Activity): boolean {
 }
 
 export function createActivity(body: CreateActivityBody): Activity {
+  const excludeFromAnalytics =
+  body.excludeFromAnalytics ??
+  isChronoLogSelfActivity(body.appName, body.windowTitle);
+
   const date = toLocalDateString(body.startTime);
   const activities = ActivityStore
     .readDay(date)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const category = body.category ?? autoCategory(body.appName, body.windowTitle, body.url);
+  const category =
+  body.category ??
+  (excludeFromAnalytics
+    ? 'ChronoLog'
+    : autoCategory(body.appName, body.windowTitle, body.url));
 
   const activity: Activity = {
     id: ActivityStore.nextActivityId(activities),
@@ -107,6 +152,7 @@ export function createActivity(body: CreateActivityBody): Activity {
     startTime: body.startTime,
     endTime: body.endTime,
     date,
+    excludeFromAnalytics,
   };
 
   const prev = activities.at(-1);
@@ -123,6 +169,8 @@ export function createActivity(body: CreateActivityBody): Activity {
     // Keep the latest metadata for better categorization display.
     prev.windowTitle = activity.windowTitle ?? prev.windowTitle;
     prev.url = activity.url ?? prev.url;
+    prev.excludeFromAnalytics =
+    prev.excludeFromAnalytics || activity.excludeFromAnalytics;
     ActivityStore.writeDay(date, activities);
     return prev;
   }

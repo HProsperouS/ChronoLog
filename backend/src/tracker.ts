@@ -24,12 +24,38 @@ let config: TrackerConfig = {
   trackingEnabled:        true,
   idleDetectionEnabled:   true,
   idleThresholdMinutes:   5,
-  pollIntervalMs:         5_000,
+  pollIntervalMs:         1_000,
   excludedApps:           new Set(),
   respectPrivateBrowsing: true,
 };
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+// ─── macOS permission prompt backoff ──────────────────────────────────────────
+// If the app lacks Screen Recording / Accessibility permissions, querying the
+// active window can trigger repeated OS permission prompts. When we detect a
+// likely permissions error, back off for a while to avoid spamming the user.
+let macPermissionBackoffUntilMs = 0;
+let macPermissionWarnedAtMs = 0;
+
+function isLikelyMacPermissionsError(err: unknown): boolean {
+  if (process.platform !== 'darwin') return false;
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  return /screen\s*recording|tcc|not\s+authorized|not\s+permitted|permission|accessibility/i.test(msg);
+}
+
+function enterMacPermissionBackoff(nowMs: number, err: unknown): void {
+  // Back off long enough that the user can act, but not forever.
+  const BACKOFF_MS = 10 * 60_000;
+  macPermissionBackoffUntilMs = Math.max(macPermissionBackoffUntilMs, nowMs + BACKOFF_MS);
+
+  // Log at most once per minute to keep logs readable.
+  if (nowMs - macPermissionWarnedAtMs > 60_000) {
+    macPermissionWarnedAtMs = nowMs;
+    const msg = err instanceof Error ? err.message : String(err ?? 'permission error');
+    console.warn(`[tracker] macOS permissions likely missing; backing off ${BACKOFF_MS / 60_000}m. Error: ${msg}`);
+  }
+}
 
 async function fetchConfig(): Promise<void> {
   try {
@@ -44,7 +70,7 @@ async function fetchConfig(): Promise<void> {
       config.idleDetectionEnabled = (settings.idleDetectionEnabled as boolean) ?? true;
       config.idleThresholdMinutes = (settings.idleThresholdMinutes as number)  ?? 5;
 
-      const newPollMs = ((settings.pollIntervalSeconds as number) ?? 5) * 1_000;
+      const newPollMs = ((settings.pollIntervalSeconds as number) ?? 1) * 1_000;
       if (newPollMs !== config.pollIntervalMs) {
         config.pollIntervalMs = newPollMs;
         reschedulePoller();
@@ -77,27 +103,36 @@ function getSystemIdleSeconds(): number {
     }
 
     if (process.platform === 'win32') {
-      // GetLastInputInfo via inline PowerShell
       const ps = [
         "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices;",
-        "public class IdleTimer {",
-        "  [DllImport(\"user32.dll\")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO i);",
+        "public static class IdleTimer {",
+        "  [StructLayout(LayoutKind.Sequential)]",
         "  public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }",
+        "  [DllImport(\"user32.dll\")]",
+        "  public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);",
         "}'",
-        "$i = New-Object IdleTimer+LASTINPUTINFO; $i.cbSize = 8;",
-        "[IdleTimer]::GetLastInputInfo([ref]$i) | Out-Null;",
-        "[Math]::Floor(([Environment]::TickCount - $i.dwTime) / 1000)",
-      ].join(' ');
+        "$i = New-Object IdleTimer+LASTINPUTINFO",
+        "$i.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($i)",
+        "$ok = [IdleTimer]::GetLastInputInfo([ref]$i)",
+        "if (-not $ok) { Write-Output 0; exit }",
+        "$tick = [Environment]::TickCount64",
+        "$last = [int64][uint32]$i.dwTime",
+        "$idleMs = $tick - $last",
+        "if ($idleMs -lt 0 -or $idleMs -gt 86400000) { Write-Output 0; exit }",
+        "[Math]::Floor($idleMs / 1000)"
+      ].join('; ');
+
       const out = execSync(`powershell -NoProfile -Command "${ps}"`, {
         timeout: 3_000,
         stdio: ['ignore', 'pipe', 'ignore'],
       }).toString().trim();
+
       return parseInt(out, 10) || 0;
     }
-
   } catch {
     return 0; // fallback: assume not idle
   }
+
   return 0;
 }
 
@@ -140,13 +175,17 @@ function saveTrackerState(session: Session | null): void {
     try { fs.unlinkSync(TRACKER_STATE_FILE); } catch { /* state file may not exist */ }
     return;
   }
+
+  const isSelfActivity = isChronoLogSelfActivity(session.appName, session.windowTitle);
+
   const payload = {
-    appName: session.appName,
+    appName: isSelfActivity ? 'ChronoLog' : session.appName,
     windowTitle: session.windowTitle,
     url: session.url,
     startTime: session.startTime.toISOString(),
     savedAt: new Date().toISOString(),
   };
+
   fs.writeFileSync(TRACKER_STATE_FILE, JSON.stringify(payload, null, 2), 'utf8');
 }
 
@@ -174,28 +213,39 @@ function loadTrackerState(): Session | null {
 }
 
 async function postActivity(session: Session, endTime: Date): Promise<boolean> {
+  const isSelfActivity = isChronoLogSelfActivity(session.appName, session.windowTitle);
   const durationMs = endTime.getTime() - session.startTime.getTime();
-  if (durationMs / 1_000 < MIN_DURATION_SECONDS) return true;
+  const durationSeconds = durationMs / 1_000;
+
+  if (durationSeconds < MIN_DURATION_SECONDS) {
+    console.log(
+      `[tracker] skipping short session (${durationSeconds.toFixed(1)}s) for ${session.appName}`
+    );
+    return true;
+  }
 
   const body = {
-    appName:     session.appName,
+    appName: isSelfActivity ? 'ChronoLog' : session.appName,
     windowTitle: session.windowTitle,
-    url:         session.url,
-    duration:    Math.round((durationMs / 1_000 / 60) * 10) / 10,
-    startTime:   session.startTime.toISOString(),
-    endTime:     endTime.toISOString(),
+    url: session.url,
+    duration: Math.round((durationMs / 1_000 / 60) * 10) / 10,
+    startTime: session.startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    excludeFromAnalytics: isSelfActivity,
   };
 
   try {
     const res = await fetch(`${API_URL}/api/activities`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body),
+      body: JSON.stringify(body),
     });
+
     if (!res.ok) {
       console.error(`[tracker] POST failed: ${res.status}`);
       return false;
     }
+
     return true;
   } catch (err) {
     console.error('[tracker] Could not reach backend:', (err as Error).message);
@@ -208,9 +258,36 @@ function extractUrl(win: activeWin.Result): string | undefined {
   return undefined;
 }
 
+function isChronoLogSelfActivity(
+  appName: string,
+  windowTitle?: string
+): boolean {
+  const app = (appName ?? '').trim().toLowerCase();
+  const title = (windowTitle ?? '').trim().toLowerCase();
+
+  if (app === 'chronolog') return true;
+  if (app === 'electron' && title.includes('chronolog')) return true;
+
+  return false;
+}
+
 // ─── Main poll ────────────────────────────────────────────────────────────────
 
 async function poll(): Promise<void> {
+  // macOS permissions backoff: avoid repeatedly triggering OS prompts.
+  if (process.platform === 'darwin') {
+    const now = Date.now();
+    if (now < macPermissionBackoffUntilMs) {
+      // If we were tracking something, flush it so we don't attribute idle time incorrectly.
+      if (current) {
+        await postActivity(current, new Date());
+        current = null;
+        saveTrackerState(null);
+      }
+      return;
+    }
+  }
+
   // 1. Tracking disabled — flush and do nothing
   if (!config.trackingEnabled) {
     if (current) {
@@ -225,14 +302,15 @@ async function poll(): Promise<void> {
   if (config.idleDetectionEnabled) {
     const idleSecs = getSystemIdleSeconds();
     const thresholdSecs = config.idleThresholdMinutes * 60;
-    if (idleSecs >= thresholdSecs) {
+
+    // Ignore suspicious readings instead of blocking tracking forever
+    if (idleSecs >= 0 && idleSecs <= 86400 && idleSecs >= thresholdSecs) {
       if (current) {
         // Back-date the end time to when idle actually started
         const endTime = new Date(Date.now() - idleSecs * 1_000);
         await postActivity(current, endTime);
         current = null;
         saveTrackerState(null);
-        console.log(`[tracker] Idle ${idleSecs}s ≥ ${thresholdSecs}s — session closed`);
       }
       return;
     }
@@ -242,7 +320,11 @@ async function poll(): Promise<void> {
   let win: activeWin.Result | undefined;
   try {
     win = (await activeWin()) ?? undefined;
-  } catch {
+  } catch (err) {
+    console.error('[tracker] activeWin failed:', err);
+    if (isLikelyMacPermissionsError(err)) {
+      enterMacPermissionBackoff(Date.now(), err);
+    }
     return; // locked screen / UAC dialog — skip silently
   }
 
@@ -276,19 +358,44 @@ async function poll(): Promise<void> {
     : url;
 
   // 6. Session tracking
-  // For browsers, group by URL hostname so that title changes (e.g. YouTube
-  // switching videos) don't fragment the session into many tiny pieces.
+  const normalizeBrowserUrl = (rawUrl: string): string => {
+    try {
+      const parsed = new URL(rawUrl);
+
+      // Ignore in-page anchors like #section
+      parsed.hash = '';
+
+      // Remove common tracking parameters
+      parsed.searchParams.delete('utm_source');
+      parsed.searchParams.delete('utm_medium');
+      parsed.searchParams.delete('utm_campaign');
+      parsed.searchParams.delete('utm_term');
+      parsed.searchParams.delete('utm_content');
+      parsed.searchParams.delete('utm_id');
+      parsed.searchParams.delete('utm_name');
+
+      // Normalize trailing slash for non-root paths
+      if (parsed.pathname.length > 1 && parsed.pathname.endsWith('/')) {
+        parsed.pathname = parsed.pathname.slice(0, -1);
+      }
+
+      return parsed.toString();
+    } catch {
+      return rawUrl;
+    }
+  };
+
   const sessionKey = (app: string, title: string | undefined, u: string | undefined) => {
     if (isBrowserApp(app)) {
-      if (u) {
-        try { return app + '|' + new URL(u).hostname; } catch { /* fall through */ }
-      }
-      // URL may be unavailable in some browser privacy/permission states.
-      // Using only app name avoids fragmenting one browsing period by tab title.
-      return app;
+      const normalizedUrl = u ? normalizeBrowserUrl(u) : '';
+      const normalizedTitle = (title ?? '').trim();
+      return app + '|' + normalizedUrl + '|' + normalizedTitle;
     }
     return app + '|' + (title ?? '');
   };
+
+
+
 
   const sameWindow =
     current &&
@@ -303,7 +410,7 @@ async function poll(): Promise<void> {
     current = { appName, windowTitle, url: recordUrl, startTime: new Date() };
     saveTrackerState(current);
   } else {
-    // Same session — keep title/url up to date so category rules stay accurate
+    // Same session — refresh metadata for the current activity
     current.windowTitle = windowTitle;
     current.url = recordUrl;
     saveTrackerState(current);

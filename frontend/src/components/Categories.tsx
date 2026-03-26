@@ -1,13 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FolderTree, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
-import { categoryColors } from '../constants';
+import { categoryColors, DEFAULT_CATEGORY_COLOR } from '../constants';
 import type { CategoryRule } from '../types';
 
 const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
+const CUSTOM_CATEGORY_VALUE = '__custom__';
+
+function parseKeywords(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
+}
+
+function normalizeCategoryName(value: string): string {
+  return value.trim();
+}
+
+
+function resolveDraftCategory(
+  selectedCategory: string,
+  customCategoryInput: string
+): string {
+  if (selectedCategory === CUSTOM_CATEGORY_VALUE) {
+    return normalizeCategoryName(customCategoryInput);
+  }
+
+  return normalizeCategoryName(selectedCategory);
+}
 
 export function Categories() {
   const [rules, setRules] = useState<CategoryRule[]>([]);
@@ -18,11 +42,34 @@ export function Categories() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { messages, flash, dismiss } = useFlash();
 
+const defaultCategories = [
+  'Work',
+  'Study',
+  'Entertainment',
+  'Communication',
+  'Utilities',
+  'Uncategorized',
+  'ChronoLog',
+];
+
+
+
+const [customCategoryInput, setCustomCategoryInput] = useState('');
+
+const categories = useMemo(() => {
+  const fromRules = rules
+    .map((r) => r.category?.trim())
+    .filter(Boolean) as string[];
+
+  return Array.from(new Set([...defaultCategories, ...fromRules]));
+}, [rules]);
+
+
   useEffect(() => {
     api.getCategoryRules().then(setRules).catch(() => flash('error', 'Failed to load category rules'));
   }, []);
 
-  const categories = ['Work', 'Study', 'Entertainment', 'Communication', 'Utilities', 'Uncategorized'];
+ 
 
   async function confirmDelete() {
     if (!deletingId) return;
@@ -42,26 +89,50 @@ export function Categories() {
   function handleEdit(id: string) {
     const rule = rules.find((r) => r.id === id);
     if (!rule) return;
+    
+    const isDefaultCategory = defaultCategories.includes(rule.category);
+
     setDraft({
       appName: rule.appName,
-      category: rule.category,
+      category: isDefaultCategory ? rule.category : CUSTOM_CATEGORY_VALUE,
       keywords: rule.keywords?.join(', ') ?? '',
       isAutomatic: rule.isAutomatic,
     });
+
+    setCustomCategoryInput(isDefaultCategory ? '' : rule.category);
+
     setEditingId(id);
   }
 
   async function handleSaveEdit() {
     if (!editingId) return;
+
+    const parsedKeywords = parseKeywords(draft.keywords);
+
+    if (!draft.isAutomatic && parsedKeywords.length === 0) {
+      flash('warning', 'Manual rules must include at least one keyword');
+      return;
+    }
+
+    const resolvedCategory = resolveDraftCategory(draft.category, customCategoryInput);
+
+    if (!resolvedCategory) {
+      flash('warning', 'Category is required');
+      return;
+    }
+
     try {
       const patch = {
-        category: draft.category,
-        keywords: draft.keywords ? draft.keywords.split(',').map((k) => k.trim()).filter(Boolean) : [],
+        category: resolvedCategory,
+        keywords: draft.isAutomatic ? [] : parsedKeywords,
         isAutomatic: draft.isAutomatic,
       };
+
       const updated = await api.updateCategoryRule(editingId, patch);
       setRules((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
       setEditingId(null);
+      setDraft({ ...EMPTY_DRAFT });
+      setCustomCategoryInput('');
       flash('success', 'Rule updated successfully');
     } catch {
       flash('error', 'Failed to update rule');
@@ -73,16 +144,32 @@ export function Categories() {
       flash('warning', 'Application name is required');
       return;
     }
+
+    const parsedKeywords = parseKeywords(draft.keywords);
+
+    if (!draft.isAutomatic && parsedKeywords.length === 0) {
+      flash('warning', 'Manual rules must include at least one keyword');
+      return;
+    }
+
+    const resolvedCategory = resolveDraftCategory(draft.category, customCategoryInput);
+    if (!resolvedCategory) {
+      flash('warning', 'Category is required');
+      return;
+    }
+
     try {
       const created = await api.createCategoryRule({
         appName: draft.appName.trim(),
-        category: draft.category,
-        keywords: draft.keywords ? draft.keywords.split(',').map((k) => k.trim()).filter(Boolean) : [],
+        category: resolvedCategory,
+        keywords: draft.isAutomatic ? [] : parsedKeywords,
         isAutomatic: draft.isAutomatic,
       });
+
       setRules((prev) => [...prev, created]);
       setIsAdding(false);
       setDraft({ ...EMPTY_DRAFT });
+      setCustomCategoryInput('');
       flash('success', `Rule for "${created.appName}" added`);
     } catch {
       flash('error', 'Failed to add rule');
@@ -93,10 +180,12 @@ export function Categories() {
     setEditingId(null);
     setIsAdding(false);
     setDraft({ ...EMPTY_DRAFT });
+    setCustomCategoryInput('');
   }
 
   function handleStartAdd() {
     setDraft({ ...EMPTY_DRAFT });
+    setCustomCategoryInput('');
     setEditingId(null);
     setIsAdding(true);
   }
@@ -109,7 +198,7 @@ export function Categories() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-white">Category Rules</h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-white mt-0.5">
               Manage application categorization
             </p>
           </div>
@@ -127,7 +216,7 @@ export function Categories() {
       <div className="p-4 sm:p-6">
         {/* Category Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {categories.slice(0, 6).map((category) => {
+          {categories.map((category) => {
             const count = rules.filter(r => r.category === category).length;
             return (
               <div key={category} className="bg-[#13131a] border border-white/5 rounded-xl p-5 hover:border-white/10 transition-all">
@@ -135,14 +224,14 @@ export function Categories() {
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-3 h-3 rounded"
-                      style={{ backgroundColor: categoryColors[category] || '#9ca3af' }}
+                      style={{ backgroundColor: categoryColors[category] ?? DEFAULT_CATEGORY_COLOR }}
                     />
                     <div>
                       <p className="text-sm font-semibold text-white">{category}</p>
-                      <p className="text-xs text-gray-500">{count} rules</p>
+                      <p className="text-xs text-white">{count} rules</p>
                     </div>
                   </div>
-                  <FolderTree className="w-4 h-4 text-gray-600" />
+                  <FolderTree className="w-4 h-4 text-white" />
                 </div>
               </div>
             );
@@ -159,19 +248,19 @@ export function Categories() {
             <table className="w-full">
               <thead className="bg-white/5 border-b border-white/5">
                 <tr>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Application
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Keywords
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-white uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -185,34 +274,65 @@ export function Categories() {
                         placeholder="Application name"
                         value={draft.appName}
                         onChange={(e) => setDraft((d) => ({ ...d, appName: e.target.value }))}
-                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                       />
                     </td>
                     <td className="px-5 py-3">
-                      <select
-                        value={draft.category}
-                        onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
-                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
+                      <div className="space-y-2">
+                        <select
+                          value={draft.category}
+                          onChange={(e) =>
+                            setDraft((d) => ({
+                              ...d,
+                              category: e.target.value as CategoryRule['category'],
+                            }))
+                          }
+                          className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                          <option value={CUSTOM_CATEGORY_VALUE}>+ Create new category</option>
+                        </select>
+
+                        {draft.category === CUSTOM_CATEGORY_VALUE && (
+                          <input
+                            type="text"
+                            placeholder="Enter new category name"
+                            value={customCategoryInput}
+                            onChange={(e) => setCustomCategoryInput(e.target.value)}
+                            className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                          />
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3">
                       <input
                         type="text"
-                        placeholder="keyword1, keyword2"
+                        placeholder={draft.isAutomatic ? 'Not used for automatic rules' : 'e.g. googledocs, youtube'}
                         value={draft.keywords}
                         onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
-                        className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                        disabled={draft.isAutomatic}
+                        className={`w-full px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:border-indigo-500 ${
+                          draft.isAutomatic
+                            ? 'bg-white/5 border-white/5 text-gray-500 placeholder-gray-600 cursor-not-allowed'
+                            : 'bg-black border-white/10 text-white placeholder-gray-600'
+                        }`}
                       />
                     </td>
                     <td className="px-5 py-3">
                       <select
                         value={draft.isAutomatic ? 'auto' : 'manual'}
-                        onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
-                        className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            isAutomatic: e.target.value === 'auto',
+                            keywords: e.target.value === 'auto' ? '' : d.keywords,
+                          }))
+                        }
+                        className="px-2 py-0.5 bg-black border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
                       >
                         <option value="auto">Automatic</option>
                         <option value="manual">Manual</option>
@@ -247,22 +367,42 @@ export function Categories() {
                       </td>
                       <td className="px-5 py-3">
                         {isEditing ? (
-                          <select
-                            value={draft.category}
-                            onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as CategoryRule['category'] }))}
-                            className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                          >
-                            {categories.map((cat) => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
+                          <div className="space-y-2">
+                            <select
+                              value={draft.category}
+                              onChange={(e) =>
+                                setDraft((d) => ({
+                                  ...d,
+                                  category: e.target.value as CategoryRule['category'],
+                                }))
+                              }
+                              className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                              <option value={CUSTOM_CATEGORY_VALUE}>+ Create new category</option>
+                            </select>
+
+                            {draft.category === CUSTOM_CATEGORY_VALUE && (
+                              <input
+                                type="text"
+                                placeholder="Enter new category name"
+                                value={customCategoryInput}
+                                onChange={(e) => setCustomCategoryInput(e.target.value)}
+                                className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                              />
+                            )}
+                          </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <div
                               className="w-2 h-2 rounded"
-                              style={{ backgroundColor: categoryColors[rule.category] }}
+                              style={{ backgroundColor: categoryColors[rule.category] ?? DEFAULT_CATEGORY_COLOR }}
                             />
-                            <span className="text-xs text-gray-400">{rule.category}</span>
+                            <span className="text-xs text-white">{rule.category}</span>
                           </div>
                         )}
                       </td>
@@ -272,11 +412,16 @@ export function Categories() {
                             type="text"
                             value={draft.keywords}
                             onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
-                            placeholder="keyword1, keyword2"
-                            className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                            placeholder={draft.isAutomatic ? 'Not used for automatic rules' : 'e.g. googledocs, youtube'}
+                            disabled={draft.isAutomatic}
+                            className={`w-full px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:border-indigo-500 ${
+                              draft.isAutomatic
+                                ? 'bg-white/5 border-white/5 text-gray-500 placeholder-gray-600 cursor-not-allowed'
+                                : 'bg-white/5 border-white/10 text-white placeholder-gray-600'
+                            }`}
                           />
                         ) : (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-white">
                             {rule.keywords?.join(', ') || '—'}
                           </span>
                         )}
@@ -285,7 +430,13 @@ export function Categories() {
                         {isEditing ? (
                           <select
                             value={draft.isAutomatic ? 'auto' : 'manual'}
-                            onChange={(e) => setDraft((d) => ({ ...d, isAutomatic: e.target.value === 'auto' }))}
+                            onChange={(e) =>
+                              setDraft((d) => ({
+                                ...d,
+                                isAutomatic: e.target.value === 'auto',
+                                keywords: e.target.value === 'auto' ? '' : d.keywords,
+                              }))
+                            }
                             className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-white focus:outline-none focus:border-indigo-500"
                           >
                             <option value="auto">Automatic</option>
@@ -296,7 +447,7 @@ export function Categories() {
                             className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                               rule.isAutomatic
                                 ? 'bg-emerald-500/10 text-emerald-400'
-                                : 'bg-gray-500/10 text-gray-400'
+                                : 'bg-gray-500/10 text-white'
                             }`}
                           >
                             {rule.isAutomatic ? 'Automatic' : 'Manual'}
@@ -352,11 +503,11 @@ export function Categories() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-white mb-1">How Category Rules Work</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                <strong className="text-white">Automatic rules</strong> are applied based on the application name alone.
-                <strong className="text-white"> Manual rules</strong> use keywords to categorize based on window titles or URLs
-                (useful for browsers). ChronoLog will automatically learn your preferences over time
-                and suggest new rules based on your usage patterns.
+              <p className="text-xs text-white leading-relaxed">
+                <strong className="text-white">Automatic rules</strong> set the default category for an application.
+                <strong className="text-white"> Manual rules</strong> act as overrides for that application when keywords match the
+                page title, URL, or site name. For example, you can set Firefox to Entertainment by default, but use a manual
+                keyword like <span className="text-white">googledocs</span> to classify Google Docs as Work.
               </p>
             </div>
           </div>
@@ -368,7 +519,7 @@ export function Categories() {
         <DialogContent className="bg-[#111827] border border-red-500/30">
           <DialogHeader>
             <DialogTitle className="text-sm text-red-400">Delete rule?</DialogTitle>
-            <DialogDescription className="text-xs text-gray-400">
+            <DialogDescription className="text-xs text-white">
               This will permanently remove the rule for{' '}
               <span className="text-white font-medium">
                 {rules.find((r) => r.id === deletingId)?.appName ?? ''}

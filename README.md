@@ -126,10 +126,10 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 │  │  active-win  ────┼─────►│  ├── services/                 │   │
 │  │                  │      │  └── store/ → data/ (JSON)     │   │
 │  └──────────────────┘      │       ├── activities/          │   │
-│                             │       ├── settings.json        │   │
-│                             │       ├── category-rules.json  │   │
-│                             │       └── insights.json        │   │
-│                             └──────────────┬───────────────┘    │
+│                            │       ├── settings.json        │   │
+│                            │       ├── category-rules.json  │   │
+│                            │       └── insights.json        │   │
+│                            └───────────────┬────────────────┘   │
 │                                            │ REST API (fetch)   │
 │                                            ▼                    │
 │                             ┌──────────────────────────────┐    │

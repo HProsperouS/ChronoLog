@@ -158,8 +158,38 @@ export interface InsightsQuota {
   nextAvailableAt: string | null;
 }
 
+export interface WeeklyInsightsQuota {
+  weekStart: string;
+  used: number;
+  remaining: number;
+  limit: number;
+  canGenerate: boolean;
+  cooldownRemainingMinutes: number;
+  nextAvailableAt: string | null;
+}
+
 export async function getInsightsQuota(date: string): Promise<InsightsQuota> {
   const data = await apiFetch<{ quota: InsightsQuota }>(`/api/insights/quota?date=${date}`);
+  return data.quota;
+}
+
+export async function getWeeklyInsights(weekStart?: string): Promise<Insight[]> {
+  const query = weekStart ? `?weekStart=${weekStart}` : '';
+  const data = await apiFetch<{ insights: Insight[] }>(`/api/insights/weekly${query}`);
+  return data.insights;
+}
+
+export async function generateWeeklyInsights(weekStart: string): Promise<Insight[]> {
+  const data = await apiFetch<{ insights: Insight[] }>('/api/insights/weekly/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ weekStart }),
+  });
+  return data.insights;
+}
+
+export async function getWeeklyInsightsQuota(weekStart: string): Promise<WeeklyInsightsQuota> {
+  const data = await apiFetch<{ quota: WeeklyInsightsQuota }>(`/api/insights/weekly/quota?weekStart=${weekStart}`);
   return data.quota;
 }
 

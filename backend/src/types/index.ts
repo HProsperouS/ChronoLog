@@ -34,7 +34,8 @@ export interface Insight {
   title: string;
   description: string;
   icon: string;
-  date: string;       // YYYY-MM-DD
+  date?: string;       // YYYY-MM-DD (for daily insights)
+  weekStart?: string;  // YYYY-MM-DD (for weekly insights, Monday)
   created_at: string;
 }
 

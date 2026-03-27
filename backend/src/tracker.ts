@@ -1,5 +1,10 @@
 import './load-env';
-import activeWin from 'active-win';
+let activeWin: any = null;
+try {
+  activeWin = require('active-win');
+} catch (err) {
+  console.warn('[tracker] Warning: active-win not available. Tracking disabled. Install Visual Studio C++ build tools to enable.');
+}
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -253,7 +258,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   }
 }
 
-function extractUrl(win: activeWin.Result): string | undefined {
+function extractUrl(win: any): string | undefined {
   if ('url' in win && typeof win.url === 'string') return win.url;
   return undefined;
 }
@@ -317,9 +322,9 @@ async function poll(): Promise<void> {
   }
 
   // 3. Read active window
-  let win: activeWin.Result | undefined;
+  let win: any | undefined;
   try {
-    win = (await activeWin()) ?? undefined;
+    win = activeWin ? (await activeWin()) ?? undefined : undefined;
   } catch (err) {
     console.error('[tracker] activeWin failed:', err);
     if (isLikelyMacPermissionsError(err)) {

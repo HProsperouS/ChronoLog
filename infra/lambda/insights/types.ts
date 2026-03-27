@@ -49,8 +49,22 @@ export interface InsightContent {
 }
 
 export interface GenerateRequestBody {
-  date: string;
-  stats: InsightsLambdaStatsPayload;
+  mode?: 'daily' | 'weekly';
+  date?: string;
+  weekStart?: string;
+  weekEnd?: string;
+  stats?: InsightsLambdaStatsPayload;
+  startDate?: string;
+  endDate?: string;
+  dailyStats?: (InsightsLambdaStatsPayload & { date: string })[];
+  aggregated?: {
+    totalTime: number;
+    avgFocusScore: number;
+    contextSwitches: number;
+    longestSession: number;
+    categoryTotals: Record<string, number>;
+    topApps: { appName: string; category: Category; duration: number }[];
+  };
   sessionTimeline?: SessionTimelineEntry[];
   comparison?: {
     yesterday?: InsightsLambdaStatsPayload;

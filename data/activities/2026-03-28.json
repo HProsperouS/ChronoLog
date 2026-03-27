@@ -1,0 +1,52 @@
+[
+  {
+    "id": 45,
+    "appName": "Visual Studio Code",
+    "windowTitle": "Personal project - hobby",
+    "category": "Study",
+    "duration": 120,
+    "startTime": "2026-03-28T10:00:00Z",
+    "endTime": "2026-03-28T12:00:00Z",
+    "date": "2026-03-28"
+  },
+  {
+    "id": 46,
+    "appName": "YouTube",
+    "windowTitle": "Learning - web dev",
+    "category": "Study",
+    "duration": 45,
+    "startTime": "2026-03-28T12:00:00Z",
+    "endTime": "2026-03-28T12:45:00Z",
+    "date": "2026-03-28"
+  },
+  {
+    "id": 47,
+    "appName": "Safari",
+    "windowTitle": "Lunch break",
+    "category": "Entertainment",
+    "duration": 60,
+    "startTime": "2026-03-28T12:45:00Z",
+    "endTime": "2026-03-28T13:45:00Z",
+    "date": "2026-03-28"
+  },
+  {
+    "id": 48,
+    "appName": "Visual Studio Code",
+    "windowTitle": "Hobby project continued",
+    "category": "Study",
+    "duration": 90,
+    "startTime": "2026-03-28T13:45:00Z",
+    "endTime": "2026-03-28T15:15:00Z",
+    "date": "2026-03-28"
+  },
+  {
+    "id": 49,
+    "appName": "Netflix",
+    "windowTitle": "Show time",
+    "category": "Entertainment",
+    "duration": 180,
+    "startTime": "2026-03-28T17:00:00Z",
+    "endTime": "2026-03-28T20:00:00Z",
+    "date": "2026-03-28"
+  }
+]

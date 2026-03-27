@@ -1,0 +1,92 @@
+[
+  {
+    "id": 36,
+    "appName": "Visual Studio Code",
+    "windowTitle": "Code cleanup",
+    "category": "Work",
+    "duration": 90,
+    "startTime": "2026-03-27T09:00:00Z",
+    "endTime": "2026-03-27T10:30:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 37,
+    "appName": "Chrome",
+    "windowTitle": "News browsing",
+    "category": "Entertainment",
+    "duration": 20,
+    "startTime": "2026-03-27T10:30:00Z",
+    "endTime": "2026-03-27T10:50:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 38,
+    "appName": "Visual Studio Code",
+    "windowTitle": "PR reviews",
+    "category": "Work",
+    "duration": 65,
+    "startTime": "2026-03-27T10:50:00Z",
+    "endTime": "2026-03-27T11:55:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 39,
+    "appName": "Slack",
+    "windowTitle": "Team chat",
+    "category": "Communication",
+    "duration": 25,
+    "startTime": "2026-03-27T11:55:00Z",
+    "endTime": "2026-03-27T12:20:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 40,
+    "appName": "Postman",
+    "windowTitle": "API testing",
+    "category": "Work",
+    "duration": 40,
+    "startTime": "2026-03-27T12:20:00Z",
+    "endTime": "2026-03-27T13:00:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 41,
+    "appName": "YouTube",
+    "windowTitle": "Lunch - music videos",
+    "category": "Entertainment",
+    "duration": 50,
+    "startTime": "2026-03-27T13:00:00Z",
+    "endTime": "2026-03-27T13:50:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 42,
+    "appName": "Visual Studio Code",
+    "windowTitle": "Feature refinement",
+    "category": "Work",
+    "duration": 70,
+    "startTime": "2026-03-27T13:50:00Z",
+    "endTime": "2026-03-27T15:00:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 43,
+    "appName": "Slack",
+    "windowTitle": "Project planning",
+    "category": "Communication",
+    "duration": 45,
+    "startTime": "2026-03-27T15:00:00Z",
+    "endTime": "2026-03-27T15:45:00Z",
+    "date": "2026-03-27"
+  },
+  {
+    "id": 44,
+    "appName": "Twitch",
+    "windowTitle": "Stream watching",
+    "category": "Entertainment",
+    "duration": 120,
+    "startTime": "2026-03-27T17:00:00Z",
+    "endTime": "2026-03-27T19:00:00Z",
+    "date": "2026-03-27"
+  }
+]

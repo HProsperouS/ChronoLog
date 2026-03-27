@@ -126,10 +126,10 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 │  │  active-win  ────┼─────►│  ├── services/                 │   │
 │  │                  │      │  └── store/ → data/ (JSON)     │   │
 │  └──────────────────┘      │       ├── activities/          │   │
-│                             │       ├── settings.json        │   │
-│                             │       ├── category-rules.json  │   │
-│                             │       └── insights.json        │   │
-│                             └──────────────┬───────────────┘    │
+│                            │       ├── settings.json        │   │
+│                            │       ├── category-rules.json  │   │
+│                            │       └── insights.json        │   │
+│                            └───────────────┬────────────────┘   │
 │                                            │ REST API (fetch)   │
 │                                            ▼                    │
 │                             ┌──────────────────────────────┐    │
@@ -659,7 +659,7 @@ Singapore market indicator: 140,000+ tertiary students, 86% rely on laptops/desk
 - Orvin Wirawan
 - JiaJun Liu
 - Jeremy Tan
-- Steven Nathenial
+- Steven Nathaniel
 
 ---
 

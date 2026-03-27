@@ -2,6 +2,7 @@ import { readInsights, writeInsights } from '../store/config.store';
 import { readRange } from '../store/activity.store';
 import * as StatsService from './stats.service';
 import type { Insight, SessionTimelineEntry } from '../types';
+import { CronJob } from 'cron';
 
 /** Local calendar step for YYYY-MM-DD (matches frontend `addDaysYmd`; avoids UTC `toISOString` day shifts). */
 function addDaysYmd(ymd: string, deltaDays: number): string {
@@ -372,4 +373,22 @@ export function getWeeklyInsightsGenerateQuota(weekStartMonday: string): {
     cooldownRemainingMinutes,
     nextAvailableAt,
   };
+}
+
+/** Start weekly insights auto-generation (every Sunday at 11:59 PM UTC). */
+export function startWeeklyInsightsScheduler(): void {
+  const job = new CronJob('59 23 * * 0', async () => {
+    try {
+      const lastMonday = getLastMonday();
+      console.log(`[scheduler] Generating weekly insights for week starting ${lastMonday}`);
+      await generateWeeklyInsights(lastMonday);
+      console.log(`[scheduler] Weekly insights generated successfully`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[scheduler] Failed to generate weekly insights: ${msg}`);
+    }
+  });
+
+  job.start();
+  console.log('[scheduler] Weekly insights auto-generation enabled (every Sunday 23:59 UTC)');
 }

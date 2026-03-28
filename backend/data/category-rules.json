@@ -107,77 +107,77 @@
     "isAutomatic": true
   },
   {
-    "id": "1774688700960",
+    "id": "1774691798910",
     "appName": "Visual Studio Code",
     "category": "Work",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700963",
+    "id": "1774691798913",
     "appName": "Cursor",
     "category": "Work",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700966",
+    "id": "1774691798918",
     "appName": "Notion",
     "category": "Study",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700968",
+    "id": "1774691798920",
     "appName": "Adobe Acrobat",
     "category": "Reading",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700971",
+    "id": "1774691798922",
     "appName": "Slack",
     "category": "Communication",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700974",
+    "id": "1774691798925",
     "appName": "Discord",
     "category": "Communication",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700977",
+    "id": "1774691798928",
     "appName": "Steam",
     "category": "Gaming",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700980",
+    "id": "1774691798931",
     "appName": "File Explorer",
     "category": "Utilities",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700982",
+    "id": "1774691798934",
     "appName": "Finder",
     "category": "Utilities",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700985",
+    "id": "1774691798938",
     "appName": "ChronoLog",
     "category": "ChronoLog",
     "isAutomatic": true,
     "keywords": []
   },
   {
-    "id": "1774688700988",
+    "id": "1774691798940",
     "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -188,7 +188,7 @@
     ]
   },
   {
-    "id": "1774688700990",
+    "id": "1774691798943",
     "appName": "Firefox",
     "category": "Research",
     "isAutomatic": false,
@@ -200,7 +200,7 @@
     ]
   },
   {
-    "id": "1774688700993",
+    "id": "1774691798945",
     "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -210,7 +210,7 @@
     ]
   },
   {
-    "id": "1774688700995",
+    "id": "1774691798950",
     "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -222,7 +222,7 @@
     ]
   },
   {
-    "id": "1774688700999",
+    "id": "1774691798953",
     "appName": "Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -233,7 +233,7 @@
     ]
   },
   {
-    "id": "1774688701001",
+    "id": "1774691798956",
     "appName": "Google Chrome",
     "category": "Study",
     "isAutomatic": false,
@@ -244,7 +244,7 @@
     ]
   },
   {
-    "id": "1774688701005",
+    "id": "1774691798959",
     "appName": "Google Chrome",
     "category": "Research",
     "isAutomatic": false,
@@ -256,7 +256,7 @@
     ]
   },
   {
-    "id": "1774688701009",
+    "id": "1774691798963",
     "appName": "Google Chrome",
     "category": "Gaming",
     "isAutomatic": false,
@@ -266,7 +266,7 @@
     ]
   },
   {
-    "id": "1774688701012",
+    "id": "1774691798968",
     "appName": "Google Chrome",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -278,7 +278,7 @@
     ]
   },
   {
-    "id": "1774688701015",
+    "id": "1774691798972",
     "appName": "Google Chrome",
     "category": "Meetings",
     "isAutomatic": false,

@@ -169,6 +169,11 @@ const seedActivities: SeedActivity[] = [
   makeActivity(monday, '03:15', '03:16', 'Firefox', 'Steam Store', 'https://store.steampowered.com/app/123', 'Gaming'),
   makeActivity(monday, '03:16', '03:17', 'Firefox', 'YouTube - lofi mix', 'https://www.youtube.com/watch?v=lofi-1', 'Entertainment'),
   makeActivity(monday, '03:17', '04:00', 'Adobe Acrobat', 'CN Week 8 Slides.pdf', undefined, 'Reading'),
+  makeActivity(monday, '04:00', '04:15', 'Slack', 'Study Group Planning', undefined, 'Communication'),
+  makeActivity(monday, '04:15', '04:30', 'Firefox', 'ChatGPT - algorithm explanation', 'https://chat.openai.com/c/demo-monday-1', 'Research'),
+  makeActivity(monday, '04:30', '04:45', 'File Explorer', 'Lecture Downloads', undefined, 'Admin'),
+  makeActivity(monday, '04:45', '04:48', 'Firefox', 'Zoom - quick check-in', 'https://zoom.us/j/demo-mon-1', 'Meetings'),
+  makeActivity(monday, '04:48', '04:51', 'File Explorer', 'Temp Files', undefined, 'Admin'),
 
   // Tuesday - work heavy
   makeActivity(tuesday, '01:00', '01:50', 'Cursor', 'Insights.tsx', undefined, 'Work'),
@@ -176,6 +181,11 @@ const seedActivities: SeedActivity[] = [
   makeActivity(tuesday, '02:20', '02:55', 'Slack', 'Deloitte Intern Channel', undefined, 'Communication'),
   makeActivity(tuesday, '02:55', '03:30', 'Firefox', 'Google Meet - Weekly Sync', 'https://meet.google.com/abc-defg-hij', 'Meetings'),
   makeActivity(tuesday, '03:30', '04:05', 'File Explorer', 'Evidence Folder Review', undefined, 'Admin'),
+  makeActivity(tuesday, '04:05', '04:20', 'Adobe Acrobat', 'Client Notes.pdf', undefined, 'Reading'),
+  makeActivity(tuesday, '04:20', '04:35', 'Notion', 'Sprint Checklist', undefined, 'Study'),
+  makeActivity(tuesday, '04:35', '04:50', 'Firefox', 'YouTube - productivity mix', 'https://www.youtube.com/watch?v=focus-mix', 'Entertainment'),
+  makeActivity(tuesday, '04:50', '04:53', 'Steam', 'Store Browse', undefined, 'Gaming'),
+  makeActivity(tuesday, '04:53', '04:56', 'Adobe Acrobat', 'Reference Snippet.pdf', undefined, 'Reading'),
 
   // Wednesday - distraction heavy
   makeActivity(wednesday, '01:00', '01:01', 'Firefox', 'Steam Store - Helldivers 2', 'https://store.steampowered.com/app/553850', 'Gaming'),
@@ -184,6 +194,9 @@ const seedActivities: SeedActivity[] = [
   makeActivity(wednesday, '01:03', '01:50', 'Steam', 'Monster Hunter Wilds', undefined, 'Gaming'),
   makeActivity(wednesday, '01:50', '02:10', 'Discord', 'Voice Chat', undefined, 'Communication'),
   makeActivity(wednesday, '02:10', '02:40', 'Visual Studio Code', 'Assignment 2', undefined, 'Work'),
+  makeActivity(wednesday, '02:40', '02:55', 'Adobe Acrobat', 'Game Review Notes.pdf', undefined, 'Reading'),
+  makeActivity(wednesday, '02:55', '03:10', 'Firefox', 'Zoom - casual team catchup', 'https://zoom.us/j/987654321', 'Meetings'),
+  makeActivity(wednesday, '03:10', '03:25', 'File Explorer', 'Screenshots Cleanup', undefined, 'Admin'),
 
   // Thursday - balanced
   makeActivity(thursday, '01:00', '01:35', 'Notion', 'DAA Quiz Revision', undefined, 'Study'),
@@ -191,6 +204,11 @@ const seedActivities: SeedActivity[] = [
   makeActivity(thursday, '02:10', '02:40', 'Adobe Acrobat', 'Research Paper.pdf', undefined, 'Reading'),
   makeActivity(thursday, '02:40', '03:10', 'Slack', 'Project Updates', undefined, 'Communication'),
   makeActivity(thursday, '03:10', '03:45', 'Firefox', 'YouTube - music mix', 'https://www.youtube.com/watch?v=music-1', 'Entertainment'),
+  makeActivity(thursday, '03:45', '04:00', 'Steam', 'Steam Store Browse', undefined, 'Gaming'),
+  makeActivity(thursday, '04:00', '04:15', 'Firefox', 'Google Meet - project sync', 'https://meet.google.com/thursday-sync', 'Meetings'),
+  makeActivity(thursday, '04:15', '04:30', 'File Explorer', 'Project Archive', undefined, 'Admin'),
+  makeActivity(thursday, '04:30', '04:33', 'Discord', 'Quick Reply', undefined, 'Communication'),
+  makeActivity(thursday, '04:33', '04:36', 'File Explorer', 'Rename Files', undefined, 'Admin'),
 
   // Friday - meeting heavy
   makeActivity(friday, '01:00', '01:45', 'Firefox', 'Zoom Workplace - Team Standup', 'https://zoom.us/j/123456789', 'Meetings'),
@@ -198,11 +216,20 @@ const seedActivities: SeedActivity[] = [
   makeActivity(friday, '02:15', '02:45', 'Google Chrome', 'ChatGPT - architecture brainstorming', 'https://chat.openai.com/c/demo-3', 'Research'),
   makeActivity(friday, '02:45', '03:20', 'Visual Studio Code', 'activity.service.ts', undefined, 'Work'),
   makeActivity(friday, '03:20', '03:24', 'ChronoLog', 'ChronoLog - Dashboard', undefined, 'ChronoLog', true),
+  makeActivity(friday, '03:24', '03:40', 'Adobe Acrobat', 'Meeting Summary.pdf', undefined, 'Reading'),
+  makeActivity(friday, '03:40', '03:55', 'Notion', 'Follow-up Tasks', undefined, 'Study'),
+  makeActivity(friday, '03:55', '04:10', 'Steam', 'Quick Browse', undefined, 'Gaming'),
+  makeActivity(friday, '04:10', '04:25', 'File Explorer', 'Shared Drive Review', undefined, 'Admin'),
 
   // Saturday - sparse day
   makeActivity(saturday, '05:00', '05:20', 'Adobe Acrobat', 'Algorithm Notes.pdf', undefined, 'Reading'),
   makeActivity(saturday, '05:20', '05:40', 'Firefox', 'YouTube - recursion tutorial', 'https://www.youtube.com/watch?v=recursion-1', 'Study'),
   makeActivity(saturday, '05:40', '06:00', 'Steam', 'Steam Library', undefined, 'Gaming'),
+  makeActivity(saturday, '06:00', '06:15', 'Discord', 'Weekend Chat', undefined, 'Communication'),
+  makeActivity(saturday, '06:15', '06:30', 'Firefox', 'ChatGPT - study planning', 'https://chat.openai.com/c/demo-sat-1', 'Research'),
+  makeActivity(saturday, '06:30', '06:45', 'Firefox', 'YouTube - music', 'https://www.youtube.com/watch?v=sat-music', 'Entertainment'),
+  makeActivity(saturday, '06:45', '07:00', 'File Explorer', 'Desktop Cleanup', undefined, 'Admin'),
+  makeActivity(saturday, '07:00', '07:15', 'Firefox', 'Zoom - weekend check-in', 'https://zoom.us/j/24681012', 'Meetings'),
 
   // Sunday - context switch heavy
   makeActivity(sunday, '01:00', '01:01', 'Firefox', 'Steam Store - sale page', 'https://store.steampowered.com/sale/demo', 'Gaming'),
@@ -211,6 +238,12 @@ const seedActivities: SeedActivity[] = [
   makeActivity(sunday, '01:03', '01:04', 'Firefox', 'YouTube - trailer', 'https://www.youtube.com/watch?v=trailer-1', 'Entertainment'),
   makeActivity(sunday, '01:04', '01:35', 'Visual Studio Code', 'tracker.ts', undefined, 'Work'),
   makeActivity(sunday, '01:35', '01:50', 'Notion', 'Weekly Review', undefined, 'Admin'),
+  makeActivity(sunday, '01:50', '02:05', 'Slack', 'Weekend Project Chat', undefined, 'Communication'),
+  makeActivity(sunday, '02:05', '02:20', 'Adobe Acrobat', 'Weekly Review Notes.pdf', undefined, 'Reading'),
+  makeActivity(sunday, '02:20', '02:35', 'Firefox', 'Google Meet - catchup', 'https://meet.google.com/demo-sync', 'Meetings'),
+  makeActivity(sunday, '02:35', '02:50', 'Steam', 'Store Wishlist', undefined, 'Gaming'),
+  makeActivity(sunday, '02:50', '02:53', 'Adobe Acrobat', 'Short Memo.pdf', undefined, 'Reading'),
+  makeActivity(sunday, '02:53', '02:56', 'Discord', 'Weekend Ping', undefined, 'Communication'),
 ];
 
 function resetDemoStore() {

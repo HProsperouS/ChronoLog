@@ -1,5 +1,14 @@
+import fs from 'fs';
+import path from 'path';
 import { createActivity } from '../services/activity.service';
 import { createRule } from '../services/category.service';
+
+const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
+const ACTIVITIES_DIR = path.join(DATA_DIR, 'activities');
+const RULES_FILE = path.join(DATA_DIR, 'category-rules.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const TRACKER_STATE_FILE = path.join(DATA_DIR, 'tracker-state.json');
+console.log('*** seed-demo.ts loaded ***');
 
 // If your project exports these store helpers, uncomment and use them.
 // import { writeDay, availableDates } from '../store/activity.store';
@@ -48,14 +57,58 @@ const seedRules: SeedRule[] = [
   { appName: 'Google Chrome', category: 'Meetings', isAutomatic: false, keywords: ['meet.google.com', 'zoom', 'weekly sync'] },
 ];
 
+function writeDemoSettings() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+
+  const settingsPayload = {
+    settings: {
+      trackingEnabled: false,
+      idleDetectionEnabled: true,
+      notificationsEnabled: true,
+      launchAtStartup: true,
+      runInBackground: true,
+      pollIntervalSeconds: 5,
+      idleThresholdMinutes: 5,
+      retentionDays: 90,
+    },
+    privacy: {
+      excludedApps: [
+        'GitHub Desktop',
+        'IntelliJ IDEA',
+      ],
+      respectPrivateBrowsing: true,
+    },
+  };
+
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsPayload, null, 2), 'utf8');
+  console.log('Created default demo settings.json');
+}
+
+
 function iso(date: string, time: string) {
   return `${date}T${time}:00.000Z`;
 }
 
-function ymdDaysAgo(daysAgo: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - daysAgo);
-  return d.toISOString().slice(0, 10);
+function formatLocalYmd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function startOfWeekMondayYmd(): string {
+  const today = new Date();
+  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const day = d.getDay(); // Sun=0, Mon=1, ... Sat=6
+  const diff = day === 0 ? -6 : 1 - day; // move back to Monday
+  d.setDate(d.getDate() + diff);
+  return formatLocalYmd(d);
+}
+
+function addDaysYmd(ymd: string, deltaDays: number): string {
+  const d = new Date(`${ymd}T12:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  return formatLocalYmd(d);
 }
 
 function minutesBetween(startIso: string, endIso: string) {
@@ -87,67 +140,98 @@ function makeActivity(
   };
 }
 
-const day6 = ymdDaysAgo(6);
-const day5 = ymdDaysAgo(5);
-const day4 = ymdDaysAgo(4);
-const day3 = ymdDaysAgo(3);
-const day2 = ymdDaysAgo(2);
-const day1 = ymdDaysAgo(1);
-const day0 = ymdDaysAgo(0);
+
+
+// Monday - study heavy
+// Tuesday - work heavy
+// Wednesday - distraction heavy
+// Thursday - balanced
+// Friday - meeting heavy
+// Saturday - sparse day
+// Sunday - context switch heavy
+
+const monday = startOfWeekMondayYmd();
+const tuesday = addDaysYmd(monday, 1);
+const wednesday = addDaysYmd(monday, 2);
+const thursday = addDaysYmd(monday, 3);
+const friday = addDaysYmd(monday, 4);
+const saturday = addDaysYmd(monday, 5);
+const sunday = addDaysYmd(monday, 6);
+
 
 
 const seedActivities: SeedActivity[] = [
-  // 6 days ago - study heavy
-  makeActivity(day6, '01:00', '01:45', 'Notion', 'SPM Notes - Product Roadmaps', undefined, 'Study'),
-  makeActivity(day6, '01:45', '02:20', 'Firefox', 'YouTube - Dynamic Programming Lecture', 'https://www.youtube.com/watch?v=dp-lecture-1', 'Study'),
-  makeActivity(day6, '02:20', '02:22', 'Discord', 'General Chat', undefined, 'Communication'),
-  makeActivity(day6, '02:22', '03:15', 'Visual Studio Code', 'ChronoLog tracker.ts', undefined, 'Work'),
-  makeActivity(day6, '03:15', '03:16', 'Firefox', 'Steam Store', 'https://store.steampowered.com/app/123', 'Gaming'),
-  makeActivity(day6, '03:16', '03:17', 'Firefox', 'YouTube - lofi mix', 'https://www.youtube.com/watch?v=lofi-1', 'Entertainment'),
-  makeActivity(day6, '03:17', '04:00', 'Adobe Acrobat', 'CN Week 8 Slides.pdf', undefined, 'Reading'),
+  // Monday - study heavy
+  makeActivity(monday, '01:00', '01:45', 'Notion', 'SPM Notes - Product Roadmaps', undefined, 'Study'),
+  makeActivity(monday, '01:45', '02:20', 'Firefox', 'YouTube - Dynamic Programming Lecture', 'https://www.youtube.com/watch?v=dp-lecture-1', 'Study'),
+  makeActivity(monday, '02:20', '02:22', 'Discord', 'General Chat', undefined, 'Communication'),
+  makeActivity(monday, '02:22', '03:15', 'Visual Studio Code', 'ChronoLog tracker.ts', undefined, 'Work'),
+  makeActivity(monday, '03:15', '03:16', 'Firefox', 'Steam Store', 'https://store.steampowered.com/app/123', 'Gaming'),
+  makeActivity(monday, '03:16', '03:17', 'Firefox', 'YouTube - lofi mix', 'https://www.youtube.com/watch?v=lofi-1', 'Entertainment'),
+  makeActivity(monday, '03:17', '04:00', 'Adobe Acrobat', 'CN Week 8 Slides.pdf', undefined, 'Reading'),
 
-  // 5 days ago - work heavy
-  makeActivity(day5, '01:00', '01:50', 'Cursor', 'Insights.tsx', undefined, 'Work'),
-  makeActivity(day5, '01:50', '02:20', 'Firefox', 'ChatGPT - prompt tuning', 'https://chat.openai.com/c/demo-1', 'Research'),
-  makeActivity(day5, '02:20', '02:55', 'Slack', 'Deloitte Intern Channel', undefined, 'Communication'),
-  makeActivity(day5, '02:55', '03:30', 'Firefox', 'Google Meet - Weekly Sync', 'https://meet.google.com/abc-defg-hij', 'Meetings'),
-  makeActivity(day5, '03:30', '04:05', 'File Explorer', 'Evidence Folder Review', undefined, 'Admin'),
+  // Tuesday - work heavy
+  makeActivity(tuesday, '01:00', '01:50', 'Cursor', 'Insights.tsx', undefined, 'Work'),
+  makeActivity(tuesday, '01:50', '02:20', 'Firefox', 'ChatGPT - prompt tuning', 'https://chat.openai.com/c/demo-1', 'Research'),
+  makeActivity(tuesday, '02:20', '02:55', 'Slack', 'Deloitte Intern Channel', undefined, 'Communication'),
+  makeActivity(tuesday, '02:55', '03:30', 'Firefox', 'Google Meet - Weekly Sync', 'https://meet.google.com/abc-defg-hij', 'Meetings'),
+  makeActivity(tuesday, '03:30', '04:05', 'File Explorer', 'Evidence Folder Review', undefined, 'Admin'),
 
-  // 4 days ago - distraction heavy
-  makeActivity(day4, '01:00', '01:01', 'Firefox', 'Steam Store - Helldivers 2', 'https://store.steampowered.com/app/553850', 'Gaming'),
-  makeActivity(day4, '01:01', '01:02', 'Firefox', 'YouTube - funny clips', 'https://www.youtube.com/watch?v=funny-1', 'Entertainment'),
-  makeActivity(day4, '01:02', '01:03', 'Firefox', 'ChatGPT - random browsing', 'https://chat.openai.com/c/demo-2', 'Research'),
-  makeActivity(day4, '01:03', '01:50', 'Steam', 'Monster Hunter Wilds', undefined, 'Gaming'),
-  makeActivity(day4, '01:50', '02:10', 'Discord', 'Voice Chat', undefined, 'Communication'),
-  makeActivity(day4, '02:10', '02:40', 'Visual Studio Code', 'Assignment 2', undefined, 'Work'),
+  // Wednesday - distraction heavy
+  makeActivity(wednesday, '01:00', '01:01', 'Firefox', 'Steam Store - Helldivers 2', 'https://store.steampowered.com/app/553850', 'Gaming'),
+  makeActivity(wednesday, '01:01', '01:02', 'Firefox', 'YouTube - funny clips', 'https://www.youtube.com/watch?v=funny-1', 'Entertainment'),
+  makeActivity(wednesday, '01:02', '01:03', 'Firefox', 'ChatGPT - random browsing', 'https://chat.openai.com/c/demo-2', 'Research'),
+  makeActivity(wednesday, '01:03', '01:50', 'Steam', 'Monster Hunter Wilds', undefined, 'Gaming'),
+  makeActivity(wednesday, '01:50', '02:10', 'Discord', 'Voice Chat', undefined, 'Communication'),
+  makeActivity(wednesday, '02:10', '02:40', 'Visual Studio Code', 'Assignment 2', undefined, 'Work'),
 
-  // 3 days ago - balanced
-  makeActivity(day3, '01:00', '01:35', 'Notion', 'DAA Quiz Revision', undefined, 'Study'),
-  makeActivity(day3, '01:35', '02:10', 'Firefox', 'Stack Overflow - Typescript generics', 'https://stackoverflow.com/questions/12345', 'Research'),
-  makeActivity(day3, '02:10', '02:40', 'Adobe Acrobat', 'Research Paper.pdf', undefined, 'Reading'),
-  makeActivity(day3, '02:40', '03:10', 'Slack', 'Project Updates', undefined, 'Communication'),
-  makeActivity(day3, '03:10', '03:45', 'Firefox', 'YouTube - music mix', 'https://www.youtube.com/watch?v=music-1', 'Entertainment'),
+  // Thursday - balanced
+  makeActivity(thursday, '01:00', '01:35', 'Notion', 'DAA Quiz Revision', undefined, 'Study'),
+  makeActivity(thursday, '01:35', '02:10', 'Firefox', 'Stack Overflow - Typescript generics', 'https://stackoverflow.com/questions/12345', 'Research'),
+  makeActivity(thursday, '02:10', '02:40', 'Adobe Acrobat', 'Research Paper.pdf', undefined, 'Reading'),
+  makeActivity(thursday, '02:40', '03:10', 'Slack', 'Project Updates', undefined, 'Communication'),
+  makeActivity(thursday, '03:10', '03:45', 'Firefox', 'YouTube - music mix', 'https://www.youtube.com/watch?v=music-1', 'Entertainment'),
 
-  // 2 days ago - meeting heavy
-  makeActivity(day2, '01:00', '01:45', 'Firefox', 'Zoom Workplace - Team Standup', 'https://zoom.us/j/123456789', 'Meetings'),
-  makeActivity(day2, '01:45', '02:15', 'Slack', 'Ops Channel', undefined, 'Communication'),
-  makeActivity(day2, '02:15', '02:45', 'Google Chrome', 'ChatGPT - architecture brainstorming', 'https://chat.openai.com/c/demo-3', 'Research'),
-  makeActivity(day2, '02:45', '03:20', 'Visual Studio Code', 'activity.service.ts', undefined, 'Work'),
-  makeActivity(day2, '03:20', '03:24', 'ChronoLog', 'ChronoLog - Dashboard', undefined, 'ChronoLog', true),
+  // Friday - meeting heavy
+  makeActivity(friday, '01:00', '01:45', 'Firefox', 'Zoom Workplace - Team Standup', 'https://zoom.us/j/123456789', 'Meetings'),
+  makeActivity(friday, '01:45', '02:15', 'Slack', 'Ops Channel', undefined, 'Communication'),
+  makeActivity(friday, '02:15', '02:45', 'Google Chrome', 'ChatGPT - architecture brainstorming', 'https://chat.openai.com/c/demo-3', 'Research'),
+  makeActivity(friday, '02:45', '03:20', 'Visual Studio Code', 'activity.service.ts', undefined, 'Work'),
+  makeActivity(friday, '03:20', '03:24', 'ChronoLog', 'ChronoLog - Dashboard', undefined, 'ChronoLog', true),
 
-  // 1 day ago - sparse day
-  makeActivity(day1, '05:00', '05:20', 'Adobe Acrobat', 'Algorithm Notes.pdf', undefined, 'Reading'),
-  makeActivity(day1, '05:20', '05:40', 'Firefox', 'YouTube - recursion tutorial', 'https://www.youtube.com/watch?v=recursion-1', 'Study'),
-  makeActivity(day1, '05:40', '06:00', 'Steam', 'Steam Library', undefined, 'Gaming'),
+  // Saturday - sparse day
+  makeActivity(saturday, '05:00', '05:20', 'Adobe Acrobat', 'Algorithm Notes.pdf', undefined, 'Reading'),
+  makeActivity(saturday, '05:20', '05:40', 'Firefox', 'YouTube - recursion tutorial', 'https://www.youtube.com/watch?v=recursion-1', 'Study'),
+  makeActivity(saturday, '05:40', '06:00', 'Steam', 'Steam Library', undefined, 'Gaming'),
 
-  // today - context switch heavy
-  makeActivity(day0, '01:00', '01:01', 'Firefox', 'Steam Store - sale page', 'https://store.steampowered.com/sale/demo', 'Gaming'),
-  makeActivity(day0, '01:01', '01:02', 'Firefox', 'YouTube - networking lecture', 'https://www.youtube.com/watch?v=net-lecture', 'Study'),
-  makeActivity(day0, '01:02', '01:03', 'Firefox', 'ChatGPT - CN question', 'https://chat.openai.com/c/demo-4', 'Research'),
-  makeActivity(day0, '01:03', '01:04', 'Firefox', 'YouTube - trailer', 'https://www.youtube.com/watch?v=trailer-1', 'Entertainment'),
-  makeActivity(day0, '01:04', '01:35', 'Visual Studio Code', 'tracker.ts', undefined, 'Work'),
-  makeActivity(day0, '01:35', '01:50', 'Notion', 'Weekly Review', undefined, 'Admin'),
+  // Sunday - context switch heavy
+  makeActivity(sunday, '01:00', '01:01', 'Firefox', 'Steam Store - sale page', 'https://store.steampowered.com/sale/demo', 'Gaming'),
+  makeActivity(sunday, '01:01', '01:02', 'Firefox', 'YouTube - networking lecture', 'https://www.youtube.com/watch?v=net-lecture', 'Study'),
+  makeActivity(sunday, '01:02', '01:03', 'Firefox', 'ChatGPT - CN question', 'https://chat.openai.com/c/demo-4', 'Research'),
+  makeActivity(sunday, '01:03', '01:04', 'Firefox', 'YouTube - trailer', 'https://www.youtube.com/watch?v=trailer-1', 'Entertainment'),
+  makeActivity(sunday, '01:04', '01:35', 'Visual Studio Code', 'tracker.ts', undefined, 'Work'),
+  makeActivity(sunday, '01:35', '01:50', 'Notion', 'Weekly Review', undefined, 'Admin'),
 ];
+
+function resetDemoStore() {
+  if (fs.existsSync(ACTIVITIES_DIR)) {
+    fs.rmSync(ACTIVITIES_DIR, { recursive: true, force: true });
+  }
+
+  if (fs.existsSync(RULES_FILE)) {
+    fs.rmSync(RULES_FILE, { force: true });
+  }
+
+  if (fs.existsSync(SETTINGS_FILE)) {
+    fs.rmSync(SETTINGS_FILE, { force: true });
+  }
+
+  if (fs.existsSync(TRACKER_STATE_FILE)) {
+    fs.rmSync(TRACKER_STATE_FILE, { force: true });
+  }
+
+  console.log('Reset demo data store.');
+}
 
 function seedRulesToStore() {
   for (const rule of seedRules) {
@@ -176,6 +260,12 @@ function seedActivitiesToStore() {
 }
 
 function main() {
+  console.log('*** main() started ***');
+  resetDemoStore();
+
+  console.log('Creating demo settings...');
+  writeDemoSettings();
+
   console.log('Seeding ChronoLog demo rules...');
   seedRulesToStore();
 
@@ -185,4 +275,4 @@ function main() {
   console.log(`Done. Seeded ${seedRules.length} rules and ${seedActivities.length} activities.`);
 }
 
-main();
+main()

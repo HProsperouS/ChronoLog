@@ -8,6 +8,7 @@ const ACTIVITIES_DIR = path.join(DATA_DIR, 'activities');
 const RULES_FILE = path.join(DATA_DIR, 'category-rules.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TRACKER_STATE_FILE = path.join(DATA_DIR, 'tracker-state.json');
+const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 console.log('*** seed-demo.ts loaded ***');
 
 // If your project exports these store helpers, uncomment and use them.
@@ -263,6 +264,10 @@ function resetDemoStore() {
     fs.rmSync(TRACKER_STATE_FILE, { force: true });
   }
 
+  if (fs.existsSync(CATEGORIES_FILE)) {
+    fs.rmSync(CATEGORIES_FILE, { force: true });
+  }
+  
   console.log('Reset demo data store.');
 }
 

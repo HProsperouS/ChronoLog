@@ -1,6 +1,6 @@
 {
   "settings": {
-    "trackingEnabled": false,
+    "trackingEnabled": true,
     "idleDetectionEnabled": true,
     "notificationsEnabled": true,
     "launchAtStartup": true,

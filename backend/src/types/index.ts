@@ -28,6 +28,11 @@ export interface CategoryRule {
   keywords?: string[];
 }
 
+export type CategoryDefinition = {
+  name: string;
+  color: string;
+};
+
 export interface Insight {
   id: string;
   type: 'pattern' | 'achievement' | 'recommendation';

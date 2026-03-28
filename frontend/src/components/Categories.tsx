@@ -8,7 +8,7 @@ import { categoryColors, DEFAULT_CATEGORY_COLOR } from '../constants';
 import type { CategoryRule } from '../types';
 
 const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
-const CUSTOM_CATEGORY_VALUE = '__custom__';
+
 
 function parseKeywords(raw: string): string[] {
   return raw
@@ -21,18 +21,6 @@ function normalizeCategoryName(value: string): string {
   return value.trim();
 }
 
-
-function resolveDraftCategory(
-  selectedCategory: string,
-  customCategoryInput: string
-): string {
-  if (selectedCategory === CUSTOM_CATEGORY_VALUE) {
-    return normalizeCategoryName(customCategoryInput);
-  }
-
-  return normalizeCategoryName(selectedCategory);
-}
-
 export function Categories() {
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,6 +29,11 @@ export function Categories() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { messages, flash, dismiss } = useFlash();
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#8b5cf6');
+  const [customCategoryColors, setCustomCategoryColors] = useState<Record<string, string>>({});
 
 const defaultCategories = [
   'Work',
@@ -54,19 +47,29 @@ const defaultCategories = [
 
 
 
-const [customCategoryInput, setCustomCategoryInput] = useState('');
 
 const categories = useMemo(() => {
   const fromRules = rules
     .map((r) => r.category?.trim())
     .filter(Boolean) as string[];
 
-  return Array.from(new Set([...defaultCategories, ...fromRules]));
-}, [rules]);
+  return Array.from(new Set([...defaultCategories, ...customCategories, ...fromRules]));
+}, [rules, customCategories]);
 
 
   useEffect(() => {
-    api.getCategoryRules().then(setRules).catch(() => flash('error', 'Failed to load category rules'));
+    void Promise.all([
+      api.getCategoryRules(),
+      api.getCategories(),
+    ])
+      .then(([loadedRules, loadedCategories]) => {
+        setRules(loadedRules);
+        setCustomCategories(loadedCategories.map((c) => c.name));
+        setCustomCategoryColors(
+          Object.fromEntries(loadedCategories.map((c) => [c.name, c.color]))
+        );
+      })
+      .catch(() => flash('error', 'Failed to load category data'));
   }, []);
 
  
@@ -90,16 +93,12 @@ const categories = useMemo(() => {
     const rule = rules.find((r) => r.id === id);
     if (!rule) return;
     
-    const isDefaultCategory = defaultCategories.includes(rule.category);
-
-    setDraft({
-      appName: rule.appName,
-      category: isDefaultCategory ? rule.category : CUSTOM_CATEGORY_VALUE,
-      keywords: rule.keywords?.join(', ') ?? '',
-      isAutomatic: rule.isAutomatic,
-    });
-
-    setCustomCategoryInput(isDefaultCategory ? '' : rule.category);
+  setDraft({
+    appName: rule.appName,
+    category: rule.category,
+    keywords: rule.keywords?.join(', ') ?? '',
+    isAutomatic: rule.isAutomatic,
+  });
 
     setEditingId(id);
   }
@@ -114,7 +113,7 @@ const categories = useMemo(() => {
       return;
     }
 
-    const resolvedCategory = resolveDraftCategory(draft.category, customCategoryInput);
+    const resolvedCategory = normalizeCategoryName(draft.category);
 
     if (!resolvedCategory) {
       flash('warning', 'Category is required');
@@ -132,7 +131,6 @@ const categories = useMemo(() => {
       setRules((prev) => prev.map((r) => (r.id === editingId ? updated : r)));
       setEditingId(null);
       setDraft({ ...EMPTY_DRAFT });
-      setCustomCategoryInput('');
       flash('success', 'Rule updated successfully');
     } catch {
       flash('error', 'Failed to update rule');
@@ -152,7 +150,7 @@ const categories = useMemo(() => {
       return;
     }
 
-    const resolvedCategory = resolveDraftCategory(draft.category, customCategoryInput);
+    const resolvedCategory = normalizeCategoryName(draft.category);
     if (!resolvedCategory) {
       flash('warning', 'Category is required');
       return;
@@ -169,7 +167,6 @@ const categories = useMemo(() => {
       setRules((prev) => [...prev, created]);
       setIsAdding(false);
       setDraft({ ...EMPTY_DRAFT });
-      setCustomCategoryInput('');
       flash('success', `Rule for "${created.appName}" added`);
     } catch {
       flash('error', 'Failed to add rule');
@@ -180,14 +177,50 @@ const categories = useMemo(() => {
     setEditingId(null);
     setIsAdding(false);
     setDraft({ ...EMPTY_DRAFT });
-    setCustomCategoryInput('');
   }
 
   function handleStartAdd() {
-    setDraft({ ...EMPTY_DRAFT });
-    setCustomCategoryInput('');
+    setDraft((prev) => ({
+      ...EMPTY_DRAFT,
+      category: categories.includes(prev.category) ? prev.category : EMPTY_DRAFT.category,
+    }));
     setEditingId(null);
     setIsAdding(true);
+  }
+
+  async function handleCreateCategory() {
+    const normalized = normalizeCategoryName(newCategoryName);
+
+    if (!normalized) {
+      flash('warning', 'Category name is required');
+      return;
+    }
+
+    if (categories.some((c) => c.toLowerCase() === normalized.toLowerCase())) {
+      flash('warning', 'That category already exists');
+      return;
+    }
+
+    try {
+      const created = await api.createCategory({
+        name: normalized,
+        color: newCategoryColor,
+      });
+
+      setCustomCategories((prev) => [...prev, created.name]);
+      setCustomCategoryColors((prev) => ({
+        ...prev,
+        [created.name]: created.color,
+      }));
+      setDraft((d) => ({ ...d, category: created.name as CategoryRule['category'] }));
+      setNewCategoryName('');
+      setNewCategoryColor('#8b5cf6');
+      setIsCategoryDialogOpen(false);
+      flash('success', `Category "${created.name}" created`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create category';
+      flash('error', message);
+    }
   }
 
   return (
@@ -202,13 +235,6 @@ const categories = useMemo(() => {
               Manage application categorization
             </p>
           </div>
-          <button
-            onClick={handleStartAdd}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Rule
-          </button>
         </div>
       </div>
 
@@ -224,7 +250,7 @@ const categories = useMemo(() => {
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-3 h-3 rounded"
-                      style={{ backgroundColor: categoryColors[category] ?? DEFAULT_CATEGORY_COLOR }}
+                      style={{ backgroundColor: customCategoryColors[category] ?? categoryColors[category] ?? DEFAULT_CATEGORY_COLOR }}
                     />
                     <div>
                       <p className="text-sm font-semibold text-white">{category}</p>
@@ -240,10 +266,27 @@ const categories = useMemo(() => {
 
         {/* Rules Table */}
         <div className="bg-[#13131a] border border-white/5 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/5">
+          <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-white">Application Rules</h2>
-          </div>
 
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsCategoryDialogOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-300 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Category
+              </button>
+
+              <button
+                onClick={handleStartAdd}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Rule
+              </button>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/5 border-b border-white/5">
@@ -278,35 +321,22 @@ const categories = useMemo(() => {
                       />
                     </td>
                     <td className="px-5 py-3">
-                      <div className="space-y-2">
-                        <select
-                          value={draft.category}
-                          onChange={(e) =>
-                            setDraft((d) => ({
-                              ...d,
-                              category: e.target.value as CategoryRule['category'],
-                            }))
-                          }
-                          className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                        >
-                          {categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                              {cat}
-                            </option>
-                          ))}
-                          <option value={CUSTOM_CATEGORY_VALUE}>+ Create new category</option>
-                        </select>
-
-                        {draft.category === CUSTOM_CATEGORY_VALUE && (
-                          <input
-                            type="text"
-                            placeholder="Enter new category name"
-                            value={customCategoryInput}
-                            onChange={(e) => setCustomCategoryInput(e.target.value)}
-                            className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
-                          />
-                        )}
-                      </div>
+                      <select
+                        value={draft.category}
+                        onChange={(e) =>
+                          setDraft((d) => ({
+                            ...d,
+                            category: e.target.value as CategoryRule['category'],
+                          }))
+                        }
+                        className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-5 py-3">
                       <input
@@ -367,40 +397,27 @@ const categories = useMemo(() => {
                       </td>
                       <td className="px-5 py-3">
                         {isEditing ? (
-                          <div className="space-y-2">
-                            <select
-                              value={draft.category}
-                              onChange={(e) =>
-                                setDraft((d) => ({
-                                  ...d,
-                                  category: e.target.value as CategoryRule['category'],
-                                }))
-                              }
-                              className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                            >
-                              {categories.map((cat) => (
-                                <option key={cat} value={cat}>
-                                  {cat}
-                                </option>
-                              ))}
-                              <option value={CUSTOM_CATEGORY_VALUE}>+ Create new category</option>
-                            </select>
-
-                            {draft.category === CUSTOM_CATEGORY_VALUE && (
-                              <input
-                                type="text"
-                                placeholder="Enter new category name"
-                                value={customCategoryInput}
-                                onChange={(e) => setCustomCategoryInput(e.target.value)}
-                                className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
-                              />
-                            )}
-                          </div>
+                          <select
+                            value={draft.category}
+                            onChange={(e) =>
+                              setDraft((d) => ({
+                                ...d,
+                                category: e.target.value as CategoryRule['category'],
+                              }))
+                            }
+                            className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                          >
+                            {categories.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
                         ) : (
                           <div className="flex items-center gap-2">
                             <div
                               className="w-2 h-2 rounded"
-                              style={{ backgroundColor: categoryColors[rule.category] ?? DEFAULT_CATEGORY_COLOR }}
+                              style={{ backgroundColor: customCategoryColors[rule.category] ?? categoryColors[rule.category] ?? DEFAULT_CATEGORY_COLOR }}
                             />
                             <span className="text-xs text-white">{rule.category}</span>
                           </div>
@@ -513,6 +530,71 @@ const categories = useMemo(() => {
           </div>
         </div>
       </div>
+
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="bg-[#111827] border border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-sm text-white">Create new category</DialogTitle>
+            <DialogDescription className="text-xs text-white">
+              Add a custom category that can be used in your application rules.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs text-white">Category name</label>
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Finance, Social, Admin"
+                className="w-full px-3 py-2 bg-black border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-white">Category color</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={newCategoryColor}
+                  onChange={(e) => setNewCategoryColor(e.target.value)}
+                  className="h-10 w-14 rounded border border-white/10 bg-black p-1 cursor-pointer"
+                />
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: newCategoryColor }}
+                  />
+                  <span className="text-xs text-gray-300">{newCategoryColor}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-xs bg-white/10 text-white border-white/20 hover:bg-white/15"
+              onClick={() => {
+                setIsCategoryDialogOpen(false);
+                setNewCategoryName('');
+                setNewCategoryColor('#8b5cf6');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="text-xs"
+              onClick={handleCreateCategory}
+            >
+              Create Category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>

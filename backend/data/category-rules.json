@@ -79,8 +79,9 @@
   {
     "id": "6",
     "appName": "Notepad++",
-    "category": "Work",
-    "isAutomatic": true
+    "category": "NEW CATEGORY TEST",
+    "isAutomatic": true,
+    "keywords": []
   },
   {
     "id": "7",

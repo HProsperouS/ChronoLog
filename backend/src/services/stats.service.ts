@@ -26,7 +26,7 @@ function addDaysYmd(ymd: string, deltaDays: number): string {
   return `${y}-${m}-${day}`;
 }
 
-const FOCUS: Category[] = ['Work', 'Study'];
+const FOCUS: Category[] = ['Deep Work', 'Study'];
 
 /**
  * Same definition everywhere: Dashboard, Insights UI, GET /api/stats, and

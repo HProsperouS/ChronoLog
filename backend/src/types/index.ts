@@ -1,9 +1,11 @@
 export type Category =
-  | 'Work'
+  | 'Deep Work'
   | 'Study'
-  | 'Entertainment'
   | 'Communication'
-  | 'Utilities'
+  | 'Meetings'
+  | 'Admin'
+  | 'Entertainment'
+  | 'Gaming'
   | 'Uncategorized'
   | 'ChronoLog';
 

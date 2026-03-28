@@ -7,7 +7,7 @@ import * as api from '../api';
 import { categoryColors, DEFAULT_CATEGORY_COLOR } from '../constants';
 import type { CategoryRule } from '../types';
 
-const EMPTY_DRAFT = { appName: '', category: 'Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
+
 
 
 function parseKeywords(raw: string): string[] {
@@ -20,6 +20,9 @@ function parseKeywords(raw: string): string[] {
 function normalizeCategoryName(value: string): string {
   return value.trim();
 }
+
+const EMPTY_DRAFT = { appName: '', category: 'Deep Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
+
 
 export function Categories() {
   const [rules, setRules] = useState<CategoryRule[]>([]);
@@ -35,15 +38,18 @@ export function Categories() {
   const [newCategoryColor, setNewCategoryColor] = useState('#8b5cf6');
   const [customCategoryColors, setCustomCategoryColors] = useState<Record<string, string>>({});
 
-const defaultCategories = [
-  'Work',
-  'Study',
-  'Entertainment',
-  'Communication',
-  'Utilities',
-  'Uncategorized',
-  'ChronoLog',
-];
+
+  const defaultCategories = [
+    'Deep Work',
+    'Study',
+    'Communication',
+    'Meetings',
+    'Admin',
+    'Entertainment',
+    'Gaming',
+    'Uncategorized',
+    'ChronoLog',
+  ];
 
 
 
@@ -520,12 +526,24 @@ const categories = useMemo(() => {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-white mb-1">How Category Rules Work</h3>
-              <p className="text-xs text-white leading-relaxed">
-                <strong className="text-white">Automatic rules</strong> set the default category for an application.
-                <strong className="text-white"> Manual rules</strong> act as overrides for that application when keywords match the
-                page title, URL, or site name. For example, you can set Firefox to Entertainment by default, but use a manual
-                keyword like <span className="text-white">googledocs</span> to classify Google Docs as Work.
-              </p>
+              <div className="text-xs text-white leading-relaxed space-y-2">
+                <p>
+                  Rules are applied separately for each application.
+                </p>
+                <p>
+                  <strong className="text-white">Automatic rules</strong> set the default category for an app.
+                </p>
+                <p>
+                  <strong className="text-white">Manual rules</strong> are keyword-based overrides for that same app. ChronoLog checks
+                  manual rules first using the window title, URL, or site name. If one matches, that category is used. If none match,
+                  the automatic rule is used instead. If no rule applies, the activity becomes <strong className="text-white">Uncategorized</strong>.
+                </p>
+                <p>
+                  <strong className="text-white">Example:</strong><br />
+                  Firefox default → Entertainment<br />
+                  Firefox + <span className="text-white">googledocs</span> → Work
+                </p>
+              </div>
             </div>
           </div>
         </div>

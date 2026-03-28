@@ -1,5 +1,5 @@
 import './load-env';
-import activeWin from 'active-win';
+import { activeWindow } from 'active-win';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -253,7 +253,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   }
 }
 
-function extractUrl(win: activeWin.Result): string | undefined {
+function extractUrl(win: NonNullable<Awaited<ReturnType<typeof activeWindow>>>): string | undefined {
   if ('url' in win && typeof win.url === 'string') return win.url;
   return undefined;
 }
@@ -317,9 +317,9 @@ async function poll(): Promise<void> {
   }
 
   // 3. Read active window
-  let win: activeWin.Result | undefined;
+  let win: Awaited<ReturnType<typeof activeWindow>>;
   try {
-    win = (await activeWin()) ?? undefined;
+    win = (await activeWindow()) ?? undefined;
   } catch (err) {
     console.error('[tracker] activeWin failed:', err);
     if (isLikelyMacPermissionsError(err)) {

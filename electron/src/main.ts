@@ -237,6 +237,7 @@ function startTracker(): void {
   const env = {
     ...process.env,
     API_URL: `http://localhost:${BACKEND_PORT}`,
+    DATA_DIR: getDataDir(),
     NODE_ENV: isDev ? 'development' : 'production',
   };
 
@@ -260,6 +261,10 @@ function startTracker(): void {
 
   trackerProcess.on('error', (err) => {
     console.error('[tracker] Failed to start:', err);
+  });
+
+  trackerProcess.on('exit', (code, signal) => {
+    console.log(`[tracker] exited code=${code ?? 'null'} signal=${signal ?? 'null'}`);
   });
 }
 

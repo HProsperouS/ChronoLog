@@ -1,8 +1,8 @@
 import './load-env';
+import { activeWindow } from 'active-win';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { pathToFileURL } from 'url';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 const MIN_DURATION_SECONDS = 5;
@@ -30,70 +30,6 @@ let config: TrackerConfig = {
 };
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
-
-type ActiveWindowResult = {
-  title?: string | null;
-  url?: string;
-  owner: {
-    name: string;
-  };
-};
-
-type ActiveWindowFn = (options?: {
-  accessibilityPermission?: boolean;
-  screenRecordingPermission?: boolean;
-}) => Promise<ActiveWindowResult | undefined>;
-
-const dynamicImport = new Function(
-  'specifier',
-  'return import(specifier);'
-) as (specifier: string) => Promise<Record<string, unknown>>;
-
-let loadedActiveWindowFn: ActiveWindowFn | null = null;
-let activeWindowLoadFailed = false;
-
-function resolveActiveWinPlatformModulePath(): string | null {
-  let activeWinEntry: string;
-  try {
-    activeWinEntry = require.resolve('active-win');
-  } catch {
-    return null;
-  }
-
-  const activeWinDir = path.dirname(activeWinEntry);
-  if (process.platform === 'darwin') return path.join(activeWinDir, 'lib', 'macos.js');
-  if (process.platform === 'win32') return path.join(activeWinDir, 'lib', 'windows.js');
-  if (process.platform === 'linux') return path.join(activeWinDir, 'lib', 'linux.js');
-  return null;
-}
-
-async function getActiveWindowFn(): Promise<ActiveWindowFn | null> {
-  if (loadedActiveWindowFn) return loadedActiveWindowFn;
-  if (activeWindowLoadFailed) return null;
-
-  const modulePath = resolveActiveWinPlatformModulePath();
-  if (!modulePath) {
-    activeWindowLoadFailed = true;
-    console.error(`[tracker] active-win unsupported or missing on platform: ${process.platform}`);
-    return null;
-  }
-
-  try {
-    const moduleUrl = pathToFileURL(modulePath).href;
-    const mod = await dynamicImport(moduleUrl);
-    const candidate = mod.activeWindow;
-    if (typeof candidate !== 'function') {
-      throw new Error(`activeWindow export missing from ${modulePath}`);
-    }
-    loadedActiveWindowFn = candidate as ActiveWindowFn;
-    console.log(`[tracker] active-win loaded via ${modulePath}`);
-    return loadedActiveWindowFn;
-  } catch (err) {
-    activeWindowLoadFailed = true;
-    console.error('[tracker] Failed to load active-win module:', err);
-    return null;
-  }
-}
 
 // ─── macOS permission prompt backoff ──────────────────────────────────────────
 // If the app lacks Screen Recording / Accessibility permissions, querying the
@@ -295,7 +231,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
     duration: Math.round((durationMs / 1_000 / 60) * 10) / 10,
     startTime: session.startTime.toISOString(),
     endTime: endTime.toISOString(),
-    excludeFromAnalytics: isSelfActivity,
+    excludeFromAnalytics: false,
   };
 
   try {
@@ -317,7 +253,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   }
 }
 
-function extractUrl(win: ActiveWindowResult): string | undefined {
+function extractUrl(win: NonNullable<Awaited<ReturnType<typeof activeWindow>>>): string | undefined {
   if ('url' in win && typeof win.url === 'string') return win.url;
   return undefined;
 }
@@ -381,12 +317,9 @@ async function poll(): Promise<void> {
   }
 
   // 3. Read active window
-  const activeWindowFn = await getActiveWindowFn();
-  if (!activeWindowFn) return;
-
-  let win: ActiveWindowResult | undefined;
+  let win: Awaited<ReturnType<typeof activeWindow>>;
   try {
-    win = (await activeWindowFn()) ?? undefined;
+    win = (await activeWindow()) ?? undefined;
   } catch (err) {
     console.error('[tracker] activeWin failed:', err);
     if (isLikelyMacPermissionsError(err)) {

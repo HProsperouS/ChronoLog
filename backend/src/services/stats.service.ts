@@ -450,3 +450,84 @@ export function getWeeklyStats(from: string, to: string): DailyStats[] {
   // });
   return result;
 }
+
+/** Aggregate weekly stats payload for insights Lambda. */
+export function getInsightsLambdaStatsWeekly(
+  from: string,
+  to: string,
+): {
+  startDate: string;
+  endDate: string;
+  dailyStats: (InsightsLambdaStatsPayload & { date: string })[];
+  aggregated: {
+    totalTime: number;
+    avgFocusScore: number;
+    contextSwitches: number;
+    longestSession: number;
+    categoryTotals: Record<string, number>;
+    topApps: { appName: string; category: Category; duration: number }[];
+  };
+} {
+  const activities = analyticsOnly(readRange(from, to));
+
+  const byDate = new Map<string, Activity[]>();
+  for (const a of activities) {
+    if (!byDate.has(a.date)) byDate.set(a.date, []);
+    byDate.get(a.date)!.push(a);
+  }
+
+  const dailyStats: (InsightsLambdaStatsPayload & { date: string })[] = [];
+  let cur = from;
+  while (cur <= to) {
+    const dayActivities = byDate.get(cur) ?? [];
+    const stats = {
+      ...buildDailyStats(cur, dayActivities),
+      ...computeInsightMetrics(dayActivities),
+    };
+    dailyStats.push(stats);
+    cur = addDaysYmd(cur, 1);
+  }
+
+  // Aggregate across week
+  const aggregated = {
+    totalTime: dailyStats.reduce((sum, d) => sum + d.totalTime, 0),
+    avgFocusScore: Math.round(
+      dailyStats.reduce((sum, d) => sum + d.focusScore, 0) / Math.max(1, dailyStats.length),
+    ),
+    contextSwitches: dailyStats.reduce((sum, d) => sum + d.contextSwitches, 0),
+    longestSession: Math.max(0, ...dailyStats.map((d) => d.longestSession)),
+    categoryTotals: {} as Record<string, number>,
+    topApps: [] as { appName: string; category: Category; duration: number }[],
+  };
+
+  // Aggregate category totals
+  for (const day of dailyStats) {
+    for (const [cat, mins] of Object.entries(day.categoryTotals)) {
+      aggregated.categoryTotals[cat] = (aggregated.categoryTotals[cat] ?? 0) + mins;
+    }
+  }
+
+  // Get top apps across the week
+  const appMap = new Map<string, { appName: string; category: Category; duration: number }>();
+  for (const day of dailyStats) {
+    for (const app of day.topApps) {
+      const key = `${app.appName}|${app.category}`;
+      const existing = appMap.get(key);
+      if (existing) {
+        existing.duration += app.duration;
+      } else {
+        appMap.set(key, { ...app });
+      }
+    }
+  }
+  aggregated.topApps = [...appMap.values()]
+    .sort((a, b) => b.duration - a.duration)
+    .slice(0, 6);
+
+  return {
+    startDate: from,
+    endDate: to,
+    dailyStats,
+    aggregated,
+  };
+}

@@ -66,41 +66,26 @@ export function Insights() {
   const [quota, setQuota] = useState<api.InsightsQuota | null>(null);
   const [weeklyQuota, setWeeklyQuota] = useState<api.WeeklyInsightsQuota | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [weeklyGenerateError, setWeeklyGenerateError] = useState<string | null>(null);
-  const [selectedWeekStart, setSelectedWeekStart] = useState<string>('');
+  const [generateErrorWeekly, setGenerateErrorWeekly] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () => {
       const today = todayStr();
+      const weekMon = startOfWeekMonday(today);
       const thisWeekMon = startOfWeekMonday(today);
       const thisWeekSun = endOfWeekSunday(thisWeekMon);
       const fetchFrom = addDaysYmd(thisWeekMon, -7);
-
-      // Set initial week selection if not already set
-      if (!selectedWeekStart) {
-        setSelectedWeekStart(thisWeekMon);
-      }
-
       void Promise.all([
         api.getInsights(today),
+        api.getWeeklyInsights(weekMon),
         api.getWeeklyStatsRange(fetchFrom, thisWeekSun),
         api.getInsightsQuota(today),
-      ]).then(([ins, stats, quotaInfo]) => {
+        api.getWeeklyInsightsQuota(weekMon),
+      ]).then(([ins, weekIns, stats, quotaInfo, weekQuotaInfo]) => {
         setInsights(ins);
+        setWeeklyInsights(weekIns);
         setRangeStats(stats);
         setQuota(quotaInfo);
-      }).catch(() => {
-        // keep existing UI state if poll fails
-      });
-
-      // Load weekly insights for current week
-      void Promise.all([
-        api.getInsights(`w-${thisWeekMon}`),
-        api.getWeeklyInsightsQuota(thisWeekMon),
-      ]).then(([weekIns, weekQuotaInfo]) => {
-        // Filter to only weekly insights
-        const purifiedInsights = weekIns.filter((ins) => ins.date.startsWith('w-'));
-        setWeeklyInsights(purifiedInsights);
         setWeeklyQuota(weekQuotaInfo);
       }).catch(() => {
         // keep existing UI state if poll fails
@@ -134,18 +119,20 @@ export function Insights() {
   }
 
   async function handleGenerateWeekly() {
-    setWeeklyGenerateError(null);
+    setGenerateErrorWeekly(null);
     setGeneratingWeekly(true);
     try {
-      const fresh = await api.generateWeeklyInsights(selectedWeekStart);
+      const weekMon = startOfWeekMonday(todayStr());
+      const fresh = await api.generateWeeklyInsights(weekMon);
       setWeeklyInsights(fresh);
-      const nextQuota = await api.getWeeklyInsightsQuota(selectedWeekStart);
+      const nextQuota = await api.getWeeklyInsightsQuota(weekMon);
       setWeeklyQuota(nextQuota);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to generate weekly insights.';
-      setWeeklyGenerateError(message);
+      setGenerateErrorWeekly(message);
       try {
-        const nextQuota = await api.getWeeklyInsightsQuota(selectedWeekStart);
+        const weekMon = startOfWeekMonday(todayStr());
+        const nextQuota = await api.getWeeklyInsightsQuota(weekMon);
         setWeeklyQuota(nextQuota);
       } catch {
         // ignore follow-up quota fetch failure
@@ -154,21 +141,6 @@ export function Insights() {
       setGeneratingWeekly(false);
     }
   }
-
-  // Load weekly insights when selected week changes
-  useEffect(() => {
-    if (!selectedWeekStart) return;
-    void Promise.all([
-      api.getInsights(`w-${selectedWeekStart}`),
-      api.getWeeklyInsightsQuota(selectedWeekStart),
-    ]).then(([weekIns, weekQuotaInfo]) => {
-      const purifiedInsights = weekIns.filter((ins) => ins.date.startsWith('w-'));
-      setWeeklyInsights(purifiedInsights);
-      setWeeklyQuota(weekQuotaInfo);
-    }).catch(() => {
-      setWeeklyInsights([]);
-    });
-  }, [selectedWeekStart]);
 
   const getIcon = (iconName: string) => {
     const icons: Record<string, React.ElementType> = {
@@ -825,17 +797,18 @@ export function Insights() {
         </div>
 
         {/* Weekly Summary */}
-        <div className="mt-6 bg-[#13131a] border border-white/5 rounded-xl overflow-hidden">
-          <div className="p-5 border-b border-white/5 bg-gradient-to-r from-purple-500/5 via-transparent to-pink-500/5">
+        <div className="bg-[#13131a] border border-white/5 rounded-xl overflow-hidden mt-6">
+          <div className="p-5 border-b border-white/5 bg-gradient-to-r from-purple-500/5 via-transparent to-indigo-500/5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg shadow-purple-500/20">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg shadow-purple-500/20">
                   <Sparkles className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-white tracking-tight">Weekly AI Insights</h2>
+                  <h2 className="text-base font-semibold text-white tracking-tight">Weekly Summary</h2>
                   <p className="mt-1 text-xs text-gray-500 leading-relaxed max-w-xl">
-                    Comprehensive analysis and trends for your selected week. Generate a fresh batch anytime.
+                    AI analysis of your week&apos;s trends and patterns for{' '}
+                    <span className="text-gray-400 font-medium">{formatCalendarWeekRange(weekStart, weekEnd)}</span>. Generate a fresh batch anytime.
                   </p>
                   {weeklyQuota && (
                     <p className="mt-1 text-[11px] text-gray-500">
@@ -852,36 +825,27 @@ export function Insights() {
                   )}
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="date"
-                  value={selectedWeekStart}
-                  onChange={(e) => setSelectedWeekStart(e.target.value)}
-                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:bg-white/10"
-                  title="Select the Monday of the week you want to analyze"
-                />
-                <button
-                  type="button"
-                  onClick={() => void handleGenerateWeekly()}
-                  disabled={generatingWeekly || !(weeklyQuota?.canGenerate ?? true)}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-purple-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-purple-500/25 transition-all hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {generatingWeekly ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating…
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="h-4 w-4" />
-                      Generate insights
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => void handleGenerateWeekly()}
+                disabled={generatingWeekly || !(weeklyQuota?.canGenerate ?? true)}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-purple-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-purple-500/25 transition-all hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
+              >
+                {generatingWeekly ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4" />
+                    Generate insights
+                  </>
+                )}
+              </button>
             </div>
-            {weeklyGenerateError && (
-              <p className="mt-3 text-xs text-rose-300">{weeklyGenerateError}</p>
+            {generateErrorWeekly && (
+              <p className="mt-3 text-xs text-rose-300">{generateErrorWeekly}</p>
             )}
           </div>
 
@@ -891,10 +855,9 @@ export function Insights() {
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
                   <Sparkles className="h-7 w-7 text-purple-400/80" />
                 </div>
-                <p className="text-sm font-medium text-white">No insights for this week yet</p>
+                <p className="text-sm font-medium text-white">No weekly summary yet</p>
                 <p className="mt-2 max-w-sm text-xs text-gray-500 leading-relaxed">
-                  We haven&apos;t saved any AI cards for this week. Use <span className="text-gray-400">Generate insights</span>{' '}
-                  above to analyze the week&apos;s activity.
+                  We haven&apos;t saved a weekly analysis for this week. Use <span className="text-gray-400">Generate insights</span> above to analyze weekly trends — you&apos;ll need backend + Lambda configured for it to succeed.
                 </p>
                 <button
                   type="button"
@@ -909,7 +872,7 @@ export function Insights() {
             ) : (
               <div className="space-y-3">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-gray-600 mb-1">
-                  {weeklyInsights.length} insight{weeklyInsights.length === 1 ? '' : 's'} · week
+                  {weeklyInsights.length} insight{weeklyInsights.length === 1 ? '' : 's'} · weekly
                 </p>
                 {weeklyInsights.map((insight) => {
                   const Icon = getIcon(insight.icon);

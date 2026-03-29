@@ -38,25 +38,31 @@ export default async function insightsRoutes(app: FastifyInstance) {
     return reply.send({ quota });
   });
 
-  // Weekly insights routes
-  app.post<{ Body: { startDate?: string } }>('/weekly/generate', async (request, reply) => {
-    const startDate = request.body?.startDate ?? new Date().toISOString().slice(0, 10);
+  // Weekly insights endpoints
+  app.get<{ Querystring: { weekStart?: string } }>('/weekly', async (request, reply) => {
+    const weekStart = request.query.weekStart;
+    const insights = AiService.getWeeklyInsights(weekStart);
+    return reply.send({ insights });
+  });
+
+  app.post<{ Body: { weekStart?: string } }>('/weekly/generate', async (request, reply) => {
+    const weekStart = request.body?.weekStart ?? AiService.getLastMonday();
     try {
-      const insights = await AiService.generateWeeklyInsights(startDate);
+      const insights = await AiService.generateWeeklyInsights(weekStart);
       return reply.send({ insights });
     } catch (err: unknown) {
-      if (err instanceof AiService.InsightCooldownError) {
+      if (err instanceof AiService.WeeklyInsightCooldownError) {
         return reply.code(429).send({
           error: err.message,
           quota: {
-            ...AiService.getWeeklyInsightsGenerateQuota(startDate),
+            ...AiService.getWeeklyInsightsGenerateQuota(weekStart),
           },
         });
       }
-      if (err instanceof AiService.InsightQuotaError) {
+      if (err instanceof AiService.WeeklyInsightQuotaError) {
         return reply.code(429).send({
           error: err.message,
-          quota: AiService.getWeeklyInsightsGenerateQuota(startDate),
+          quota: AiService.getWeeklyInsightsGenerateQuota(weekStart),
         });
       }
       const message = err instanceof Error ? err.message : 'AI service error';
@@ -64,9 +70,9 @@ export default async function insightsRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get<{ Querystring: { startDate?: string } }>('/weekly/quota', async (request, reply) => {
-    const startDate = request.query.startDate ?? new Date().toISOString().slice(0, 10);
-    const quota = AiService.getWeeklyInsightsGenerateQuota(startDate);
+  app.get<{ Querystring: { weekStart?: string } }>('/weekly/quota', async (request, reply) => {
+    const weekStart = request.query.weekStart ?? AiService.getLastMonday();
+    const quota = AiService.getWeeklyInsightsGenerateQuota(weekStart);
     return reply.send({ quota });
   });
 }

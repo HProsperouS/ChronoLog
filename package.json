@@ -1,6 +1,6 @@
 {
   "name": "chronolog",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "ChronoLog — Local-first time tracker",
   "main": "electron/dist/main.js",
   "private": true,

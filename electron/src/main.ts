@@ -261,6 +261,10 @@ function startTracker(): void {
   trackerProcess.on('error', (err) => {
     console.error('[tracker] Failed to start:', err);
   });
+
+  trackerProcess.on('exit', (code, signal) => {
+    console.error(`[tracker] Exited (code=${code ?? 'null'}, signal=${signal ?? 'null'})`);
+  });
 }
 
 // ─── Main window ──────────────────────────────────────────────────────────────

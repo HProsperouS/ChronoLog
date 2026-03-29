@@ -163,6 +163,30 @@ export async function getInsightsQuota(date: string): Promise<InsightsQuota> {
   return data.quota;
 }
 
+export interface WeeklyInsightsQuota {
+  weekStart: string;
+  used: number;
+  remaining: number;
+  limit: number;
+  canGenerate: boolean;
+  cooldownRemainingMinutes: number;
+  nextAvailableAt: string | null;
+}
+
+export async function generateWeeklyInsights(startDate: string): Promise<Insight[]> {
+  const data = await apiFetch<{ insights: Insight[] }>('/api/insights/weekly/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ startDate }),
+  });
+  return data.insights;
+}
+
+export async function getWeeklyInsightsQuota(startDate: string): Promise<WeeklyInsightsQuota> {
+  const data = await apiFetch<{ quota: WeeklyInsightsQuota }>(`/api/insights/weekly/quota?startDate=${startDate}`);
+  return data.quota;
+}
+
 // ─── Settings: privacy & data management ───────────────────────────────────────
 
 export interface PrivacySettings {

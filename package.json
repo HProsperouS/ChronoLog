@@ -1,6 +1,6 @@
 {
   "name": "chronolog",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "ChronoLog — Local-first time tracker",
   "main": "electron/dist/main.js",
   "private": true,
@@ -102,5 +102,8 @@
     "electron-builder": "^26.8.1",
     "typescript": "^5.4.5",
     "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "active-win": "^9.0.0"
   }
 }

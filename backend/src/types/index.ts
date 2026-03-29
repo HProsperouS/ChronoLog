@@ -1,11 +1,6 @@
-export type Category =
-  | 'Work'
-  | 'Study'
-  | 'Entertainment'
-  | 'Communication'
-  | 'Utilities'
-  | 'Uncategorized'
-  | 'ChronoLog';
+export type Category = string;
+
+export type ProductivityType = 'productive' | 'non_productive' | 'neutral';
 
 export interface Activity {
   id: number;
@@ -20,13 +15,31 @@ export interface Activity {
   excludeFromAnalytics?: boolean;
 }
 
+export type RuleConditionField = 'windowTitle' | 'url' | 'hostname';
+export type RuleConditionOperator = 'contains';
+export type RuleMatchMode = 'any' | 'all';
+
+export interface RuleCondition {
+  field: RuleConditionField;
+  operator: RuleConditionOperator;
+  value: string;
+}
+
 export interface CategoryRule {
   id: string;
   appName: string;
   category: Category;
   isAutomatic: boolean;
-  keywords?: string[];
+  keywords?: string[]; // legacy/simple rules
+  matchMode?: RuleMatchMode;
+  conditions?: RuleCondition[];
 }
+
+export type CategoryDefinition = {
+  name: string;
+  color: string;
+  productivityType: ProductivityType;
+};
 
 export interface Insight {
   id: string;
@@ -66,11 +79,18 @@ export interface SessionTimelineEntry {
 /** Returned by `/api/stats/*` — stable public shape */
 export interface DailyStats {
   date: string;
-  categoryTotals: Record<Category, number>;  // minutes per category
+  categoryTotals: Record<string, number>; // minutes per category
   totalTime: number;
-  focusScore: number;                        // 0-100
+
+  productiveMinutes: number;
+  nonProductiveMinutes: number;
+  neutralMinutes: number;
+
+  focusScore: number; // 0-100
   contextSwitches: number;
-  longestSession: number;                    // minutes (longest single activity row)
+  productivitySwitches: number;
+
+  longestSession: number; // minutes (longest single activity row)
   topApps: { appName: string; category: Category; duration: number }[];
 }
 
@@ -115,10 +135,14 @@ export interface CreateCategoryRuleBody {
   category: Category;
   isAutomatic: boolean;
   keywords?: string[];
+  matchMode?: RuleMatchMode;
+  conditions?: RuleCondition[];
 }
 
 export interface UpdateCategoryRuleBody {
   category?: Category;
   isAutomatic?: boolean;
   keywords?: string[];
+  matchMode?: RuleMatchMode;
+  conditions?: RuleCondition[];
 }

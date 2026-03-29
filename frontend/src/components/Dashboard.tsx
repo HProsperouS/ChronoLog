@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Clock, TrendingUp, Target, Zap } from 'lucide-react';
 import { StatCard } from './StatCard';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router';
 import * as api from '../api';
 import { categoryColors } from '../constants';
@@ -21,11 +21,13 @@ function trendVsYesterday(curr: number, prev: number): { value: string; isPositi
 }
 
 const BUILT_IN_CATEGORY_ORDER = [
-  'Work',
+  'Deep Work',
   'Study',
-  'Entertainment',
   'Communication',
-  'Utilities',
+  'Meetings',
+  'Admin',
+  'Entertainment',
+  'Gaming',
   'ChronoLog',
   'Uncategorized',
 ] as const;
@@ -47,9 +49,14 @@ function getCategoryColor(category: string): string {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const [daily, setDaily]             = useState<DailyStats | null>(null);
+  const [daily, setDaily] = useState<DailyStats | null>(null);
   const [yesterdayDaily, setYesterdayDaily] = useState<DailyStats | null>(null);
-  const [weekly, setWeekly]           = useState<DailyStats[]>([]);
+  const [weekly, setWeekly] = useState<DailyStats[]>([]);
+  const [pieDate, setPieDate] = useState(todayStr());
+  const [pieDaily, setPieDaily] = useState<DailyStats | null>(null);
+  const [showAllPieSlices, setShowAllPieSlices] = useState(false);
+  const [showWeeklyOtherDetails, setShowWeeklyOtherDetails] = useState(false);
+
 
   useEffect(() => {
     const fetch = () => {
@@ -61,16 +68,18 @@ export function Dashboard() {
         api.getDailyStats(today),
         api.getDailyStats(yest).catch(() => null),
         api.getWeeklyStatsRange(weekStart, weekEnd),
-      ]).then(([d, y, w]) => {
+        api.getDailyStats(pieDate).catch(() => null),
+      ]).then(([d, y, w, p]) => {
         setDaily(d);
         setYesterdayDaily(y);
         setWeekly(w);
+        setPieDaily(p);
       });
     };
     fetch();
     const timer = setInterval(fetch, 30_000);
     return () => clearInterval(timer);
-  }, []);
+  }, [pieDate]);
 
     const weeklyCategoryMeta = useMemo(() => {
       const totals = new Map<string, number>();
@@ -120,36 +129,71 @@ export function Dashboard() {
     );
   };
 
-  if (!daily) {
+  if (!daily || !pieDaily) {
     return <div className="flex-1 bg-[#0a0a0f] flex items-center justify-center"><p className="text-gray-500 text-sm">Loading...</p></div>;
   }
+
+  const dailyStats = daily;
+  const pieStats = pieDaily;
 
   const weekStart = startOfWeekMonday(todayStr());
   const weekEnd = endOfWeekSunday(weekStart);
   const calendarWeekLabel = formatCalendarWeekRange(weekStart, weekEnd);
 
-  const pieData = (() => {
-    const MAX_VISIBLE_CATEGORIES = 6;
+  const pieCategoryMeta = (() => {
+    const MIN_VISIBLE_CATEGORIES = 4;
+    const MIN_PERCENT_FOR_OWN_SLICE = 0.08; // 8%
 
-    const sorted = Object.entries(daily.categoryTotals)
+    const sorted = Object.entries(pieStats.categoryTotals)
       .filter(([, v]) => v > 0)
       .sort((a, b) => b[1] - a[1]);
 
-    const visible = sorted.slice(0, MAX_VISIBLE_CATEGORIES);
-    const hidden = sorted.slice(MAX_VISIBLE_CATEGORIES);
+    let visible = sorted.filter(([, value]) =>
+      pieStats.totalTime > 0 && (value / pieStats.totalTime) >= MIN_PERCENT_FOR_OWN_SLICE
+    );
+
+    if (visible.length < Math.min(MIN_VISIBLE_CATEGORIES, sorted.length)) {
+      visible = sorted.slice(0, Math.min(MIN_VISIBLE_CATEGORIES, sorted.length));
+    }
+
+    const visibleNames = new Set(visible.map(([name]) => name));
+    const hidden = sorted.filter(([name]) => !visibleNames.has(name));
 
     const otherValue = hidden.reduce((sum, [, value]) => sum + value, 0);
 
-    const combined = otherValue > 0
+    const summaryPieData = (otherValue > 0
       ? [...visible, ['Other', otherValue] as [string, number]]
-      : visible;
-
-    return combined.map(([name, value]) => ({
+      : visible
+    ).map(([name, value]) => ({
       name,
       value,
-      percent: daily.totalTime > 0 ? (value / daily.totalTime) * 100 : 0,
+      percent: pieStats.totalTime > 0 ? (value / pieStats.totalTime) * 100 : 0,
     }));
+
+    const fullPieData = sorted.map(([name, value]) => ({
+      name,
+      value,
+      percent: pieStats.totalTime > 0 ? (value / pieStats.totalTime) * 100 : 0,
+    }));
+
+    const allLegendItems = sorted.map(([name, value]) => ({
+      name,
+      value,
+      percent: pieStats.totalTime > 0 ? (value / pieStats.totalTime) * 100 : 0,
+    }));
+
+    return {
+      summaryPieData,
+      fullPieData,
+      allLegendItems,
+    };
   })();
+
+  const activePieData = showAllPieSlices
+    ? pieCategoryMeta.fullPieData
+    : pieCategoryMeta.summaryPieData;
+
+  const pieLegendItems = pieCategoryMeta.allLegendItems;
 
   const weeklyBarData = [...weekly]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -176,7 +220,7 @@ export function Dashboard() {
   console.log('[Dashboard] weeklyCategoryMeta', weeklyCategoryMeta);
   console.log('[Dashboard] weeklyBarData', weeklyBarData);
 
-  const productiveTime = (daily.categoryTotals.Work ?? 0) + (daily.categoryTotals.Study ?? 0);
+  const productiveTime = daily.productiveMinutes ?? 0;
   const mostUsed = daily.topApps[0]?.appName ?? '—';
 
   function trendWithYesterday(curr: number, prev: number) {
@@ -187,12 +231,14 @@ export function Dashboard() {
   const productiveTrend = yesterdayDaily
     ? trendWithYesterday(
         productiveTime,
-        (yesterdayDaily.categoryTotals.Work ?? 0) + (yesterdayDaily.categoryTotals.Study ?? 0),
+        yesterdayDaily.productiveMinutes ?? 0,
       )
     : undefined;
+
   const focusTrend = yesterdayDaily
     ? trendWithYesterday(daily.focusScore, yesterdayDaily.focusScore)
     : undefined;
+
   const longestTrend = yesterdayDaily
     ? trendWithYesterday(daily.longestSession, yesterdayDaily.longestSession)
     : undefined;
@@ -233,17 +279,38 @@ export function Dashboard() {
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 sm:mb-6">
           {/* Today's Distribution */}
-          {/* Today's Distribution */}
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-white mb-4">Today's Distribution</h2>
-            <p className="text-xs text-gray-500 mb-3">Click on a segment to view details</p>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Distribution</h2>
+                <p className="text-xs text-gray-500 mt-1">Choose a day and click a segment to view details</p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                  <input
+                    type="date"
+                    value={pieDate}
+                    min={weekStart}
+                    max={weekEnd}
+                    onChange={(e) => setPieDate(e.target.value)}
+                    className="px-2.5 py-1 text-xs rounded-md border border-white/10 text-gray-300 bg-white/5"
+                  />
+                  <button
+                    type="button"
+                    className="px-2.5 py-1 text-xs rounded-md border border-white/10 text-gray-300 bg-white/5 hover:bg-white/10 transition-colors"
+                    onClick={() => setShowAllPieSlices((v) => !v)}
+                  >
+                    {showAllPieSlices ? 'Show summary' : 'Show all slices'}
+                  </button>
+                </div>
+              </div>
 
             <div className="flex items-center gap-6 h-[280px]">
               <div className="flex-1 h-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={pieData}
+                      data={activePieData}
                       cx="50%"
                       cy="50%"
                       innerRadius={50}
@@ -256,36 +323,41 @@ export function Dashboard() {
                       onClick={() => navigate('/activity')}
                       cursor="pointer"
                     >
-                      {pieData.map((entry, i) => (
+                      {activePieData.map((entry, i) => (
                         <Cell
                           key={i}
                           fill={getCategoryColor(entry.name)}
                           className="hover:opacity-80 transition-opacity"
                         />
                       ))}
+
                     </Pie>
                     <Tooltip content={renderPieTooltip} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="w-56 shrink-0 space-y-2 overflow-y-auto pr-1">
-                {pieData.map((entry) => (
-                  <div key={entry.name} className="flex items-center justify-between gap-3 text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: getCategoryColor(entry.name) }}
-                      />
-                      <span className="text-gray-300 truncate">{entry.name}</span>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-white font-medium">{Math.round(entry.percent)}%</div>
-                      <div className="text-xs text-gray-500">{formatDuration(entry.value)}</div>
-                    </div>
+                <div className="w-56 h-full shrink-0 overflow-y-auto pr-5">
+                  <div className="space-y-2">
+                    {pieLegendItems.map((entry) => (
+                      <div key={entry.name} className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: getCategoryColor(entry.name) }}
+                          />
+                          <span className="text-gray-300 truncate">{entry.name}</span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-white font-medium">{Math.round(entry.percent)}%</div>
+                          <div className="text-xs text-gray-500">{formatDuration(entry.value)}</div>
+                        </div>
+                      </div>
+                    ))}
+
                   </div>
-                ))}
-              </div>
+                </div>
+
             </div>
           </div>
 
@@ -293,25 +365,25 @@ export function Dashboard() {
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
             <h2 className="text-sm font-semibold text-white mb-1">Weekly Activity</h2>
             <p className="text-xs text-gray-500 mb-4">{calendarWeekLabel}</p>
+
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={weeklyBarData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="day" stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
-                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <XAxis
+                  dataKey="day"
+                  stroke="#6b7280"
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
+                  axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
-
-                    console.log('[Dashboard][Weekly Tooltip]', {
-                      label,
-                      payload: payload.map((p) => ({
-                        name: p.name,
-                        dataKey: p.dataKey,
-                        value: p.value,
-                        color: p.color,
-                        payload: p.payload,
-                      })),
-                    });
 
                     return (
                       <div className="bg-[#111827] border border-white/10 rounded-lg px-3 py-2 text-xs text-white shadow-lg">
@@ -326,7 +398,7 @@ export function Dashboard() {
                     );
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px' }} iconType="circle" />
+
                 {weeklyCategoryMeta.visibleCategories.map((category, index) => {
                   const isLastVisible =
                     index === weeklyCategoryMeta.visibleCategories.length - 1 &&
@@ -353,6 +425,50 @@ export function Dashboard() {
                 )}
               </BarChart>
             </ResponsiveContainer>
+
+            <div className="mt-3 max-h-32 overflow-y-auto space-y-1 pr-1">
+              {weeklyCategoryMeta.visibleCategories.map((category) => (
+                <div key={category} className="flex items-center gap-2 text-xs text-gray-400">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: getCategoryColor(category) }}
+                  />
+                  <span>{category}</span>
+                </div>
+              ))}
+
+              {weeklyCategoryMeta.hiddenCategories.length > 0 && (
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-300 transition-colors"
+                    onClick={() => setShowWeeklyOtherDetails((v) => !v)}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: getCategoryColor('Other') }}
+                    />
+                    <span>
+                      {showWeeklyOtherDetails ? '▼' : '▶'} Other
+                    </span>
+                  </button>
+
+                  {showWeeklyOtherDetails && (
+                    <div className="ml-4 space-y-1">
+                      {weeklyCategoryMeta.hiddenCategories.map((category) => (
+                        <div key={category} className="flex items-center gap-2 text-xs text-gray-500">
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: getCategoryColor(category) }}
+                          />
+                          <span>{category}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

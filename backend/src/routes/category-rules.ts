@@ -1,10 +1,23 @@
 import type { FastifyInstance } from 'fastify';
 import * as CategoryService from '../services/category.service';
-import type { CreateCategoryRuleBody, UpdateCategoryRuleBody } from '../types';
-
+import type {
+  CreateCategoryRuleBody,
+  UpdateCategoryRuleBody,
+  RuleCondition,
+} from '../types';
 
 function normalizeKeywords(values?: string[]): string[] {
   return (values ?? []).map((v) => v.trim()).filter(Boolean);
+}
+
+function normalizeConditions(values?: RuleCondition[]): RuleCondition[] {
+  return (values ?? [])
+    .map((condition) => ({
+      field: condition.field,
+      operator: condition.operator,
+      value: condition.value.trim(),
+    }))
+    .filter((condition) => condition.value.length > 0);
 }
 
 export default async function categoryRulesRoutes(app: FastifyInstance) {
@@ -28,6 +41,29 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
               type: 'array',
               items: { type: 'string', minLength: 1 },
             },
+            matchMode: {
+              type: 'string',
+              enum: ['any', 'all'],
+            },
+            conditions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['field', 'operator', 'value'],
+                additionalProperties: false,
+                properties: {
+                  field: {
+                    type: 'string',
+                    enum: ['windowTitle', 'url', 'hostname'],
+                  },
+                  operator: {
+                    type: 'string',
+                    enum: ['contains'],
+                  },
+                  value: { type: 'string', minLength: 1 },
+                },
+              },
+            },
           },
         },
       },
@@ -40,20 +76,27 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
         category: body.category,
         isAutomatic: body.isAutomatic,
         keywords: normalizeKeywords(body.keywords),
+        matchMode: body.matchMode ?? 'any',
+        conditions: normalizeConditions(body.conditions),
       };
 
       if (!normalizedBody.appName) {
         return reply.status(400).send({ error: 'appName is required.' });
       }
 
-      if (!normalizedBody.isAutomatic && (normalizedBody.keywords?.length ?? 0) === 0) {
+      const hasKeywords = (normalizedBody.keywords?.length ?? 0) > 0;
+      const hasConditions = (normalizedBody.conditions?.length ?? 0) > 0;
+
+      if (!normalizedBody.isAutomatic && !hasKeywords && !hasConditions) {
         return reply.status(400).send({
-          error: 'Manual rules must include at least one keyword.',
+          error: 'Manual rules must include at least one keyword or one advanced condition.',
         });
       }
 
       if (normalizedBody.isAutomatic) {
         normalizedBody.keywords = [];
+        normalizedBody.conditions = [];
+        normalizedBody.matchMode = 'any';
       }
 
       const rule = CategoryService.createRule(normalizedBody);
@@ -83,6 +126,29 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
               type: 'array',
               items: { type: 'string', minLength: 1 },
             },
+            matchMode: {
+              type: 'string',
+              enum: ['any', 'all'],
+            },
+            conditions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['field', 'operator', 'value'],
+                additionalProperties: false,
+                properties: {
+                  field: {
+                    type: 'string',
+                    enum: ['windowTitle', 'url', 'hostname'],
+                  },
+                  operator: {
+                    type: 'string',
+                    enum: ['contains'],
+                  },
+                  value: { type: 'string', minLength: 1 },
+                },
+              },
+            },
           },
         },
       },
@@ -104,9 +170,14 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
           ? normalizeKeywords(body.keywords)
           : existingRule.keywords ?? [];
 
-      if (!nextIsAutomatic && nextKeywords.length === 0) {
+      const nextConditions =
+        body.conditions !== undefined
+          ? normalizeConditions(body.conditions)
+          : existingRule.conditions ?? [];
+
+      if (!nextIsAutomatic && nextKeywords.length === 0 && nextConditions.length === 0) {
         return reply.status(400).send({
-          error: 'Manual rules must include at least one keyword.',
+          error: 'Manual rules must include at least one keyword or one advanced condition.',
         });
       }
 
@@ -114,8 +185,22 @@ export default async function categoryRulesRoutes(app: FastifyInstance) {
 
       if (body.category !== undefined) updateBody.category = body.category;
       if (body.isAutomatic !== undefined) updateBody.isAutomatic = body.isAutomatic;
+      if (body.matchMode !== undefined) updateBody.matchMode = body.matchMode;
+
       if (body.keywords !== undefined) {
         updateBody.keywords = nextIsAutomatic ? [] : nextKeywords;
+      }
+
+      if (body.conditions !== undefined) {
+        updateBody.conditions = nextIsAutomatic ? [] : nextConditions;
+      }
+
+      if (nextIsAutomatic) {
+        updateBody.keywords = [];
+        updateBody.conditions = [];
+        if (updateBody.matchMode === undefined) {
+          updateBody.matchMode = 'any';
+        }
       }
 
       const rule = CategoryService.updateRule(id, updateBody);

@@ -1,381 +1,265 @@
 import type { Category } from '../types';
+import type { InstalledApp } from './app-scanner';
 
-/**
- * Comprehensive mapping of lowercase app name → category.
- * Used during first-launch to auto-categorize installed applications.
- */
-export const APP_CATEGORY_MAP: Record<string, Category> = {
-
-  // ── Development: Editors & IDEs ──────────────────────────────────────────
-  'visual studio code':       'Work',   // VS Code
-  'cursor':                   'Work',
-  'xcode':                    'Work',
-  'android studio':           'Work',
-  'intellij idea':            'Work',
-  'intellij idea ce':         'Work',
-  'webstorm':                 'Work',
-  'pycharm':                  'Work',
-  'pycharm ce':               'Work',
-  'goland':                   'Work',
-  'clion':                    'Work',
-  'datagrip':                 'Work',
-  'rider':                    'Work',
-  'phpstorm':                 'Work',
-  'rubymine':                 'Work',
-  'fleet':                    'Work',
-  'nova':                     'Work',
-  'bbedit':                   'Work',
-  'sublime text':             'Work',
-  'sublime text 4':           'Work',
-  'atom':                     'Work',
-  'textmate':                 'Work',
-  'espresso':                 'Work',
-  'visual studio':            'Work',
-  'notepad++':                'Work',
-  'brackets':                 'Work',
-  'bluefish':                 'Work',
-  'geany':                    'Work',
-
-  // ── Development: Terminals ────────────────────────────────────────────────
-  'terminal':                 'Work',
-  'iterm':                    'Work',
-  'iterm2':                   'Work',
-  'warp':                     'Work',
-  'alacritty':                'Work',
-  'kitty':                    'Work',
-  'hyper':                    'Work',
-  'tabby':                    'Work',
-  'cmd':                      'Work',
-  'powershell':               'Work',
-  'windowsterminal':          'Work',
-  'windows terminal':         'Work',
-
-  // ── Development: Database Tools ───────────────────────────────────────────
-  'tableplus':                'Work',
-  'postico':                  'Work',
-  'dbngin':                   'Work',
-  'sequel pro':               'Work',
-  'mongodb compass':          'Work',
-  'dbeaver':                  'Work',
-  'redisinsight':             'Work',
-  'redis insight':            'Work',
-  'studio 3t':                'Work',
-  'robo 3t':                  'Work',
-  'pgadmin':                  'Work',
-  'pgadmin 4':                'Work',
-
-  // ── Development: API & Network ────────────────────────────────────────────
-  'postman':                  'Work',
-  'insomnia':                 'Work',
-  'paw':                      'Work',
-  'proxyman':                 'Work',
-  'charles':                  'Work',
-  'wireshark':                'Work',
-  'http toolkit':             'Work',
-  'rapidapi':                 'Work',
-
-  // ── Development: Version Control ─────────────────────────────────────────
-  'github desktop':           'Work',
-  'tower':                    'Work',
-  'sourcetree':               'Work',
-  'fork':                     'Work',
-  'gitkraken':                'Work',
-  'sublime merge':            'Work',
-
-  // ── Development: Containers / DevOps ─────────────────────────────────────
-  'docker desktop':           'Work',
-  'docker':                   'Work',
-  'rancher desktop':          'Work',
-  'orbstack':                 'Work',
-
-  // ── Development: Simulators / Misc ───────────────────────────────────────
-  'simulator':                'Work',
-  'instruments':              'Work',
-  'loom':                     'Work',
-  'obs':                      'Work',
-  'obs studio':               'Work',
-
-  // ── Design ────────────────────────────────────────────────────────────────
-  'figma':                    'Work',
-  'sketch':                   'Work',
-  'adobe photoshop':          'Work',
-  'adobe illustrator':        'Work',
-  'adobe xd':                 'Work',
-  'adobe indesign':           'Work',
-  'adobe after effects':      'Work',
-  'adobe premiere pro':       'Work',
-  'adobe lightroom':          'Work',
-  'adobe lightroom classic':  'Work',
-  'adobe acrobat':            'Work',
-  'adobe acrobat reader':     'Utilities',
-  'adobe audition':           'Work',
-  'adobe animate':            'Work',
-  'adobe dimension':          'Work',
-  'adobe fresco':             'Work',
-  'affinity designer':        'Work',
-  'affinity photo':           'Work',
-  'affinity publisher':       'Work',
-  'canva':                    'Work',
-  'principle':                'Work',
-  'protopie':                 'Work',
-  'origami studio':           'Work',
-  'zeplin':                   'Work',
-  'framer':                   'Work',
-  'pixelmator pro':           'Work',
-  'pixelmator':               'Work',
-  'screenflow':               'Work',
-  'final cut pro':            'Work',
-  'davinci resolve':          'Work',
-  'logic pro':                'Work',
-  'motion':                   'Work',
-  'compressor':               'Work',
-  'blender':                  'Work',
-  'cinema 4d':                'Work',
-  'maya':                     'Work',
-  'autocad':                  'Work',
-  'sketchup':                 'Work',
-
-  // ── Office & Productivity ─────────────────────────────────────────────────
-  'microsoft word':           'Work',
-  'word':                     'Work',
-  'microsoft excel':          'Work',
-  'excel':                    'Work',
-  'microsoft powerpoint':     'Work',
-  'powerpoint':               'Work',
-  'microsoft onenote':        'Work',
-  'onenote':                  'Work',
-  'microsoft outlook':        'Work',
-  'outlook':                  'Work',
-  'pages':                    'Work',
-  'numbers':                  'Work',
-  'keynote':                  'Work',
-  'libreoffice':              'Work',
-  'libreoffice writer':       'Work',
-  'libreoffice calc':         'Work',
-  'libreoffice impress':      'Work',
-  'wps office':               'Work',
-  'wps':                      'Work',
-
-  // ── Note-taking & Knowledge ───────────────────────────────────────────────
-  'notion':                   'Study',
-  'obsidian':                 'Study',
-  'logseq':                   'Study',
-  'craft':                    'Study',
-  'bear':                     'Study',
-  'ulysses':                  'Study',
-  'day one':                  'Study',
-  'drafts':                   'Study',
-  'ia writer':                'Study',
-  'typora':                   'Study',
-  'marktext':                 'Study',
-  'notes':                    'Study',
-  'joplin':                   'Study',
-  'standard notes':           'Study',
-  'evernote':                 'Study',
-  'devonthink':               'Study',
-  'devonthink 3':             'Study',
-  'zotero':                   'Study',
-  'mendeley':                 'Study',
-  'papers':                   'Study',
-  'anki':                     'Study',
-  'goodlinks':                'Study',
-  'reeder':                   'Study',
-  'netnewswire':              'Study',
-  'readwise reader':          'Study',
-  'instapaper':               'Study',
-  'pocket':                   'Study',
-  'kindle':                   'Study',
-  'books':                    'Study',
-
-  // ── Communication ─────────────────────────────────────────────────────────
-  'slack':                    'Communication',
-  'discord':                  'Communication',
-  'zoom':                     'Communication',
-  'zoom.us':                  'Communication',
-  'microsoft teams':          'Communication',
-  'teams':                    'Communication',
-  'telegram':                 'Communication',
-  'whatsapp':                 'Communication',
-  'signal':                   'Communication',
-  'viber':                    'Communication',
-  'messages':                 'Communication',
-  'facetime':                 'Communication',
-  'skype':                    'Communication',
-  'lark':                     'Communication',
-  'feishu':                   'Communication',
-  'spark':                    'Communication',
-  'mimestream':               'Communication',
-  'airmail':                  'Communication',
-  'airmail 5':                'Communication',
-  'hey':                      'Communication',
-  'superhuman':               'Communication',
-  'mail':                     'Communication',
-  'thunderbird':              'Communication',
-  'missive':                  'Communication',
-  'caprine':                  'Communication',
-  'beeper':                   'Communication',
-  'textsoap':                 'Communication',
-
-  // ── Entertainment ─────────────────────────────────────────────────────────
-  'spotify':                  'Entertainment',
-  'music':                    'Entertainment',
-  'podcasts':                 'Entertainment',
-  'tv':                       'Entertainment',
-  'vlc':                      'Entertainment',
-  'iina':                     'Entertainment',
-  'infuse':                   'Entertainment',
-  'infuse 7':                 'Entertainment',
-  'plex':                     'Entertainment',
-  'plex media player':        'Entertainment',
-  'jellyfin media player':    'Entertainment',
-  'emby theater':             'Entertainment',
-  'steam':                    'Entertainment',
-  'epic games launcher':      'Entertainment',
-  'battle.net':               'Entertainment',
-  'gog galaxy':               'Entertainment',
-  'itch':                     'Entertainment',
-  'retroarch':                'Entertainment',
-  'openemu':                  'Entertainment',
-  'twitch':                   'Entertainment',
-  'netflix':                  'Entertainment',
-  'disney+':                  'Entertainment',
-  'amazon prime video':       'Entertainment',
-  'youtube music':            'Entertainment',
-  'soundcloud':               'Entertainment',
-  'deezer':                   'Entertainment',
-  'tidal':                    'Entertainment',
-  'garageband':               'Entertainment',
-  'photo booth':              'Entertainment',
-  'quicktime player':         'Entertainment',
-  'chess':                    'Entertainment',
-  'stardew valley':           'Entertainment',
-  'minecraft':                'Entertainment',
-  'league of legends':        'Entertainment',
-  'twitterrific':             'Entertainment',
-  'tweetbot':                 'Entertainment',
-  'ivory':                    'Entertainment',
-  'mango 5star':              'Entertainment',
-  'news':                     'Entertainment',
-
-  // ── Utilities ─────────────────────────────────────────────────────────────
-  'finder':                   'Utilities',
-  'system preferences':       'Utilities',
-  'system settings':          'Utilities',
-  'activity monitor':         'Utilities',
-  'disk utility':             'Utilities',
-  'console':                  'Utilities',
-  'keychain access':          'Utilities',
-  '1password':                'Utilities',
-  '1password 7':              'Utilities',
-  'bitwarden':                'Utilities',
-  'keepassxc':                'Utilities',
-  'dashlane':                 'Utilities',
-  'lastpass':                 'Utilities',
-  'alfred':                   'Utilities',
-  'raycast':                  'Utilities',
-  'launchbar':                'Utilities',
-  'bartender':                'Utilities',
-  'bartender 4':              'Utilities',
-  'ice':                      'Utilities',
-  'cleanmymac':               'Utilities',
-  'cleanmymac x':             'Utilities',
-  'daisydisk':                'Utilities',
-  'istat menus':              'Utilities',
-  'amphetamine':              'Utilities',
-  'lungo':                    'Utilities',
-  'caffeine':                 'Utilities',
-  'rectangle':                'Utilities',
-  'rectangle pro':            'Utilities',
-  'magnet':                   'Utilities',
-  'moom':                     'Utilities',
-  'bettersnaptool':           'Utilities',
-  'bettertouchtool':          'Utilities',
-  'karabiner-elements':       'Utilities',
-  'karabiner':                'Utilities',
-  'keyboard maestro':         'Utilities',
-  'automator':                'Utilities',
-  'shortcuts':                'Utilities',
-  'dropbox':                  'Utilities',
-  'google drive':             'Utilities',
-  'onedrive':                 'Utilities',
-  'mega':                     'Utilities',
-  'the unarchiver':           'Utilities',
-  'archiver':                 'Utilities',
-  'keka':                     'Utilities',
-  'transmit':                 'Utilities',
-  'transmit 5':               'Utilities',
-  'cyberduck':                'Utilities',
-  'filezilla':                'Utilities',
-  'cleanshot x':              'Utilities',
-  'shottr':                   'Utilities',
-  'flameshot':                'Utilities',
-  'preview':                  'Utilities',
-  'maps':                     'Utilities',
-  'weather':                  'Utilities',
-  'stocks':                   'Utilities',
-  'home':                     'Utilities',
-  'reminders':                'Utilities',
-  'calendar':                 'Utilities',
-  'contacts':                 'Utilities',
-  'photos':                   'Utilities',
-  'image capture':            'Utilities',
-  'calculator':               'Utilities',
-  'font book':                'Utilities',
-  'migration assistant':      'Utilities',
-  'time machine':             'Utilities',
-  'hazel':                    'Utilities',
-  'setapp':                   'Utilities',
-  'apple configurator':       'Utilities',
-  'script editor':            'Work',
-  'paint':                    'Utilities',
-  'notepad':                  'Utilities',
-  'snipping tool':            'Utilities',
-  'task manager':             'Utilities',
-  'control panel':            'Utilities',
-  'microsoft store':          'Utilities',
-  'windows explorer':         'Utilities',
+export type AppSignature = {
+  canonicalName: string;
+  category?: Category;
+  isBrowser?: boolean;
+  aliases?: string[];
+  exeNames?: string[];
+  pathContains?: string[];
 };
 
-/**
- * App names (lowercase) that should get keyword-based rules instead of a
- * single automatic rule, because context (URL / window title) determines
- * whether the session is work or entertainment.
- */
-export const BROWSER_APPS = new Set([
-  'chrome', 'google chrome',
-  'safari',
-  'firefox', 'firefox developer edition',
-  'edge', 'msedge', 'microsoft edge',
-  'brave browser', 'brave',
-  'opera', 'opera gx',
-  'arc',
-  'vivaldi',
-  'chromium',
-  'waterfox',
-  'librewolf',
-  'tor browser',
-]);
+export type BrowserAdvancedRuleBlueprint = {
+  category: Category;
+  matchMode: 'all';
+  terms: string[];
+};
 
-export const BROWSER_WORK_KEYWORDS = [
-  'github', 'gitlab', 'bitbucket',
-  'stackoverflow', 'stackoverflow.com',
-  'docs', 'documentation', 'mdn',
-  'localhost', '127.0.0.1',
-  'jira', 'confluence', 'linear', 'notion',
-  'figma', 'vercel', 'netlify',
-  'aws', 'azure', 'gcp', 'console.cloud',
-  'google docs', 'google sheets', 'google slides',
+function normalize(value: string): string {
+  return value.trim().toLowerCase().replace(/\.exe$/i, '').replace(/\s+/g, ' ');
+}
+
+export const APP_SIGNATURES: AppSignature[] = [
+  {
+    canonicalName: 'firefox',
+    isBrowser: true,
+    aliases: ['mozilla firefox', 'firefox developer edition'],
+    exeNames: ['firefox.exe'],
+    pathContains: ['mozilla firefox\\firefox.exe'],
+  },
+  {
+    canonicalName: 'google chrome',
+    isBrowser: true,
+    aliases: ['chrome'],
+    exeNames: ['chrome.exe'],
+  },
+  {
+    canonicalName: 'microsoft edge',
+    isBrowser: true,
+    aliases: ['edge', 'msedge'],
+    exeNames: ['msedge.exe'],
+  },
+
+  { canonicalName: 'visual studio code', category: 'Deep Work', aliases: ['vs code'], exeNames: ['code.exe'] },
+  { canonicalName: 'cursor', category: 'Deep Work', exeNames: ['cursor.exe'] },
+  { canonicalName: 'intellij idea', category: 'Deep Work' },
+  { canonicalName: 'pycharm', category: 'Deep Work' },
+  { canonicalName: 'webstorm', category: 'Deep Work' },
+  { canonicalName: 'datagrip', category: 'Deep Work' },
+  { canonicalName: 'docker desktop', category: 'Deep Work', aliases: ['docker'] },
+  { canonicalName: 'wireshark', category: 'Deep Work' },
+  { canonicalName: 'notepad++', category: 'Deep Work' },
+
+  { canonicalName: 'notion', category: 'Study' },
+  { canonicalName: 'obsidian', category: 'Study' },
+  { canonicalName: 'adobe acrobat', category: 'Study', aliases: ['adobe acrobat reader'] },
+  { canonicalName: 'microsoft word', category: 'Study', aliases: ['word'] },
+  { canonicalName: 'microsoft excel', category: 'Study', aliases: ['excel'] },
+  { canonicalName: 'microsoft powerpoint', category: 'Study', aliases: ['powerpoint'] },
+  { canonicalName: 'microsoft onenote', category: 'Study', aliases: ['onenote'] },
+
+  { canonicalName: 'slack', category: 'Communication' },
+  { canonicalName: 'discord', category: 'Communication' },
+  { canonicalName: 'telegram', category: 'Communication', aliases: ['telegram desktop'] },
+  { canonicalName: 'outlook', category: 'Communication', aliases: ['microsoft outlook'] },
+  { canonicalName: 'whatsapp', category: 'Communication', aliases: ['whatsapp beta', 'whatsapp desktop'], exeNames: ['whatsapp.exe'] },
+
+  { canonicalName: 'zoom', category: 'Meetings', aliases: ['zoom workplace', 'zoom.us'] },
+  { canonicalName: 'microsoft teams', category: 'Meetings', aliases: ['teams'] },
+  { canonicalName: 'google meet', category: 'Meetings' },
+  { canonicalName: 'webex', category: 'Meetings' },
+
+  { canonicalName: 'steam', category: 'Gaming' },
+  { canonicalName: 'battle.net', category: 'Gaming' },
+  { canonicalName: 'epic games launcher', category: 'Gaming' },
+
+  { canonicalName: 'bitwarden', category: 'Admin' },
+  { canonicalName: 'file explorer', category: 'Admin', aliases: ['windows explorer', 'finder'] },
+  { canonicalName: 'task manager', category: 'Admin' },
+  { canonicalName: 'control panel', category: 'Admin' },
+
+  { canonicalName: 'chronolog', category: 'ChronoLog' },
+];
+
+// Broad fallback browser rules.
+// These are intentionally general and should lose to more specific advanced defaults.
+export const BROWSER_STUDY_KEYWORDS = [
+  'lecture',
+  'course',
+  'tutorial',
+  'revision',
+  'slides',
+  'assignment',
+  'notes',
+  'canvas',
+  'lms',
+  'moodle',
+  'coursera',
+  'edx',
+  'udemy',
+  'khan academy',
+];
+
+export const BROWSER_DEEP_WORK_KEYWORDS = [
+  'chatgpt',
+  'openai',
+  'github',
+  'gitlab',
+  'bitbucket',
+  'stackoverflow',
+  'stackoverflow.com',
+  'docs',
+  'documentation',
+  'mdn',
+  'localhost',
+  '127.0.0.1',
+  'jira',
+  'confluence',
+  'linear',
+  'notion',
+  'figma',
+  'vercel',
+  'netlify',
+  'aws',
+  'azure',
+  'gcp',
+  'console.cloud',
+  'google docs',
+  'google sheets',
+  'google slides',
   'calendar.google',
 ];
 
-export const BROWSER_ENTERTAINMENT_KEYWORDS = [
-  'youtube', 'youtu.be',
-  'netflix', 'hulu', 'disneyplus', 'disney+',
-  'twitch', 'kick.com',
-  'reddit',
-  'twitter', 'x.com',
-  'instagram', 'tiktok',
-  'facebook', 'fb.com',
-  '9gag', 'imgur',
-  'bilibili',
+export const BROWSER_MEETING_KEYWORDS = [
+  'meet.google.com',
+  'google meet',
+  'zoom',
+  'teams.microsoft.com',
+  'microsoft teams',
+  'webex',
 ];
+
+export const BROWSER_GAMING_KEYWORDS = [
+  'store.steampowered.com',
+  'steam',
+  'epic games',
+  'battle.net',
+  'riot games',
+  'valorant',
+  'league of legends',
+  'genshin',
+  'honkai',
+];
+
+export const BROWSER_ENTERTAINMENT_KEYWORDS = [
+  'netflix',
+  'hulu',
+  'disneyplus',
+  'disney+',
+  'twitch',
+  'kick.com',
+  'reddit',
+  'twitter',
+  'x.com',
+  'instagram',
+  'tiktok',
+  'facebook',
+  'fb.com',
+  '9gag',
+  'imgur',
+  'bilibili',
+  'spotify',
+];
+
+// Curated advanced defaults.
+// These are title-based "all conditions" rules designed to beat broad keyword rules.
+export const BROWSER_ADVANCED_RULE_BLUEPRINTS: BrowserAdvancedRuleBlueprint[] = [
+  // Communication / email
+  { category: 'Communication', matchMode: 'all', terms: ['gmail', 'inbox'] },
+  { category: 'Communication', matchMode: 'all', terms: ['outlook', 'inbox'] },
+  { category: 'Communication', matchMode: 'all', terms: ['mail', 'inbox'] },
+
+  // Meetings
+  { category: 'Meetings', matchMode: 'all', terms: ['google meet', 'meeting'] },
+  { category: 'Meetings', matchMode: 'all', terms: ['zoom', 'meeting'] },
+  { category: 'Meetings', matchMode: 'all', terms: ['teams', 'meeting'] },
+
+  // Google workspace / productivity
+  { category: 'Deep Work', matchMode: 'all', terms: ['google docs', 'docs'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['google sheets', 'sheets'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['google slides', 'slides'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['github', 'github'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['stackoverflow', 'stackoverflow'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['chatgpt', 'chatgpt'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['openai', 'chatgpt'] },
+
+  // Tech learning / study
+  { category: 'Study', matchMode: 'all', terms: ['youtube', 'tutorial'] },
+  { category: 'Study', matchMode: 'all', terms: ['youtube', 'lecture'] },
+  { category: 'Study', matchMode: 'all', terms: ['youtube', 'course'] },
+  { category: 'Study', matchMode: 'all', terms: ['youtube', 'revision'] },
+  { category: 'Study', matchMode: 'all', terms: ['youtube', 'assignment'] },
+  { category: 'Study', matchMode: 'all', terms: ['youtube', 'notes'] },
+
+  // Specific technical work / learning
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'wireshark'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'python'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'javascript'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'typescript'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'react'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'docker'] },
+  { category: 'Deep Work', matchMode: 'all', terms: ['youtube', 'networking'] },
+
+  // Entertainment
+  { category: 'Entertainment', matchMode: 'all', terms: ['youtube', 'music'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['youtube', 'official video'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['youtube', 'trailer'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['youtube', 'episode'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['youtube', 'reaction'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['youtube', 'highlights'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['netflix', 'netflix'] },
+  { category: 'Entertainment', matchMode: 'all', terms: ['spotify', 'spotify'] },
+
+  // Gaming content in browser
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'gameplay'] },
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'walkthrough'] },
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'boss fight'] },
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'valorant'] },
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'league of legends'] },
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'genshin'] },
+  { category: 'Gaming', matchMode: 'all', terms: ['youtube', 'honkai'] },
+];
+
+function matchesSignature(app: InstalledApp, sig: AppSignature): boolean {
+  const normalized = normalize(app.normalizedName);
+  const aliases = (sig.aliases ?? []).map(normalize);
+
+  if (normalized === normalize(sig.canonicalName)) return true;
+  if (aliases.includes(normalized)) return true;
+
+  const exeLower = app.executablePath?.toLowerCase() ?? '';
+  if ((sig.exeNames ?? []).some((exe) => exeLower.endsWith(exe.toLowerCase()))) return true;
+
+  if ((sig.pathContains ?? []).some((part) => exeLower.includes(part.toLowerCase()))) return true;
+
+  return false;
+}
+
+export function resolveInstalledApp(app: InstalledApp): {
+  canonicalName: string;
+  category?: Category;
+  isBrowser: boolean;
+} | null {
+  for (const sig of APP_SIGNATURES) {
+    if (matchesSignature(app, sig)) {
+      return {
+        canonicalName: sig.canonicalName,
+        category: sig.category,
+        isBrowser: !!sig.isBrowser,
+      };
+    }
+  }
+
+  return null;
+}

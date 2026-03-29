@@ -4,7 +4,7 @@
  * In Electron production: backend always runs on localhost:3001
  */
 
-import type { Activity, CategoryRule, DailyStats, Insight } from '../types';
+import type { Activity, CategoryRule, DailyStats, Insight, CategoryDefinition } from '../types';
 
 const BASE_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
@@ -263,4 +263,47 @@ export async function importActivities(
     body: JSON.stringify({ activitiesByDate }),
   });
   return data.summary;
+}
+
+
+// ─── Category List ─────────────────────────────────────────────────────────────────
+
+
+export async function getCategories(): Promise<CategoryDefinition[]> {
+  const data = await apiFetch<{ categories: CategoryDefinition[] }>('/api/categories');
+  return data.categories;
+}
+
+export async function createCategory(input: {
+  name: string;
+  color: string;
+  productivityType: 'productive' | 'non_productive' | 'neutral';
+}): Promise<CategoryDefinition> {
+  const data = await apiFetch<{ category: CategoryDefinition }>('/api/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return data.category;
+}
+
+export async function updateCategory(input: {
+  name: string;
+  color: string;
+  productivityType: 'productive' | 'non_productive' | 'neutral';
+}): Promise<CategoryDefinition> {
+  const data = await apiFetch<{ category: CategoryDefinition }>('/api/categories', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return data.category;
+}
+
+export async function deleteCategory(name: string): Promise<void> {
+  await apiFetch('/api/categories', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
 }

@@ -28,11 +28,13 @@ function formatComparison(curr: number, prev: number, priorLabel: string): strin
 }
 
 const BUILT_IN_CATEGORY_ORDER = [
-  'Work',
+  'Deep Work',
   'Study',
-  'Entertainment',
   'Communication',
-  'Utilities',
+  'Meetings',
+  'Admin',
+  'Entertainment',
+  'Gaming',
   'ChronoLog',
   'Uncategorized',
 ] as const;
@@ -252,8 +254,8 @@ export function Insights() {
       const y = sorted.find((s) => s.date === ymdYest);
       const focusC = t?.focusScore ?? 0;
       const focusP = y?.focusScore ?? 0;
-      const prodC = ((t?.categoryTotals.Work ?? 0) + (t?.categoryTotals.Study ?? 0)) / 60;
-      const prodP = ((y?.categoryTotals.Work ?? 0) + (y?.categoryTotals.Study ?? 0)) / 60;
+      const prodC = (t?.productiveMinutes ?? 0) / 60;
+      const prodP = (y?.productiveMinutes ?? 0) / 60;
       const ctxC = t?.contextSwitches ?? 0;
       const ctxP = y?.contextSwitches ?? 0;
       return {
@@ -270,8 +272,8 @@ export function Insights() {
         prodCmp: formatComparison(prodC, prodP, priorDaily),
         ctxDisplay: `${ctxC}`,
         ctxCmp: formatComparison(ctxC, ctxP, priorDaily),
-        ctxHint: 'Today (productive ↔ non-productive)',
-        prodHint: 'Work + Study',
+        ctxHint: 'Today (category-to-category switches)',
+        prodHint: 'All productive categories',
       };
     }
 
@@ -282,7 +284,7 @@ export function Insights() {
     const avgFocus = (days: DailyStats[]) =>
       days.length ? days.reduce((s, d) => s + d.focusScore, 0) / days.length : 0;
     const sumProdMin = (days: DailyStats[]) =>
-      days.reduce((s, d) => s + (d.categoryTotals.Work ?? 0) + (d.categoryTotals.Study ?? 0), 0);
+      days.reduce((s, d) => s + (d.productiveMinutes ?? 0), 0);
     const sumCtx = (days: DailyStats[]) => days.reduce((s, d) => s + d.contextSwitches, 0);
 
     const focusC = Math.round(avgFocus(curr7));
@@ -309,7 +311,7 @@ export function Insights() {
       ctxDisplay: ctxAvgC.toFixed(1),
       ctxCmp: hasPrev ? formatComparison(ctxAvgC, ctxAvgP, priorWeekly) : needPrevMsg,
       ctxHint: 'Avg / day (this calendar week)',
-      prodHint: 'Total Work + Study (this calendar week)',
+      prodHint: 'Total productive time (this calendar week)',
     };
   }, [rangeStats, summaryMode, weekStart, weekEnd]);
 
@@ -341,7 +343,7 @@ export function Insights() {
   function buildHabitDays() {
     if (!chartStats.length) return [];
     return chartStats.map((d) => {
-      const productiveMinutes = (d.categoryTotals.Work ?? 0) + (d.categoryTotals.Study ?? 0);
+      const productiveMinutes = d.productiveMinutes ?? 0;
       const entertainmentMinutes = d.categoryTotals.Entertainment ?? 0;
       return {
         date: d.date,
@@ -460,7 +462,7 @@ export function Insights() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* Productivity Trend */}
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-white mb-4">Productivity Score</h2>
+            <h2 className="text-sm font-semibold text-white mb-4">Focus Score</h2>
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={productivityTrend}>
                 <defs>

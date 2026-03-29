@@ -5,6 +5,7 @@ import categoryRulesRoutes from './routes/category-rules';
 import statsRoutes from './routes/stats';
 import insightsRoutes from './routes/insights';
 import settingsRoutes from './routes/settings';
+import categoriesRoutes from './routes/category-list';
 
 export async function buildApp() {
   const app = Fastify({
@@ -36,6 +37,7 @@ export async function buildApp() {
   await app.register(statsRoutes,         { prefix: '/api/stats' });
   await app.register(insightsRoutes,      { prefix: '/api/insights' });
   await app.register(settingsRoutes,      { prefix: '/api/settings' });
+  await app.register(categoriesRoutes, { prefix: '/api/categories' });
 
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 

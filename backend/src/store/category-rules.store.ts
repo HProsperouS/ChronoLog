@@ -1,172 +1,189 @@
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
-import type { CategoryRule } from '../types';
+import type { CategoryRule, RuleCondition } from '../types';
+import { scanInstalledApps } from '../services/app-scanner';
 import {
-  APP_CATEGORY_MAP,
-  BROWSER_APPS,
-  BROWSER_WORK_KEYWORDS,
+  resolveInstalledApp,
+  BROWSER_STUDY_KEYWORDS,
+  BROWSER_DEEP_WORK_KEYWORDS,
+  BROWSER_MEETING_KEYWORDS,
+  BROWSER_GAMING_KEYWORDS,
   BROWSER_ENTERTAINMENT_KEYWORDS,
+  BROWSER_ADVANCED_RULE_BLUEPRINTS,
 } from '../services/app-catalog';
-
-
 
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const RULES_FILE = path.join(DATA_DIR, 'category-rules.json');
-
-
-console.log('[store path]', RULES_FILE);
-// ─── File helpers ─────────────────────────────────────────────────────────────
 
 function ensureDir(): void {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-function sleepMs(ms: number): void {
-  const end = Date.now() + ms;
-  while (Date.now() < end) {
-    // busy wait
-  }
-}
-
 function atomicWrite(file: string, data: unknown): void {
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-
-  let lastError: unknown;
-
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
-    try {
-      if (fs.existsSync(file)) {
-        try {
-          fs.rmSync(file, { force: true });
-        } catch {
-          // ignore and let rename try anyway
-        }
-      }
-
-      fs.renameSync(tmp, file);
-      return;
-    } catch (err) {
-      lastError = err;
-      sleepMs(100);
-    }
-  }
-
-  throw lastError;
+  fs.renameSync(tmp, file);
 }
 
-// ─── App scanning (inline to avoid circular deps with activity.service) ───────
-
-function scanInstalledAppNames(): string[] {
-  const platform = os.platform();
-  const names = new Set<string>();
-
-  if (platform === 'darwin') {
-    const dirs = ['/Applications', path.join(os.homedir(), 'Applications')];
-    for (const dir of dirs) {
-      if (!fs.existsSync(dir)) continue;
-      for (const entry of fs.readdirSync(dir)) {
-        if (entry.endsWith('.app')) names.add(entry.replace(/\.app$/, ''));
-      }
-    }
-  } else if (platform === 'win32') {
-    const dirs = [
-      'C:\\Program Files',
-      'C:\\Program Files (x86)',
-      path.join(os.homedir(), 'AppData', 'Local', 'Programs'),
-    ];
-    for (const dir of dirs) {
-      if (!fs.existsSync(dir)) continue;
-      for (const entry of fs.readdirSync(dir)) {
-        try {
-          if (fs.statSync(path.join(dir, entry)).isDirectory()) names.add(entry);
-        } catch { /* skip */ }
-      }
-    }
-  } else {
-    const desktopDir = '/usr/share/applications';
-    if (fs.existsSync(desktopDir)) {
-      for (const file of fs.readdirSync(desktopDir)) {
-        if (!file.endsWith('.desktop')) continue;
-        try {
-          const content = fs.readFileSync(path.join(desktopDir, file), 'utf8');
-          const match = content.match(/^Name=(.+)$/m);
-          if (match) names.add(match[1].trim());
-        } catch { /* skip */ }
-      }
-    }
-  }
-
-  return [...names].sort((a, b) => a.localeCompare(b));
+function normalizeKeywords(values?: string[]): string[] {
+  return [...(values ?? [])]
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean)
+    .sort();
 }
 
-// ─── First-launch rule generation ─────────────────────────────────────────────
+function normalizeConditions(values?: RuleCondition[]): string {
+  return [...(values ?? [])]
+    .map((condition) => ({
+      field: String(condition.field),
+      operator: String(condition.operator),
+      value: condition.value.trim().toLowerCase(),
+    }))
+    .filter((condition) => condition.value.length > 0)
+    .sort((a, b) => {
+      if (a.field !== b.field) return a.field < b.field ? -1 : 1;
+      if (a.operator !== b.operator) return a.operator < b.operator ? -1 : 1;
+      return a.value.localeCompare(b.value);
+    })
+    .map((condition) => `${condition.field}:${condition.operator}:${condition.value}`)
+    .join('|');
+}
+
+function ruleDedupKey(rule: CategoryRule): string {
+  const keywordKey = normalizeKeywords(rule.keywords).join('|');
+  const conditionKey = normalizeConditions(rule.conditions);
+  const matchMode = rule.matchMode ?? 'any';
+
+  return [
+    rule.appName.trim().toLowerCase(),
+    rule.category.trim().toLowerCase(),
+    rule.isAutomatic ? 'auto' : 'manual',
+    matchMode,
+    keywordKey,
+    conditionKey,
+  ].join('::');
+}
+
+function dedupeRules(rules: CategoryRule[]): CategoryRule[] {
+  const seen = new Set<string>();
+  const result: CategoryRule[] = [];
+
+  for (const rule of rules) {
+    const key = ruleDedupKey(rule);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(rule);
+  }
+
+  return result;
+}
+
+function pushSimpleRule(
+  rules: CategoryRule[],
+  nextId: () => string,
+  appName: string,
+  category: CategoryRule['category'],
+  keywords: string[],
+): void {
+  rules.push({
+    id: nextId(),
+    appName,
+    category,
+    isAutomatic: false,
+    keywords,
+    matchMode: 'any',
+    conditions: [],
+  });
+}
+
+function makeTitleContainsCondition(value: string): RuleCondition {
+  return {
+    field: 'windowTitle',
+    operator: 'contains',
+    value,
+  };
+}
+
+function pushAdvancedAllRule(
+  rules: CategoryRule[],
+  nextId: () => string,
+  appName: string,
+  category: CategoryRule['category'],
+  conditions: RuleCondition[],
+): void {
+  rules.push({
+    id: nextId(),
+    appName,
+    category,
+    isAutomatic: false,
+    keywords: [],
+    matchMode: 'all',
+    conditions,
+  });
+}
+
+function pushBrowserRuleSet(
+  rules: CategoryRule[],
+  appName: string,
+  nextId: () => string
+): void {
+  // Broad fallback defaults
+  pushSimpleRule(rules, nextId, appName, 'Meetings', BROWSER_MEETING_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Gaming', BROWSER_GAMING_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Study', BROWSER_STUDY_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Deep Work', BROWSER_DEEP_WORK_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Entertainment', BROWSER_ENTERTAINMENT_KEYWORDS);
+
+  // More specific advanced defaults
+  for (const blueprint of BROWSER_ADVANCED_RULE_BLUEPRINTS) {
+    pushAdvancedAllRule(
+      rules,
+      nextId,
+      appName,
+      blueprint.category,
+      blueprint.terms.map(makeTitleContainsCondition),
+    );
+  }
+}
 
 function generateInitialRules(): CategoryRule[] {
-  const appNames = scanInstalledAppNames();
+  const installedApps = scanInstalledApps();
   const rules: CategoryRule[] = [];
   let id = 1;
+  const nextId = () => String(id++);
 
-  console.log(`[category-rules.store] Scanned ${appNames.length} installed apps`);
+  for (const app of installedApps) {
+    const resolved = resolveInstalledApp(app);
+    if (!resolved) continue;
 
-  for (const appName of appNames) {
-    const lower = appName.toLowerCase();
-
-    if (BROWSER_APPS.has(lower)) {
-      // Browsers get two keyword-based rules (Work + Entertainment)
-      rules.push({
-        id: String(id++),
-        appName,
-        category: 'Work',
-        isAutomatic: false,
-        keywords: BROWSER_WORK_KEYWORDS,
-      });
-      rules.push({
-        id: String(id++),
-        appName,
-        category: 'Entertainment',
-        isAutomatic: false,
-        keywords: BROWSER_ENTERTAINMENT_KEYWORDS,
-      });
+    if (resolved.isBrowser) {
+      pushBrowserRuleSet(rules, app.discoveredName, nextId);
       continue;
     }
 
-    const category = APP_CATEGORY_MAP[lower];
-    if (category) {
-      rules.push({ id: String(id++), appName, category, isAutomatic: true });
+    if (resolved.category) {
+      rules.push({
+        id: nextId(),
+        appName: app.discoveredName,
+        category: resolved.category,
+        isAutomatic: true,
+      });
     }
-    // Unrecognised apps are skipped — they will appear as 'Uncategorized' at runtime
   }
 
-  const matched = rules.filter((r) => r.isAutomatic).length;
-  const browsers = rules.filter((r) => !r.isAutomatic).length / 2;
-  console.log(
-    `[category-rules.store] Generated ${rules.length} rules ` +
-    `(${matched} automatic, ${browsers} browser keyword sets)`
-  );
-
-  return rules;
+  return dedupeRules(rules);
 }
-
-// ─── Public API ───────────────────────────────────────────────────────────────
 
 export function readRules(): CategoryRule[] {
   ensureDir();
+
   if (!fs.existsSync(RULES_FILE)) {
-    console.log('[category-rules.store] First launch — scanning installed apps and generating rules…');
     const rules = generateInitialRules();
     atomicWrite(RULES_FILE, rules);
     return rules;
   }
-  try {
-    return JSON.parse(fs.readFileSync(RULES_FILE, 'utf8')) as CategoryRule[];
-  } catch {
-    console.error('[category-rules.store] Failed to parse category-rules.json — regenerating from scan');
-    const rules = generateInitialRules();
-    atomicWrite(RULES_FILE, rules);
-    return rules;
-  }
+
+  return JSON.parse(fs.readFileSync(RULES_FILE, 'utf8')) as CategoryRule[];
 }
 
 export function writeRules(rules: CategoryRule[]): void {

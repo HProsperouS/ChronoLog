@@ -4,6 +4,9 @@ import type {
   CategoryRule,
   CreateCategoryRuleBody,
   UpdateCategoryRuleBody,
+  RuleCondition,
+  RuleConditionField,
+  RuleMatchMode,
 } from '../types';
 
 function normalize(value?: string): string {
@@ -14,6 +17,35 @@ function normalizeKeywords(values?: string[]): string[] {
   return (values ?? []).map((v) => v.trim()).filter(Boolean);
 }
 
+function normalizeMatchMode(value?: string): RuleMatchMode {
+  return value === 'all' ? 'all' : 'any';
+}
+
+function normalizeConditionField(value?: string): RuleConditionField | null {
+  if (value === 'windowTitle' || value === 'url' || value === 'hostname') {
+    return value;
+  }
+  return null;
+}
+
+function normalizeConditions(values?: RuleCondition[]): RuleCondition[] {
+  return (values ?? [])
+    .map((condition) => {
+      const field = normalizeConditionField(condition?.field);
+      const value = (condition?.value ?? '').trim();
+      const operator = condition?.operator === 'contains' ? 'contains' : null;
+
+      if (!field || !operator || !value) return null;
+
+      return {
+        field,
+        operator,
+        value,
+      } as RuleCondition;
+    })
+    .filter((condition): condition is RuleCondition => condition !== null);
+}
+
 function extractHostname(rawUrl?: string): string {
   if (!rawUrl) return '';
 
@@ -22,6 +54,33 @@ function extractHostname(rawUrl?: string): string {
   } catch {
     return '';
   }
+}
+
+function getFieldValue(
+  field: RuleConditionField,
+  windowTitle?: string,
+  url?: string
+): string {
+  if (field === 'windowTitle') return normalize(windowTitle);
+  if (field === 'url') return normalize(url);
+  return extractHostname(url);
+}
+
+function matchesCondition(
+  condition: RuleCondition,
+  windowTitle?: string,
+  url?: string
+): boolean {
+  const value = normalize(condition.value);
+  if (!value) return false;
+
+  const fieldValue = getFieldValue(condition.field, windowTitle, url);
+
+  if (condition.operator === 'contains') {
+    return fieldValue.includes(value);
+  }
+
+  return false;
 }
 
 function matchesKeyword(
@@ -43,11 +102,48 @@ function matchesKeyword(
   );
 }
 
+
+function getManualRulePriority(rule: CategoryRule): { tier: number; specificity: number } {
+  const conditions = normalizeConditions(rule.conditions);
+
+  if (conditions.length > 0) {
+    const matchMode = normalizeMatchMode(rule.matchMode);
+
+    return {
+      tier: matchMode === 'all' ? 3 : 2,
+      specificity: conditions.length,
+    };
+  }
+
+  const keywords = normalizeKeywords(rule.keywords);
+  if (keywords.length > 0) {
+    return {
+      tier: 1,
+      specificity: keywords.length,
+    };
+  }
+
+  return {
+    tier: 0,
+    specificity: 0,
+  };
+}
+
 function matchesManualRule(
   rule: CategoryRule,
   windowTitle?: string,
   url?: string
 ): boolean {
+  const conditions = normalizeConditions(rule.conditions);
+
+  if (conditions.length > 0) {
+    const matchMode = normalizeMatchMode(rule.matchMode);
+
+    return matchMode === 'all'
+      ? conditions.every((condition) => matchesCondition(condition, windowTitle, url))
+      : conditions.some((condition) => matchesCondition(condition, windowTitle, url));
+  }
+
   const keywords = normalizeKeywords(rule.keywords);
   if (keywords.length === 0) return false;
 
@@ -63,16 +159,29 @@ export function autoCategory(
   const appLower = normalize(appName);
 
   // 1. Manual rules first: specific override
-  const manualRules = rules.filter(
-    (r) => !r.isAutomatic && normalize(r.appName) === appLower
-  );
+  const manualRules = rules
+    .filter((r) => !r.isAutomatic && normalize(r.appName) === appLower)
+    .sort((a, b) => {
+      const aPriority = getManualRulePriority(a);
+      const bPriority = getManualRulePriority(b);
+
+      if (bPriority.tier !== aPriority.tier) {
+        return bPriority.tier - aPriority.tier;
+      }
+
+      if (bPriority.specificity !== aPriority.specificity) {
+        return bPriority.specificity - aPriority.specificity;
+      }
+
+      return 0;
+    });
 
   for (const rule of manualRules) {
     if (matchesManualRule(rule, windowTitle, url)) {
       return rule.category;
     }
   }
-
+  
   // 2. Automatic rules second: app-level default
   const autoRule = rules.find(
     (r) => r.isAutomatic && normalize(r.appName) === appLower
@@ -98,6 +207,8 @@ export function createRule(body: CreateCategoryRuleBody): CategoryRule {
     category: body.category,
     isAutomatic: body.isAutomatic,
     keywords: normalizeKeywords(body.keywords),
+    matchMode: normalizeMatchMode(body.matchMode),
+    conditions: normalizeConditions(body.conditions),
   };
 
   rules.push(rule);
@@ -125,6 +236,14 @@ export function updateRule(
 
   if (body.keywords !== undefined) {
     rule.keywords = normalizeKeywords(body.keywords);
+  }
+
+  if (body.matchMode !== undefined) {
+    rule.matchMode = normalizeMatchMode(body.matchMode);
+  }
+
+  if (body.conditions !== undefined) {
+    rule.conditions = normalizeConditions(body.conditions);
   }
 
   writeRules(rules);

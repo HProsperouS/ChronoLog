@@ -1,10 +1,5 @@
 import './load-env';
-let activeWin: any = null;
-try {
-  activeWin = require('active-win');
-} catch (err) {
-  console.warn('[tracker] Warning: active-win not available. Tracking disabled. Install Visual Studio C++ build tools to enable.');
-}
+import { activeWindow } from 'active-win';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -236,7 +231,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
     duration: Math.round((durationMs / 1_000 / 60) * 10) / 10,
     startTime: session.startTime.toISOString(),
     endTime: endTime.toISOString(),
-    excludeFromAnalytics: isSelfActivity,
+    excludeFromAnalytics: false,
   };
 
   try {
@@ -258,7 +253,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
   }
 }
 
-function extractUrl(win: any): string | undefined {
+function extractUrl(win: NonNullable<Awaited<ReturnType<typeof activeWindow>>>): string | undefined {
   if ('url' in win && typeof win.url === 'string') return win.url;
   return undefined;
 }
@@ -322,9 +317,9 @@ async function poll(): Promise<void> {
   }
 
   // 3. Read active window
-  let win: any | undefined;
+  let win: Awaited<ReturnType<typeof activeWindow>>;
   try {
-    win = activeWin ? (await activeWin()) ?? undefined : undefined;
+    win = (await activeWindow()) ?? undefined;
   } catch (err) {
     console.error('[tracker] activeWin failed:', err);
     if (isLikelyMacPermissionsError(err)) {
@@ -346,6 +341,15 @@ async function poll(): Promise<void> {
   const windowTitle = win.title || undefined;
   const rawUrl      = extractUrl(win);
   const url         = isBrowserApp(appName) ? rawUrl : undefined;
+
+if (/firefox|chrome|edge|arc/i.test(appName)) {
+  console.log('[tracker:url-debug]', {
+    appName,
+    title: windowTitle,
+    rawUrl,
+    url,
+  });
+}
 
   // 4. Excluded apps
   if (config.excludedApps.has(appName.toLowerCase())) {

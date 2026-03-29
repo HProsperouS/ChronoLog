@@ -264,7 +264,7 @@ function startTracker(): void {
   });
 
   trackerProcess.on('exit', (code, signal) => {
-    console.log(`[tracker] exited code=${code ?? 'null'} signal=${signal ?? 'null'}`);
+    console.error(`[tracker] Exited (code=${code ?? 'null'}, signal=${signal ?? 'null'})`);
   });
 }
 

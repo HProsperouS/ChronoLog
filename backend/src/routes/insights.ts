@@ -37,4 +37,42 @@ export default async function insightsRoutes(app: FastifyInstance) {
     const quota = AiService.getInsightsGenerateQuota(date);
     return reply.send({ quota });
   });
+
+  // Weekly insights endpoints
+  app.get<{ Querystring: { weekStart?: string } }>('/weekly', async (request, reply) => {
+    const weekStart = request.query.weekStart;
+    const insights = AiService.getWeeklyInsights(weekStart);
+    return reply.send({ insights });
+  });
+
+  app.post<{ Body: { weekStart?: string } }>('/weekly/generate', async (request, reply) => {
+    const weekStart = request.body?.weekStart ?? AiService.getLastMonday();
+    try {
+      const insights = await AiService.generateWeeklyInsights(weekStart);
+      return reply.send({ insights });
+    } catch (err: unknown) {
+      if (err instanceof AiService.WeeklyInsightCooldownError) {
+        return reply.code(429).send({
+          error: err.message,
+          quota: {
+            ...AiService.getWeeklyInsightsGenerateQuota(weekStart),
+          },
+        });
+      }
+      if (err instanceof AiService.WeeklyInsightQuotaError) {
+        return reply.code(429).send({
+          error: err.message,
+          quota: AiService.getWeeklyInsightsGenerateQuota(weekStart),
+        });
+      }
+      const message = err instanceof Error ? err.message : 'AI service error';
+      return reply.code(503).send({ error: message });
+    }
+  });
+
+  app.get<{ Querystring: { weekStart?: string } }>('/weekly/quota', async (request, reply) => {
+    const weekStart = request.query.weekStart ?? AiService.getLastMonday();
+    const quota = AiService.getWeeklyInsightsGenerateQuota(weekStart);
+    return reply.send({ quota });
+  });
 }

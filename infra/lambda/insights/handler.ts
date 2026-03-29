@@ -1,7 +1,7 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { timingSafeEqual } from 'crypto';
 import OpenAI from 'openai';
-import { buildSystemPrompt, buildUserPrompt } from './prompt';
+import { buildSystemPrompt, buildUserPrompt, buildWeeklySystemPrompt, buildWeeklyUserPrompt } from './prompt';
 import type { Category, GenerateRequestBody, InsightContent, SessionTimelineEntry } from './types';
 
 function json(statusCode: number, body: unknown): APIGatewayProxyResultV2 {
@@ -175,6 +175,18 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     return json(400, { error: 'Invalid JSON body' });
   }
 
+  const mode = body.mode ?? 'daily';
+
+  if (mode === 'daily') {
+    return handleDailyInsights(body, openAiKey);
+  } else if (mode === 'weekly') {
+    return handleWeeklyInsights(body, openAiKey);
+  } else {
+    return json(400, { error: 'Invalid mode (expected "daily" or "weekly")' });
+  }
+}
+
+async function handleDailyInsights(body: GenerateRequestBody, openAiKey: string): Promise<APIGatewayProxyResultV2> {
   if (!body.date || typeof body.date !== 'string' || !isInsightsLambdaStatsPayload(body.stats)) {
     return json(400, {
       error:
@@ -205,6 +217,55 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         },
       ],
       max_tokens: 1200,
+      temperature: 0.55,
+      response_format: { type: 'json_object' },
+    });
+
+    const rawText = completion.choices[0]?.message?.content ?? '{"insights":[]}';
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawText) as unknown;
+    } catch {
+      return json(502, { error: 'Model returned invalid JSON' });
+    }
+
+    const insights = normalizeInsights(parsed);
+    return json(200, { insights });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'OpenAI error';
+    return json(503, { error: message });
+  }
+}
+
+async function handleWeeklyInsights(body: GenerateRequestBody, openAiKey: string): Promise<APIGatewayProxyResultV2> {
+  if (
+    !body.weekStart ||
+    !body.weekEnd ||
+    typeof body.weekStart !== 'string' ||
+    typeof body.weekEnd !== 'string' ||
+    !body.aggregated ||
+    !body.dailyStats ||
+    !Array.isArray(body.dailyStats)
+  ) {
+    return json(400, {
+      error:
+        'Expected { weekStart, weekEnd, aggregated (weekly totals), dailyStats (array of daily stats) }',
+    });
+  }
+
+  const client = new OpenAI({ apiKey: openAiKey });
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: buildWeeklySystemPrompt() },
+        {
+          role: 'user',
+          content: buildWeeklyUserPrompt(body.aggregated, body.dailyStats),
+        },
+      ],
+      max_tokens: 1500,
       temperature: 0.55,
       response_format: { type: 'json_object' },
     });

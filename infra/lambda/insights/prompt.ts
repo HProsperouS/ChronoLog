@@ -54,6 +54,32 @@ function formatSessionTimeline(rows: SessionTimelineEntry[]): string {
   return lines.join('\n');
 }
 
+function formatWeeklyStatsBlock(
+  label: string,
+  stats: {
+    totalTime: number;
+    avgFocusScore: number;
+    contextSwitches: number;
+    longestSession: number;
+    categoryTotals: Record<string, number>;
+    topApps: { appName: string; category: string; duration: number }[];
+  },
+): string {
+  const lines = [
+    `${label}`,
+    `  Average focus score: ${stats.avgFocusScore}/100`,
+    `  Total tracked time: ${Math.floor(stats.totalTime / 60)}h ${stats.totalTime % 60}m`,
+    `  Longest session: ${stats.longestSession} minutes`,
+    `  Total context switches: ${stats.contextSwitches}`,
+    `  Category breakdown (minutes):`,
+    ...Object.entries(stats.categoryTotals)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `    ${k}: ${Math.floor(v / 60)}h ${v % 60}m`),
+    `  Top apps: ${stats.topApps.map((a) => `${a.appName} (${a.duration}m, ${a.category})`).join(', ') || 'none'}`,
+  ];
+  return lines.join('\n');
+}
+
 export function buildSystemPrompt(): string {
   return `You are a concise productivity coach for a desktop screen-time tracker.
 
@@ -97,6 +123,62 @@ export function buildUserPrompt(
       'Compare days where useful (focus score, switch counts, busiest windows, time patterns).',
     );
   }
+
+  return parts.join('\n');
+}
+
+export function buildWeeklySystemPrompt(): string {
+  return `You are a weekly productivity coach analyzing a week of screen-time tracking data.
+
+Language: English only for titles and descriptions.
+
+Rules:
+- Focus on **trends, patterns, and consistency** across the 7-day week.
+- Highlight high/low focus scores and day-to-day variation.
+- Look for weekly habits: Which days are most/least productive? Are there patterns by day-of-week?
+- Categories are user-defined. Do not assume a fixed set; use the labels provided.
+- Provide 1–2 actionable recommendations for the coming week based on the patterns observed.
+- Tone: supportive, encouraging, specific to their habits. Do not say you are an AI.
+
+Output: ONE JSON object, shape {"insights":[...]} with 3-5 items.
+Each item: type pattern|achievement|recommendation; title max 8 words; description 2-3 sentences with numbers; icon one of TrendingDown|TrendingUp|Trophy|AlertCircle|Sparkles|Target|Shuffle`;
+}
+
+export function buildWeeklyUserPrompt(
+  aggregated: {
+    totalTime: number;
+    avgFocusScore: number;
+    contextSwitches: number;
+    longestSession: number;
+    categoryTotals: Record<string, number>;
+    topApps: { appName: string; category: string; duration: number }[];
+  },
+  dailyStats: Array<{
+    date: string;
+    focusScore: number;
+    totalTime: number;
+    contextSwitches: number;
+    categoryTotals: Record<string, number>;
+  }>,
+): string {
+  const parts = [
+    'Analyze this week of productivity data:',
+    '',
+    formatWeeklyStatsBlock('Weekly Aggregate', aggregated),
+  ];
+
+  parts.push('', 'Day-by-day breakdown:');
+  for (const day of dailyStats) {
+    const dayName = new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+    parts.push(
+      `  ${dayName} (${day.date}): Focus ${day.focusScore}/100, ${Math.floor(day.totalTime / 60)}h ${day.totalTime % 60}m tracked, ${day.contextSwitches} context switches`,
+    );
+  }
+
+  parts.push(
+    '',
+    'Identify trends: Which days had highest/lowest focus? Were there consistent times of day with better productivity? How did context switching vary? Suggest 1–2 concrete improvements for next week.',
+  );
 
   return parts.join('\n');
 }

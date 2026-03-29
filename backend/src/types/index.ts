@@ -1,13 +1,6 @@
-export type Category =
-  | 'Deep Work'
-  | 'Study'
-  | 'Communication'
-  | 'Meetings'
-  | 'Admin'
-  | 'Entertainment'
-  | 'Gaming'
-  | 'Uncategorized'
-  | 'ChronoLog';
+export type Category = string;
+
+export type ProductivityType = 'productive' | 'non_productive' | 'neutral';
 
 export interface Activity {
   id: number;
@@ -33,6 +26,7 @@ export interface CategoryRule {
 export type CategoryDefinition = {
   name: string;
   color: string;
+  productivityType: ProductivityType;
 };
 
 export interface Insight {
@@ -72,11 +66,18 @@ export interface SessionTimelineEntry {
 /** Returned by `/api/stats/*` — stable public shape */
 export interface DailyStats {
   date: string;
-  categoryTotals: Record<Category, number>;  // minutes per category
+  categoryTotals: Record<string, number>; // minutes per category
   totalTime: number;
-  focusScore: number;                        // 0-100
+
+  productiveMinutes: number;
+  nonProductiveMinutes: number;
+  neutralMinutes: number;
+
+  focusScore: number; // 0-100
   contextSwitches: number;
-  longestSession: number;                    // minutes (longest single activity row)
+  productivitySwitches: number;
+
+  longestSession: number; // minutes (longest single activity row)
   topApps: { appName: string; category: Category; duration: number }[];
 }
 

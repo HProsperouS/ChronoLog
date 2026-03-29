@@ -21,11 +21,13 @@ function trendVsYesterday(curr: number, prev: number): { value: string; isPositi
 }
 
 const BUILT_IN_CATEGORY_ORDER = [
-  'Work',
+  'Deep Work',
   'Study',
-  'Entertainment',
   'Communication',
-  'Utilities',
+  'Meetings',
+  'Admin',
+  'Entertainment',
+  'Gaming',
   'ChronoLog',
   'Uncategorized',
 ] as const;
@@ -218,7 +220,7 @@ export function Dashboard() {
   console.log('[Dashboard] weeklyCategoryMeta', weeklyCategoryMeta);
   console.log('[Dashboard] weeklyBarData', weeklyBarData);
 
-  const productiveTime = (daily.categoryTotals.Work ?? 0) + (daily.categoryTotals.Study ?? 0);
+  const productiveTime = daily.productiveMinutes ?? 0;
   const mostUsed = daily.topApps[0]?.appName ?? '—';
 
   function trendWithYesterday(curr: number, prev: number) {
@@ -229,12 +231,14 @@ export function Dashboard() {
   const productiveTrend = yesterdayDaily
     ? trendWithYesterday(
         productiveTime,
-        (yesterdayDaily.categoryTotals.Work ?? 0) + (yesterdayDaily.categoryTotals.Study ?? 0),
+        yesterdayDaily.productiveMinutes ?? 0,
       )
     : undefined;
+
   const focusTrend = yesterdayDaily
     ? trendWithYesterday(daily.focusScore, yesterdayDaily.focusScore)
     : undefined;
+
   const longestTrend = yesterdayDaily
     ? trendWithYesterday(daily.longestSession, yesterdayDaily.longestSession)
     : undefined;

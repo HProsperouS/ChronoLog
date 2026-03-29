@@ -1,0 +1,653 @@
+[
+  {
+    "id": "1",
+    "appName": "Adobe Acrobat",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "2",
+    "appName": "Arc",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom",
+      "teams.microsoft.com",
+      "webex"
+    ]
+  },
+  {
+    "id": "3",
+    "appName": "Arc",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net"
+    ]
+  },
+  {
+    "id": "4",
+    "appName": "Arc",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy"
+    ]
+  },
+  {
+    "id": "5",
+    "appName": "Arc",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "6",
+    "appName": "Arc",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili",
+      "spotify"
+    ]
+  },
+  {
+    "id": "7",
+    "appName": "Battle.net",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
+    "id": "9",
+    "appName": "Bitwarden",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "11",
+    "appName": "Control Panel",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "12",
+    "appName": "Discord",
+    "category": "Communication",
+    "isAutomatic": true
+  },
+  {
+    "id": "13",
+    "appName": "Docker",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "14",
+    "appName": "Epic Games Launcher",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
+    "id": "15",
+    "appName": "Excel",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "16",
+    "appName": "File Explorer",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "17",
+    "appName": "Firefox",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom",
+      "teams.microsoft.com",
+      "webex"
+    ]
+  },
+  {
+    "id": "18",
+    "appName": "Firefox",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net"
+    ]
+  },
+  {
+    "id": "19",
+    "appName": "Firefox",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy"
+    ]
+  },
+  {
+    "id": "20",
+    "appName": "Firefox",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "21",
+    "appName": "Firefox",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili",
+      "spotify"
+    ]
+  },
+  {
+    "id": "22",
+    "appName": "Google Chrome",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom",
+      "teams.microsoft.com",
+      "webex"
+    ]
+  },
+  {
+    "id": "23",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net"
+    ]
+  },
+  {
+    "id": "24",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy"
+    ]
+  },
+  {
+    "id": "25",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "26",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili",
+      "spotify"
+    ]
+  },
+  {
+    "id": "27",
+    "appName": "Microsoft Edge",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom",
+      "teams.microsoft.com",
+      "webex"
+    ]
+  },
+  {
+    "id": "28",
+    "appName": "Microsoft Edge",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net"
+    ]
+  },
+  {
+    "id": "29",
+    "appName": "Microsoft Edge",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy"
+    ]
+  },
+  {
+    "id": "30",
+    "appName": "Microsoft Edge",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "31",
+    "appName": "Microsoft Edge",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili",
+      "spotify"
+    ]
+  },
+  {
+    "id": "32",
+    "appName": "Mozilla Firefox",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom",
+      "teams.microsoft.com",
+      "webex"
+    ]
+  },
+  {
+    "id": "33",
+    "appName": "Mozilla Firefox",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net"
+    ]
+  },
+  {
+    "id": "34",
+    "appName": "Mozilla Firefox",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy"
+    ]
+  },
+  {
+    "id": "35",
+    "appName": "Mozilla Firefox",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ]
+  },
+  {
+    "id": "36",
+    "appName": "Mozilla Firefox",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili",
+      "spotify"
+    ]
+  },
+  {
+    "id": "37",
+    "appName": "Notepad++",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "39",
+    "appName": "Notion",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "41",
+    "appName": "Obsidian",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "43",
+    "appName": "OneNote",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "44",
+    "appName": "PowerPoint",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "45",
+    "appName": "Steam",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
+    "id": "47",
+    "appName": "Task Manager",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "48",
+    "appName": "Telegram",
+    "category": "Communication",
+    "isAutomatic": true
+  },
+  {
+    "id": "49",
+    "appName": "Visual Studio Code",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "50",
+    "appName": "Wireshark",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "52",
+    "appName": "Word",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "53",
+    "appName": "Zoom Workplace",
+    "category": "Meetings",
+    "isAutomatic": true
+  }
+]

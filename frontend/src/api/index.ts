@@ -247,6 +247,7 @@ export async function getCategories(): Promise<CategoryDefinition[]> {
 export async function createCategory(input: {
   name: string;
   color: string;
+  productivityType: 'productive' | 'non_productive' | 'neutral';
 }): Promise<CategoryDefinition> {
   const data = await apiFetch<{ category: CategoryDefinition }>('/api/categories', {
     method: 'POST',
@@ -254,4 +255,25 @@ export async function createCategory(input: {
     body: JSON.stringify(input),
   });
   return data.category;
+}
+
+export async function updateCategory(input: {
+  name: string;
+  color: string;
+  productivityType: 'productive' | 'non_productive' | 'neutral';
+}): Promise<CategoryDefinition> {
+  const data = await apiFetch<{ category: CategoryDefinition }>('/api/categories', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return data.category;
+}
+
+export async function deleteCategory(name: string): Promise<void> {
+  await apiFetch('/api/categories', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
 }

@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FolderTree, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FlashContainer, useFlash } from '@/components/ui/alert';
 import * as api from '../api';
 import { categoryColors, DEFAULT_CATEGORY_COLOR } from '../constants';
-import type { CategoryRule } from '../types';
-
-
-
+import type { CategoryRule, ProductivityType, CategoryDefinition } from '../types';
 
 function parseKeywords(raw: string): string[] {
   return raw
@@ -21,23 +25,39 @@ function normalizeCategoryName(value: string): string {
   return value.trim();
 }
 
-const EMPTY_DRAFT = { appName: '', category: 'Deep Work' as CategoryRule['category'], keywords: '', isAutomatic: false };
-
+const EMPTY_DRAFT = {
+  appName: '',
+  category: 'Deep Work' as CategoryRule['category'],
+  keywords: '',
+  isAutomatic: false,
+};
 
 export function Categories() {
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
   const { messages, flash, dismiss } = useFlash();
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
+
+  const [categoryDefinitions, setCategoryDefinitions] = useState<CategoryDefinition[]>([]);
+
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#8b5cf6');
-  const [customCategoryColors, setCustomCategoryColors] = useState<Record<string, string>>({});
+  const [newCategoryProductivityType, setNewCategoryProductivityType] =
+    useState<ProductivityType>('neutral');
 
+  const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null);
+  const [editCategoryColor, setEditCategoryColor] = useState('#8b5cf6');
+  const [editCategoryProductivityType, setEditCategoryProductivityType] =
+    useState<ProductivityType>('neutral');
+
+  const [deletingCategoryName, setDeletingCategoryName] = useState<string | null>(null);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
 
   const defaultCategories = [
     'Deep Work',
@@ -51,17 +71,30 @@ export function Categories() {
     'ChronoLog',
   ];
 
+  const builtInCategorySet = new Set(defaultCategories);
 
+  const customCategories = useMemo(
+    () => categoryDefinitions.map((c) => c.name),
+    [categoryDefinitions],
+  );
 
+  const categoryColorMap = useMemo(
+    () => Object.fromEntries(categoryDefinitions.map((c) => [c.name, c.color])),
+    [categoryDefinitions],
+  );
 
-const categories = useMemo(() => {
-  const fromRules = rules
-    .map((r) => r.category?.trim())
-    .filter(Boolean) as string[];
+  const categoryProductivityMap = useMemo(
+    () => Object.fromEntries(categoryDefinitions.map((c) => [c.name, c.productivityType])),
+    [categoryDefinitions],
+  );
 
-  return Array.from(new Set([...defaultCategories, ...customCategories, ...fromRules]));
-}, [rules, customCategories]);
+  const categories = useMemo(() => {
+    const fromRules = rules
+      .map((r) => r.category?.trim())
+      .filter(Boolean) as string[];
 
+    return Array.from(new Set([...defaultCategories, ...customCategories, ...fromRules]));
+  }, [rules, customCategories]);
 
   useEffect(() => {
     void Promise.all([
@@ -70,18 +103,14 @@ const categories = useMemo(() => {
     ])
       .then(([loadedRules, loadedCategories]) => {
         setRules(loadedRules);
-        setCustomCategories(loadedCategories.map((c) => c.name));
-        setCustomCategoryColors(
-          Object.fromEntries(loadedCategories.map((c) => [c.name, c.color]))
-        );
+        setCategoryDefinitions(loadedCategories);
       })
       .catch(() => flash('error', 'Failed to load category data'));
   }, []);
 
- 
-
   async function confirmDelete() {
     if (!deletingId) return;
+
     setIsDeleting(true);
     try {
       await api.deleteCategoryRule(deletingId);
@@ -98,13 +127,13 @@ const categories = useMemo(() => {
   function handleEdit(id: string) {
     const rule = rules.find((r) => r.id === id);
     if (!rule) return;
-    
-  setDraft({
-    appName: rule.appName,
-    category: rule.category,
-    keywords: rule.keywords?.join(', ') ?? '',
-    isAutomatic: rule.isAutomatic,
-  });
+
+    setDraft({
+      appName: rule.appName,
+      category: rule.category,
+      keywords: rule.keywords?.join(', ') ?? '',
+      isAutomatic: rule.isAutomatic,
+    });
 
     setEditingId(id);
   }
@@ -194,6 +223,15 @@ const categories = useMemo(() => {
     setIsAdding(true);
   }
 
+  function handleStartEditCategory(categoryName: string) {
+    const category = categoryDefinitions.find((c) => c.name === categoryName);
+    if (!category) return;
+
+    setEditingCategory(category);
+    setEditCategoryColor(category.color);
+    setEditCategoryProductivityType(category.productivityType);
+  }
+
   async function handleCreateCategory() {
     const normalized = normalizeCategoryName(newCategoryName);
 
@@ -211,16 +249,14 @@ const categories = useMemo(() => {
       const created = await api.createCategory({
         name: normalized,
         color: newCategoryColor,
+        productivityType: newCategoryProductivityType,
       });
 
-      setCustomCategories((prev) => [...prev, created.name]);
-      setCustomCategoryColors((prev) => ({
-        ...prev,
-        [created.name]: created.color,
-      }));
+      setCategoryDefinitions((prev) => [...prev, created]);
       setDraft((d) => ({ ...d, category: created.name as CategoryRule['category'] }));
       setNewCategoryName('');
       setNewCategoryColor('#8b5cf6');
+      setNewCategoryProductivityType('neutral');
       setIsCategoryDialogOpen(false);
       flash('success', `Category "${created.name}" created`);
     } catch (err) {
@@ -229,10 +265,57 @@ const categories = useMemo(() => {
     }
   }
 
+  async function handleSaveCategoryEdit() {
+    if (!editingCategory) return;
+
+    try {
+      const updated = await api.updateCategory({
+        name: editingCategory.name,
+        color: editCategoryColor,
+        productivityType: editCategoryProductivityType,
+      });
+
+      setCategoryDefinitions((prev) =>
+        prev.map((c) => (c.name === editingCategory.name ? updated : c))
+      );
+
+      setEditingCategory(null);
+      flash('success', `Category "${updated.name}" updated`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update category';
+      flash('error', message);
+    }
+  }
+
+  async function handleDeleteCategory() {
+    if (!deletingCategoryName) return;
+
+    if (deletingCategoryName && builtInCategorySet.has(deletingCategoryName)) {
+      flash('warning', 'Built-in categories cannot be deleted');
+      setDeletingCategoryName(null);
+      return;
+    }
+
+    setIsDeletingCategory(true);
+    try {
+      await api.deleteCategory(deletingCategoryName);
+      setCategoryDefinitions((prev) =>
+        prev.filter((c) => c.name !== deletingCategoryName)
+      );
+      setDeletingCategoryName(null);
+      flash('success', `Category "${deletingCategoryName}" deleted`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete category';
+      flash('error', message);
+    } finally {
+      setIsDeletingCategory(false);
+    }
+  }
+
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0f]">
       <FlashContainer messages={messages} onDismiss={dismiss} />
-      {/* Header */}
+
       <div className="border-b border-white/5 px-4 sm:px-8 py-4 sm:py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -244,33 +327,62 @@ const categories = useMemo(() => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="p-4 sm:p-6">
-        {/* Category Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {categories.map((category) => {
-            const count = rules.filter(r => r.category === category).length;
+            const count = rules.filter((r) => r.category === category).length;
+
             return (
-              <div key={category} className="bg-[#13131a] border border-white/5 rounded-xl p-5 hover:border-white/10 transition-all">
+              <div
+                key={category}
+                className="bg-[#13131a] border border-white/5 rounded-xl p-5 hover:border-white/10 transition-all"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-3 h-3 rounded"
-                      style={{ backgroundColor: customCategoryColors[category] ?? categoryColors[category] ?? DEFAULT_CATEGORY_COLOR }}
+                      style={{
+                        backgroundColor:
+                          categoryColorMap[category] ??
+                          categoryColors[category] ??
+                          DEFAULT_CATEGORY_COLOR,
+                      }}
                     />
                     <div>
                       <p className="text-sm font-semibold text-white">{category}</p>
                       <p className="text-xs text-white">{count} rules</p>
+                      <p className="text-[11px] text-gray-400 capitalize">
+                        {(categoryProductivityMap[category] ?? 'neutral').replace('_', '-')}
+                      </p>
                     </div>
                   </div>
-                  <FolderTree className="w-4 h-4 text-white" />
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleStartEditCategory(category)}
+                      className="p-1 text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingCategoryName(category)}
+                      disabled={builtInCategorySet.has(category)}
+                      title={builtInCategorySet.has(category) ? 'Built-in categories cannot be deleted' : 'Delete category'}
+                      className={`p-1 rounded transition-colors ${
+                        builtInCategorySet.has(category)
+                          ? 'text-gray-600 cursor-not-allowed'
+                          : 'text-red-400 hover:bg-red-500/10'
+                      }`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Rules Table */}
         <div className="bg-[#13131a] border border-white/5 rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-white">Application Rules</h2>
@@ -293,6 +405,7 @@ const categories = useMemo(() => {
               </button>
             </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/5 border-b border-white/5">
@@ -314,6 +427,7 @@ const categories = useMemo(() => {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-white/5">
                 {isAdding && (
                   <tr className="bg-indigo-500/5">
@@ -326,6 +440,7 @@ const categories = useMemo(() => {
                         className="w-full px-3 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
                       />
                     </td>
+
                     <td className="px-5 py-3">
                       <select
                         value={draft.category}
@@ -344,10 +459,15 @@ const categories = useMemo(() => {
                         ))}
                       </select>
                     </td>
+
                     <td className="px-5 py-3">
                       <input
                         type="text"
-                        placeholder={draft.isAutomatic ? 'Not used for automatic rules' : 'e.g. googledocs, youtube'}
+                        placeholder={
+                          draft.isAutomatic
+                            ? 'Not used for automatic rules'
+                            : 'e.g. googledocs, youtube'
+                        }
                         value={draft.keywords}
                         onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
                         disabled={draft.isAutomatic}
@@ -358,6 +478,7 @@ const categories = useMemo(() => {
                         }`}
                       />
                     </td>
+
                     <td className="px-5 py-3">
                       <select
                         value={draft.isAutomatic ? 'auto' : 'manual'}
@@ -374,6 +495,7 @@ const categories = useMemo(() => {
                         <option value="manual">Manual</option>
                       </select>
                     </td>
+
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1">
                         <button
@@ -397,10 +519,14 @@ const categories = useMemo(() => {
                   const isEditing = editingId === rule.id;
 
                   return (
-                    <tr key={rule.id} className={isEditing ? 'bg-indigo-500/5' : 'hover:bg-white/5'}>
+                    <tr
+                      key={rule.id}
+                      className={isEditing ? 'bg-indigo-500/5' : 'hover:bg-white/5'}
+                    >
                       <td className="px-5 py-3">
                         <span className="text-sm font-medium text-white">{rule.appName}</span>
                       </td>
+
                       <td className="px-5 py-3">
                         {isEditing ? (
                           <select
@@ -423,19 +549,29 @@ const categories = useMemo(() => {
                           <div className="flex items-center gap-2">
                             <div
                               className="w-2 h-2 rounded"
-                              style={{ backgroundColor: customCategoryColors[rule.category] ?? categoryColors[rule.category] ?? DEFAULT_CATEGORY_COLOR }}
+                              style={{
+                                backgroundColor:
+                                  categoryColorMap[rule.category] ??
+                                  categoryColors[rule.category] ??
+                                  DEFAULT_CATEGORY_COLOR,
+                              }}
                             />
                             <span className="text-xs text-white">{rule.category}</span>
                           </div>
                         )}
                       </td>
+
                       <td className="px-5 py-3">
                         {isEditing ? (
                           <input
                             type="text"
                             value={draft.keywords}
                             onChange={(e) => setDraft((d) => ({ ...d, keywords: e.target.value }))}
-                            placeholder={draft.isAutomatic ? 'Not used for automatic rules' : 'e.g. googledocs, youtube'}
+                            placeholder={
+                              draft.isAutomatic
+                                ? 'Not used for automatic rules'
+                                : 'e.g. googledocs, youtube'
+                            }
                             disabled={draft.isAutomatic}
                             className={`w-full px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:border-indigo-500 ${
                               draft.isAutomatic
@@ -449,6 +585,7 @@ const categories = useMemo(() => {
                           </span>
                         )}
                       </td>
+
                       <td className="px-5 py-3">
                         {isEditing ? (
                           <select
@@ -477,6 +614,7 @@ const categories = useMemo(() => {
                           </span>
                         )}
                       </td>
+
                       <td className="px-5 py-3">
                         {isEditing ? (
                           <div className="flex items-center gap-1">
@@ -518,7 +656,6 @@ const categories = useMemo(() => {
           </div>
         </div>
 
-        {/* Info Card */}
         <div className="mt-4 bg-gradient-to-br from-indigo-500/10 to-purple-600/10 border border-indigo-500/20 rounded-xl p-5">
           <div className="flex gap-3">
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-lg">
@@ -527,9 +664,7 @@ const categories = useMemo(() => {
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-white mb-1">How Category Rules Work</h3>
               <div className="text-xs text-white leading-relaxed space-y-2">
-                <p>
-                  Rules are applied separately for each application.
-                </p>
+                <p>Rules are applied separately for each application.</p>
                 <p>
                   <strong className="text-white">Automatic rules</strong> set the default category for an app.
                 </p>
@@ -588,6 +723,24 @@ const categories = useMemo(() => {
                 </div>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-white">Productivity type</label>
+              <select
+                value={newCategoryProductivityType}
+                onChange={(e) =>
+                  setNewCategoryProductivityType(e.target.value as ProductivityType)
+                }
+                className="w-full px-3 py-2 bg-black border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="productive">Productive</option>
+                <option value="non_productive">Non-productive</option>
+                <option value="neutral">Neutral</option>
+              </select>
+              <p className="text-[11px] text-gray-400">
+                This controls how the category affects productivity time, focus score, and productivity switches.
+              </p>
+            </div>
           </div>
 
           <DialogFooter className="flex gap-2 justify-end">
@@ -599,6 +752,7 @@ const categories = useMemo(() => {
                 setIsCategoryDialogOpen(false);
                 setNewCategoryName('');
                 setNewCategoryColor('#8b5cf6');
+                setNewCategoryProductivityType('neutral');
               }}
             >
               Cancel
@@ -614,7 +768,113 @@ const categories = useMemo(() => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation dialog */}
+      <Dialog open={!!editingCategory} onOpenChange={(open) => { if (!open) setEditingCategory(null); }}>
+        <DialogContent className="bg-[#111827] border border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-sm text-white">Edit category</DialogTitle>
+            <DialogDescription className="text-xs text-white">
+              Update this category’s color and productivity type.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs text-white">Category name</label>
+              <input
+                type="text"
+                value={editingCategory?.name ?? ''}
+                readOnly
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-400 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-white">Category color</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={editCategoryColor}
+                  onChange={(e) => setEditCategoryColor(e.target.value)}
+                  className="h-10 w-14 rounded border border-white/10 bg-black p-1 cursor-pointer"
+                />
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: editCategoryColor }}
+                  />
+                  <span className="text-xs text-gray-300">{editCategoryColor}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-white">Productivity type</label>
+              <select
+                value={editCategoryProductivityType}
+                onChange={(e) =>
+                  setEditCategoryProductivityType(e.target.value as ProductivityType)
+                }
+                className="w-full px-3 py-2 bg-black border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="productive">Productive</option>
+                <option value="non_productive">Non-productive</option>
+                <option value="neutral">Neutral</option>
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-xs bg-white/10 text-white border-white/20 hover:bg-white/15"
+              onClick={() => setEditingCategory(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="text-xs"
+              onClick={handleSaveCategoryEdit}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deletingCategoryName} onOpenChange={(open) => { if (!open) setDeletingCategoryName(null); }}>
+        <DialogContent className="bg-[#111827] border border-red-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-sm text-red-400">Delete category?</DialogTitle>
+            <DialogDescription className="text-xs text-white">
+              This will permanently remove the category{' '}
+              <span className="text-white font-medium">{deletingCategoryName ?? ''}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-xs bg-white/10 text-white border-white/20 hover:bg-white/15"
+              onClick={() => setDeletingCategoryName(null)}
+              disabled={isDeletingCategory}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="text-xs"
+              onClick={handleDeleteCategory}
+              disabled={isDeletingCategory}
+            >
+              {isDeletingCategory ? 'Deleting…' : 'Yes, delete category'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
         <DialogContent className="bg-[#111827] border border-red-500/30">
           <DialogHeader>

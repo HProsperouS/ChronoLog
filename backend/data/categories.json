@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Admin",
+    "color": "#64748b",
+    "productivityType": "productive"
+  },
+  {
+    "name": "ChronoLog",
+    "color": "#1d4ed8",
+    "productivityType": "neutral"
+  },
+  {
+    "name": "Communication",
+    "color": "#a855f7",
+    "productivityType": "neutral"
+  },
+  {
+    "name": "Deep Work",
+    "color": "#6366f1",
+    "productivityType": "productive"
+  },
+  {
+    "name": "Entertainment",
+    "color": "#f59e0b",
+    "productivityType": "non_productive"
+  },
+  {
+    "name": "Gaming",
+    "color": "#ef4444",
+    "productivityType": "non_productive"
+  },
+  {
+    "name": "Meetings",
+    "color": "#06b6d4",
+    "productivityType": "productive"
+  },
+  {
+    "name": "Study",
+    "color": "#10b981",
+    "productivityType": "productive"
+  },
+  {
+    "name": "Uncategorized",
+    "color": "#94a3b8",
+    "productivityType": "neutral"
+  }
+]

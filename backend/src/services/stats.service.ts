@@ -1,4 +1,5 @@
 import { readRange } from '../store/activity.store';
+import { readCategories } from '../store/categories.store';
 import type {
   Activity,
   Category,
@@ -6,6 +7,7 @@ import type {
   BusiestSwitchWindow,
   FocusSwitchSample,
   InsightsLambdaStatsPayload,
+  ProductivityType,
 } from '../types';
 
 function emptyTotals(): Record<string, number> {
@@ -26,30 +28,74 @@ function addDaysYmd(ymd: string, deltaDays: number): string {
   return `${y}-${m}-${day}`;
 }
 
-const FOCUS: Category[] = ['Deep Work', 'Study'];
+function getCategoryProductivityMap(): Map<string, ProductivityType> {
+  return new Map(
+    readCategories().map((category) => [category.name, category.productivityType]),
+  );
+}
+
+function getProductivityType(
+  categoryName: string,
+  productivityMap: Map<string, ProductivityType>,
+): ProductivityType {
+  return productivityMap.get(categoryName) ?? 'neutral';
+}
+
+function isProductiveCategory(
+  categoryName: string,
+  productivityMap: Map<string, ProductivityType>,
+): boolean {
+  return getProductivityType(categoryName, productivityMap) === 'productive';
+}
+
+// function isNonProductiveCategory(
+//   categoryName: string,
+//   productivityMap: Map<string, ProductivityType>,
+// ): boolean {
+//   return getProductivityType(categoryName, productivityMap) === 'non_productive';
+// }
+
+function sumMinutesByProductivityType(
+  categoryTotals: Record<string, number>,
+  productivityMap: Map<string, ProductivityType>,
+  productivityType: ProductivityType,
+): number {
+  let total = 0;
+
+  for (const [categoryName, minutes] of Object.entries(categoryTotals)) {
+    if (getProductivityType(categoryName, productivityMap) === productivityType) {
+      total += minutes;
+    }
+  }
+
+  return total;
+}
 
 /**
- * Same definition everywhere: Dashboard, Insights UI, GET /api/stats, and
- * InsightsLambdaStatsPayload.contextSwitches sent to Lambda.
+ * Productivity switches count only crossings between productive and
+ * non-productive categories.
  *
- * Align with the Activity page "Productive ↔ Non-Productive only" mode:
- * - Sort the full timeline by start time.
- * - Optionally merge away very short (<1 min) interruptions when the surrounding
- *   segments have the same productive/non-productive status (noise reduction).
- * - Count each boundary where productive status flips (bidirectional).
+ * Neutral categories are ignored for this metric.
+ *
+ * To reduce noise, very short (<1 min) interruptions are merged away when the
+ * surrounding segments share the same productivity type.
  */
-function countContextSwitches(activities: Activity[]): number {
+function countProductivitySwitches(
+  activities: Activity[],
+  productivityMap: Map<string, ProductivityType>,
+): number {
   const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-  const isProductive = (category: Category) => FOCUS.includes(category);
 
   // Mirror the Activity page overview merge to avoid over-counting tiny blips.
   const contextSwitchMinMinutes = 1;
-  type TimelineBar = Activity & { isProductive: boolean; visibleDuration: number };
+  type TimelineBar = Activity & {
+    productivityType: ProductivityType;
+    visibleDuration: number;
+  };
 
   const timelineRaw: TimelineBar[] = sorted.map((a) => ({
     ...a,
-    isProductive: isProductive(a.category),
+    productivityType: getProductivityType(a.category, productivityMap),
     visibleDuration: a.duration,
   }));
 
@@ -60,7 +106,7 @@ function countContextSwitches(activities: Activity[]): number {
   ) => {
     if (!next) return false;
     if (current.visibleDuration >= contextSwitchMinMinutes) return false;
-    return prev.isProductive === next.isProductive;
+    return prev.productivityType === next.productivityType;
   };
 
   const mergeTimelineForOverview = (items: TimelineBar[]): TimelineBar[] => {
@@ -85,11 +131,10 @@ function countContextSwitches(activities: Activity[]): number {
         if (shouldMergeForOverview(prev, current, next)) {
           nextPass[nextPass.length - 1] = {
             ...prev,
-            // Keep category/appName stable (use prev), just extend duration.
             duration: prev.duration + current.duration + next.duration,
             visibleDuration: prev.visibleDuration + current.visibleDuration + next.visibleDuration,
           };
-          i += 1; // consume `next` as well
+          i += 1;
           changed = true;
         } else {
           nextPass.push(current);
@@ -108,50 +153,80 @@ function countContextSwitches(activities: Activity[]): number {
   for (let i = 1; i < timeline.length; i++) {
     const prev = timeline[i - 1];
     const curr = timeline[i];
-    if (prev.isProductive !== curr.isProductive) switches++;
+
+    const prevCounts = prev.productivityType === 'productive' || prev.productivityType === 'non_productive';
+    const currCounts = curr.productivityType === 'productive' || curr.productivityType === 'non_productive';
+
+    if (!prevCounts || !currCounts) continue;
+    if (prev.productivityType !== curr.productivityType) switches++;
   }
+
   return switches;
 }
 
+
+function countContextSwitches(activities: Activity[]): number {
+  const sorted = [...activities].sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  if (sorted.length <= 1) return 0;
+
+  let switches = 0;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+
+    if (prev.category !== curr.category) {
+      switches += 1;
+    }
+  }
+
+  return switches;
+}
+
+
 /**
- * Longest continuous block of Work/Study time (minutes).
+ * Longest continuous block of productive time (minutes).
  * Activities within GAP_MINS of each other are merged into one block,
- * so 2-minute checkpoints don't fragment a long focus session.
+ * so short checkpoints do not fragment a long focus session.
  */
-function longestFocusBlockMins(activities: Activity[]): number {
+function longestFocusBlockMins(
+  activities: Activity[],
+  productivityMap: Map<string, ProductivityType>,
+): number {
   const GAP_MINS = 5;
   const focusSorted = activities
-    .filter((a) => FOCUS.includes(a.category))
+    .filter((a) => isProductiveCategory(a.category, productivityMap))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   if (focusSorted.length === 0) return 0;
 
   let maxBlock = 0;
   let blockStartMs = new Date(focusSorted[0].startTime).getTime();
-  let blockEndMs   = blockStartMs + focusSorted[0].duration * 60_000;
+  let blockEndMs = blockStartMs + focusSorted[0].duration * 60_000;
 
   for (let i = 1; i < focusSorted.length; i++) {
-    const a         = focusSorted[i];
-    const aStartMs  = new Date(a.startTime).getTime();
-    const aEndMs    = aStartMs + a.duration * 60_000;
-    const gapMins   = (aStartMs - blockEndMs) / 60_000;
+    const a = focusSorted[i];
+    const aStartMs = new Date(a.startTime).getTime();
+    const aEndMs = aStartMs + a.duration * 60_000;
+    const gapMins = (aStartMs - blockEndMs) / 60_000;
 
     if (gapMins <= GAP_MINS) {
       if (aEndMs > blockEndMs) blockEndMs = aEndMs;
     } else {
-      maxBlock     = Math.max(maxBlock, (blockEndMs - blockStartMs) / 60_000);
+      maxBlock = Math.max(maxBlock, (blockEndMs - blockStartMs) / 60_000);
       blockStartMs = aStartMs;
-      blockEndMs   = aEndMs;
+      blockEndMs = aEndMs;
     }
   }
+
   return Math.max(maxBlock, (blockEndMs - blockStartMs) / 60_000);
 }
 
 /**
  * Focus Score (0–100) — three dimensions:
- *   50% productive time ratio   (Work+Study / total)
- *   25% longest focus block     (capped at 90 min)
- *   25% context-switch penalty  (0 switches = full; 10+ = 0)
+ *   50% productive time ratio      (productive / total)
+ *   25% longest productive block   (capped at 90 min)
+ *   25% productivity-switch penalty (0 switches = full; 10+ = 0)
  */
 function calcFocusScore(
   productiveTime: number,
@@ -213,8 +288,10 @@ function computeInsightMetrics(activities: Activity[]): {
   }
 
   const appTransitionCount = transitions.length;
+  const productivityMap = getCategoryProductivityMap();
+
   const shortFocusSessionCount = sorted.filter(
-    (a) => FOCUS.includes(a.category) && a.duration < SHORT_FOCUS_MINS,
+    (a) => isProductiveCategory(a.category, productivityMap) && a.duration < SHORT_FOCUS_MINS,
   ).length;
 
   const bucketCounts = new Map<number, number>();
@@ -269,29 +346,45 @@ function buildDailyStats(date: string, activities: Activity[], topAppsLimit = 6)
     if (a.duration > longestSession) longestSession = a.duration;
   }
 
+  const productivityMap = getCategoryProductivityMap();
+
   const totalTime = Object.values(categoryTotals).reduce((s, v) => s + v, 0);
-  const productiveTime = (categoryTotals.Work ?? 0) + (categoryTotals.Study ?? 0);
-  const switches = countContextSwitches(activities);
-  const focusScore = calcFocusScore(productiveTime, totalTime, switches, longestFocusBlockMins(activities));
+  const productiveMinutes = sumMinutesByProductivityType(
+    categoryTotals,
+    productivityMap,
+    'productive',
+  );
+  const nonProductiveMinutes = sumMinutesByProductivityType(
+    categoryTotals,
+    productivityMap,
+    'non_productive',
+  );
+  const neutralMinutes = sumMinutesByProductivityType(
+    categoryTotals,
+    productivityMap,
+    'neutral',
+  );
 
+  const contextSwitches = countContextSwitches(activities);
+  const productivitySwitches = countProductivitySwitches(activities, productivityMap);
 
-  // console.log('[stats] buildDailyStats', {
-  //   date,
-  //   activities: activities.map((a) => ({
-  //     date: a.date,
-  //     appName: a.appName,
-  //     category: a.category,
-  //     duration: a.duration,
-  //   })),
-  //   categoryTotals,
-  // });
+  const focusScore = calcFocusScore(
+    productiveMinutes,
+    totalTime,
+    productivitySwitches,
+    longestFocusBlockMins(activities, productivityMap),
+  );
 
   return {
     date,
     categoryTotals,
     totalTime,
+    productiveMinutes,
+    nonProductiveMinutes,
+    neutralMinutes,
     focusScore,
-    contextSwitches: switches,
+    contextSwitches,
+    productivitySwitches,
     longestSession,
     topApps: topApps(activities, topAppsLimit),
   };

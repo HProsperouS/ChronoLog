@@ -127,9 +127,9 @@ function canMergeAdjacent(prev: Activity, next: Activity): boolean {
 }
 
 export function createActivity(body: CreateActivityBody): Activity {
+  const isChronoLogActivity = isChronoLogSelfActivity(body.appName);
   const excludeFromAnalytics =
-  body.excludeFromAnalytics ??
-  isChronoLogSelfActivity(body.appName, body.windowTitle);
+    body.excludeFromAnalytics ?? false;
 
   const date = toLocalDateString(body.startTime);
   const activities = ActivityStore

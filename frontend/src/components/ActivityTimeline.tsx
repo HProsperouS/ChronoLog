@@ -130,6 +130,12 @@ export function ActivityTimeline() {
     return categoryProductivityMap[category] ?? 'neutral';
   }
 
+  function getProductivityColor(productivityType: ProductivityType): string {
+    if (productivityType === 'productive') return '#10b981';
+    if (productivityType === 'non_productive') return '#f59e0b';
+    return '#64748b';
+  }
+
   const formatTime = (date: Date) =>
     date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
@@ -260,27 +266,55 @@ export function ActivityTimeline() {
 
   const timelineData = mergeTimelineForOverview(timelineDataRaw);
 
-  const contextSwitchMarkers = timelineData
-    .map((activity, index) => {
-      if (index === 0) return null;
+  const contextSwitchMarkers = (() => {
+    if (contextSwitchMode === 'all') {
+      return timelineData
+        .map((activity, index) => {
+          if (index === 0) return null;
 
-      const prev = timelineData[index - 1];
+          const prev = timelineData[index - 1];
+          if (prev.category === activity.category) return null;
 
-      const isSwitch =
-        contextSwitchMode === 'all'
-          ? prev.category !== activity.category
-          : prev.productivityType !== activity.productivityType &&
-            (prev.productivityType === 'productive' || prev.productivityType === 'non_productive') &&
-            (activity.productivityType === 'productive' || activity.productivityType === 'non_productive');
+          return {
+            id: activity.id,
+            left: activity.left,
+          };
+        })
+        .filter((marker) => marker !== null);
+    }
 
-      if (!isSwitch) return null;
+    // Bridge-aware productivity switch logic:
+    // neutral categories do not count as switches themselves, but they also do not
+    // break the last seen productive/non-productive state.
+    const markers: Array<{ id: Activity['id']; left: number }> = [];
+    let lastCountedState: 'productive' | 'non_productive' | null = null;
 
-      return {
-        id: activity.id,
-        left: activity.left,
-      };
-    })
-    .filter((marker) => marker !== null);
+    for (const activity of timelineData) {
+      const state = activity.productivityType;
+
+      if (state !== 'productive' && state !== 'non_productive') {
+        continue;
+      }
+
+      if (lastCountedState === null) {
+        lastCountedState = state;
+        continue;
+      }
+
+      if (state !== lastCountedState) {
+        markers.push({
+          id: activity.id,
+          left: activity.left,
+        });
+        lastCountedState = state;
+        continue;
+      }
+
+      lastCountedState = state;
+    }
+
+    return markers;
+  })();
 
   const contextSwitchCount = contextSwitchMarkers.length;
 
@@ -295,10 +329,10 @@ export function ActivityTimeline() {
     windowHours <= 3
       ? 15
       : windowHours <= 8
-      ? 30
-      : windowHours <= 16
-      ? 60
-      : 120;
+        ? 30
+        : windowHours <= 16
+          ? 60
+          : 120;
 
   const timeTicks = Array.from(
     { length: Math.floor((windowHours * 60) / tickStepMinutes) + 1 },
@@ -314,10 +348,10 @@ export function ActivityTimeline() {
           ? hour === 0
             ? '12 AM'
             : hour < 12
-            ? `${hour} AM`
-            : hour === 12
-            ? '12 PM'
-            : `${hour - 12} PM`
+              ? `${hour} AM`
+              : hour === 12
+                ? '12 PM'
+                : `${hour - 12} PM`
           : `${minute.toString().padStart(2, '0')}`;
 
       return {
@@ -385,14 +419,18 @@ export function ActivityTimeline() {
         <div className="bg-[#13131a] border border-white/5 rounded-xl p-5 mb-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-sm font-semibold text-white">Hourly Productivity Overview</h2>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-emerald-500" />
                 <span className="text-xs text-gray-400">Productive</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-orange-400" />
-                <span className="text-xs text-gray-400">Non-Productive / Neutral</span>
+                <span className="text-xs text-gray-400">Non-Productive</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-slate-500" />
+                <span className="text-xs text-gray-400">Neutral</span>
               </div>
             </div>
           </div>
@@ -521,7 +559,7 @@ export function ActivityTimeline() {
                   style={{
                     left: `${a.left}%`,
                     width: `${a.width}%`,
-                    backgroundColor: a.isProductive ? '#10b981' : '#f59e0b',
+                    backgroundColor: getProductivityColor(a.productivityType),
                   }}
                 >
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-30">
@@ -544,13 +582,13 @@ export function ActivityTimeline() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
               <p className="text-[10px] text-emerald-400 font-medium mb-1">PRODUCTIVE TIME</p>
               <p className="text-lg font-semibold text-white">
                 {formatDuration(
                   timelineData
-                    .filter((a) => a.isProductive)
+                    .filter((a) => a.productivityType === 'productive')
                     .reduce((s, a) => s + a.visibleDuration, 0),
                 )}
               </p>
@@ -561,7 +599,18 @@ export function ActivityTimeline() {
               <p className="text-lg font-semibold text-white">
                 {formatDuration(
                   timelineData
-                    .filter((a) => !a.isProductive)
+                    .filter((a) => a.productivityType === 'non_productive')
+                    .reduce((s, a) => s + a.visibleDuration, 0),
+                )}
+              </p>
+            </div>
+
+            <div className="bg-slate-500/10 border border-slate-500/20 rounded-lg p-3">
+              <p className="text-[10px] text-slate-400 font-medium mb-1">NEUTRAL TIME</p>
+              <p className="text-lg font-semibold text-white">
+                {formatDuration(
+                  timelineData
+                    .filter((a) => a.productivityType === 'neutral')
                     .reduce((s, a) => s + a.visibleDuration, 0),
                 )}
               </p>

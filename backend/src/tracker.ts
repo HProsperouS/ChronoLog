@@ -231,7 +231,7 @@ async function postActivity(session: Session, endTime: Date): Promise<boolean> {
     duration: Math.round((durationMs / 1_000 / 60) * 10) / 10,
     startTime: session.startTime.toISOString(),
     endTime: endTime.toISOString(),
-    excludeFromAnalytics: isSelfActivity,
+    excludeFromAnalytics: false,
   };
 
   try {
@@ -341,6 +341,15 @@ async function poll(): Promise<void> {
   const windowTitle = win.title || undefined;
   const rawUrl      = extractUrl(win);
   const url         = isBrowserApp(appName) ? rawUrl : undefined;
+
+if (/firefox|chrome|edge|arc/i.test(appName)) {
+  console.log('[tracker:url-debug]', {
+    appName,
+    title: windowTitle,
+    rawUrl,
+    url,
+  });
+}
 
   // 4. Excluded apps
   if (config.excludedApps.has(appName.toLowerCase())) {

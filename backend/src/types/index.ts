@@ -15,12 +15,24 @@ export interface Activity {
   excludeFromAnalytics?: boolean;
 }
 
+export type RuleConditionField = 'windowTitle' | 'url' | 'hostname';
+export type RuleConditionOperator = 'contains';
+export type RuleMatchMode = 'any' | 'all';
+
+export interface RuleCondition {
+  field: RuleConditionField;
+  operator: RuleConditionOperator;
+  value: string;
+}
+
 export interface CategoryRule {
   id: string;
   appName: string;
   category: Category;
   isAutomatic: boolean;
-  keywords?: string[];
+  keywords?: string[]; // legacy/simple rules
+  matchMode?: RuleMatchMode;
+  conditions?: RuleCondition[];
 }
 
 export type CategoryDefinition = {
@@ -122,10 +134,14 @@ export interface CreateCategoryRuleBody {
   category: Category;
   isAutomatic: boolean;
   keywords?: string[];
+  matchMode?: RuleMatchMode;
+  conditions?: RuleCondition[];
 }
 
 export interface UpdateCategoryRuleBody {
   category?: Category;
   isAutomatic?: boolean;
   keywords?: string[];
+  matchMode?: RuleMatchMode;
+  conditions?: RuleCondition[];
 }

@@ -149,16 +149,36 @@ function countProductivitySwitches(
 
   const timeline = mergeTimelineForOverview(timelineRaw);
 
+  // Bridge-aware logic:
+  // Neutral activities do not count as switches themselves, but they also do not
+  // break the last seen productive/non-productive state.
+  //
+  // Examples:
+  // productive -> neutral -> non_productive = 1
+  // productive -> neutral -> productive = 0
+  // neutral -> productive -> non_productive = 1
   let switches = 0;
-  for (let i = 1; i < timeline.length; i++) {
-    const prev = timeline[i - 1];
-    const curr = timeline[i];
+  let lastCountedState: 'productive' | 'non_productive' | null = null;
 
-    const prevCounts = prev.productivityType === 'productive' || prev.productivityType === 'non_productive';
-    const currCounts = curr.productivityType === 'productive' || curr.productivityType === 'non_productive';
+  for (const item of timeline) {
+    const state = item.productivityType;
 
-    if (!prevCounts || !currCounts) continue;
-    if (prev.productivityType !== curr.productivityType) switches++;
+    if (state !== 'productive' && state !== 'non_productive') {
+      continue;
+    }
+
+    if (lastCountedState === null) {
+      lastCountedState = state;
+      continue;
+    }
+
+    if (state !== lastCountedState) {
+      switches += 1;
+      lastCountedState = state;
+      continue;
+    }
+
+    lastCountedState = state;
   }
 
   return switches;

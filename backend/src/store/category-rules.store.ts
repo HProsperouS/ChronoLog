@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { CategoryRule } from '../types';
+import type { CategoryRule, RuleCondition } from '../types';
 import { scanInstalledApps } from '../services/app-scanner';
 import {
   resolveInstalledApp,
@@ -9,6 +9,7 @@ import {
   BROWSER_MEETING_KEYWORDS,
   BROWSER_GAMING_KEYWORDS,
   BROWSER_ENTERTAINMENT_KEYWORDS,
+  BROWSER_ADVANCED_RULE_BLUEPRINTS,
 } from '../services/app-catalog';
 
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
@@ -24,18 +25,42 @@ function atomicWrite(file: string, data: unknown): void {
   fs.renameSync(tmp, file);
 }
 
+function normalizeKeywords(values?: string[]): string[] {
+  return [...(values ?? [])]
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean)
+    .sort();
+}
+
+function normalizeConditions(values?: RuleCondition[]): string {
+  return [...(values ?? [])]
+    .map((condition) => ({
+      field: String(condition.field),
+      operator: String(condition.operator),
+      value: condition.value.trim().toLowerCase(),
+    }))
+    .filter((condition) => condition.value.length > 0)
+    .sort((a, b) => {
+      if (a.field !== b.field) return a.field < b.field ? -1 : 1;
+      if (a.operator !== b.operator) return a.operator < b.operator ? -1 : 1;
+      return a.value.localeCompare(b.value);
+    })
+    .map((condition) => `${condition.field}:${condition.operator}:${condition.value}`)
+    .join('|');
+}
 
 function ruleDedupKey(rule: CategoryRule): string {
-  const keywordKey = [...(rule.keywords ?? [])]
-    .map((k) => k.trim().toLowerCase())
-    .sort()
-    .join('|');
+  const keywordKey = normalizeKeywords(rule.keywords).join('|');
+  const conditionKey = normalizeConditions(rule.conditions);
+  const matchMode = rule.matchMode ?? 'any';
 
   return [
     rule.appName.trim().toLowerCase(),
     rule.category.trim().toLowerCase(),
     rule.isAutomatic ? 'auto' : 'manual',
+    matchMode,
     keywordKey,
+    conditionKey,
   ].join('::');
 }
 
@@ -53,16 +78,72 @@ function dedupeRules(rules: CategoryRule[]): CategoryRule[] {
   return result;
 }
 
+function pushSimpleRule(
+  rules: CategoryRule[],
+  nextId: () => string,
+  appName: string,
+  category: CategoryRule['category'],
+  keywords: string[],
+): void {
+  rules.push({
+    id: nextId(),
+    appName,
+    category,
+    isAutomatic: false,
+    keywords,
+    matchMode: 'any',
+    conditions: [],
+  });
+}
+
+function makeTitleContainsCondition(value: string): RuleCondition {
+  return {
+    field: 'windowTitle',
+    operator: 'contains',
+    value,
+  };
+}
+
+function pushAdvancedAllRule(
+  rules: CategoryRule[],
+  nextId: () => string,
+  appName: string,
+  category: CategoryRule['category'],
+  conditions: RuleCondition[],
+): void {
+  rules.push({
+    id: nextId(),
+    appName,
+    category,
+    isAutomatic: false,
+    keywords: [],
+    matchMode: 'all',
+    conditions,
+  });
+}
+
 function pushBrowserRuleSet(
   rules: CategoryRule[],
   appName: string,
   nextId: () => string
 ): void {
-  rules.push({ id: nextId(), appName, category: 'Meetings', isAutomatic: false, keywords: BROWSER_MEETING_KEYWORDS });
-  rules.push({ id: nextId(), appName, category: 'Gaming', isAutomatic: false, keywords: BROWSER_GAMING_KEYWORDS });
-  rules.push({ id: nextId(), appName, category: 'Study', isAutomatic: false, keywords: BROWSER_STUDY_KEYWORDS });
-  rules.push({ id: nextId(), appName, category: 'Deep Work', isAutomatic: false, keywords: BROWSER_DEEP_WORK_KEYWORDS });
-  rules.push({ id: nextId(), appName, category: 'Entertainment', isAutomatic: false, keywords: BROWSER_ENTERTAINMENT_KEYWORDS });
+  // Broad fallback defaults
+  pushSimpleRule(rules, nextId, appName, 'Meetings', BROWSER_MEETING_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Gaming', BROWSER_GAMING_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Study', BROWSER_STUDY_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Deep Work', BROWSER_DEEP_WORK_KEYWORDS);
+  pushSimpleRule(rules, nextId, appName, 'Entertainment', BROWSER_ENTERTAINMENT_KEYWORDS);
+
+  // More specific advanced defaults
+  for (const blueprint of BROWSER_ADVANCED_RULE_BLUEPRINTS) {
+    pushAdvancedAllRule(
+      rules,
+      nextId,
+      appName,
+      blueprint.category,
+      blueprint.terms.map(makeTitleContainsCondition),
+    );
+  }
 }
 
 function generateInitialRules(): CategoryRule[] {

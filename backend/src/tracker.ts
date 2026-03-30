@@ -8,6 +8,7 @@ const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 const MIN_DURATION_SECONDS = 5;
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const TRACKER_STATE_FILE = path.join(DATA_DIR, 'tracker-state.json');
+const MAX_RECOVERY_GAP_MS = 60_000;
 
 // ─── Config (refreshed from backend every 60 s) ───────────────────────────────
 
@@ -253,23 +254,35 @@ function saveTrackerState(session: Session | null): void {
   fs.writeFileSync(TRACKER_STATE_FILE, JSON.stringify(payload, null, 2), 'utf8');
 }
 
-function loadTrackerState(): Session | null {
+function loadTrackerState(): { session: Session; savedAt: Date } | null {
   try {
     if (!fs.existsSync(TRACKER_STATE_FILE)) return null;
+
     const raw = JSON.parse(fs.readFileSync(TRACKER_STATE_FILE, 'utf8')) as {
       appName?: string;
       windowTitle?: string;
       url?: string;
       startTime?: string;
+      savedAt?: string;
     };
-    if (!raw.appName || !raw.startTime) return null;
+
+    if (!raw.appName || !raw.startTime || !raw.savedAt) return null;
+
     const start = new Date(raw.startTime);
-    if (Number.isNaN(start.getTime())) return null;
+    const savedAt = new Date(raw.savedAt);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(savedAt.getTime())) {
+      return null;
+    }
+
     return {
-      appName: raw.appName,
-      windowTitle: raw.windowTitle,
-      url: raw.url,
-      startTime: start,
+      session: {
+        appName: raw.appName,
+        windowTitle: raw.windowTitle,
+        url: raw.url,
+        startTime: start,
+      },
+      savedAt,
     };
   } catch {
     return null;
@@ -386,7 +399,14 @@ async function poll(): Promise<void> {
 
   let win: ActiveWindowResult | undefined;
   try {
-    win = (await activeWindowFn()) ?? undefined;
+    win = (await activeWindowFn(
+      process.platform === 'darwin'
+        ? {
+            accessibilityPermission: true,
+            screenRecordingPermission: true,
+          }
+        : undefined
+    )) ?? undefined;
   } catch (err) {
     console.error('[tracker] activeWin failed:', err);
     if (isLikelyMacPermissionsError(err)) {
@@ -405,7 +425,10 @@ async function poll(): Promise<void> {
   }
 
   const appName     = win.owner.name;
-  const windowTitle = win.title || undefined;
+  const windowTitle =
+    typeof win.title === 'string' && win.title.trim().length > 0
+      ? win.title.trim()
+      : undefined;
   const rawUrl      = extractUrl(win);
   const url         = isBrowserApp(appName) ? rawUrl : undefined;
 
@@ -523,14 +546,24 @@ async function start(): Promise<void> {
   await fetchConfig();
   const recovered = loadTrackerState();
   if (recovered) {
-    const ok = await postActivity(recovered, new Date());
-    if (ok) {
-      saveTrackerState(null);
-      console.log('[tracker] Recovered previous session tail on startup');
+    const recoveryGapMs = Date.now() - recovered.savedAt.getTime();
+
+    if (recoveryGapMs <= MAX_RECOVERY_GAP_MS) {
+      const ok = await postActivity(recovered.session, new Date());
+      if (ok) {
+        saveTrackerState(null);
+        console.log('[tracker] Recovered previous session tail on startup');
+      } else {
+        console.log('[tracker] Recovery post failed, keeping state file for retry');
+      }
     } else {
-      console.log('[tracker] Recovery post failed, keeping state file for retry');
+      saveTrackerState(null);
+      console.log(
+        `[tracker] Discarded stale tracker state on startup (${Math.round(recoveryGapMs / 1000)}s old)`
+      );
     }
   }
+
   console.log(`[tracker] Started — poll ${config.pollIntervalMs / 1_000}s, idle ${config.idleThresholdMinutes}min, API: ${API_URL}`);
   await poll();
   reschedulePoller();

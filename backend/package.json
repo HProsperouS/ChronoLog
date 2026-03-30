@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
-    "active-win": "^9.0.0",
+    "get-windows": "^9.3.0",
     "cron": "^4.4.0",
     "dotenv": "^16.4.5",
     "fastify": "^5.8.4",

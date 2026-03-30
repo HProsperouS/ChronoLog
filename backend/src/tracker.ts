@@ -53,17 +53,17 @@ let loadedActiveWindowFn: ActiveWindowFn | null = null;
 let activeWindowLoadFailed = false;
 
 function resolveActiveWinPlatformModulePath(): string | null {
-  let activeWinEntry: string;
+  let getWindowsEntry: string;
   try {
-    activeWinEntry = require.resolve('active-win');
+    getWindowsEntry = require.resolve('get-windows');
   } catch {
     return null;
   }
 
-  const activeWinDir = path.dirname(activeWinEntry);
-  if (process.platform === 'darwin') return path.join(activeWinDir, 'lib', 'macos.js');
-  if (process.platform === 'win32') return path.join(activeWinDir, 'lib', 'windows.js');
-  if (process.platform === 'linux') return path.join(activeWinDir, 'lib', 'linux.js');
+  const getWindowsDir = path.dirname(getWindowsEntry);
+  if (process.platform === 'darwin') return path.join(getWindowsDir, 'lib', 'macos.js');
+  if (process.platform === 'win32') return path.join(getWindowsDir, 'lib', 'windows.js');
+  if (process.platform === 'linux') return path.join(getWindowsDir, 'lib', 'linux.js');
   return null;
 }
 
@@ -74,7 +74,7 @@ async function getActiveWindowFn(): Promise<ActiveWindowFn | null> {
   const modulePath = resolveActiveWinPlatformModulePath();
   if (!modulePath) {
     activeWindowLoadFailed = true;
-    console.error(`[tracker] active-win unsupported or missing on platform: ${process.platform}`);
+    console.error(`[tracker] get-windows unsupported or missing on platform: ${process.platform}`);
     return null;
   }
 
@@ -86,11 +86,11 @@ async function getActiveWindowFn(): Promise<ActiveWindowFn | null> {
       throw new Error(`activeWindow export missing from ${modulePath}`);
     }
     loadedActiveWindowFn = candidate as ActiveWindowFn;
-    console.log(`[tracker] active-win loaded via ${modulePath}`);
+    console.log(`[tracker] get-windows loaded via ${modulePath}`);
     return loadedActiveWindowFn;
   } catch (err) {
     activeWindowLoadFailed = true;
-    console.error('[tracker] Failed to load active-win module:', err);
+    console.error('[tracker] Failed to load get-windows module:', err);
     return null;
   }
 }

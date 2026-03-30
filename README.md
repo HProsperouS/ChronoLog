@@ -89,12 +89,30 @@ The Activity screen also runs a **60-second** check for the local calendar date 
 | **Desktop shell** | Electron 35 (main process + system tray) |
 | **Frontend** | React 18 · Vite · TailwindCSS v4 · shadcn/ui · Recharts |
 | **Backend** | Node.js · Fastify 4 · TypeScript |
-| **Tracker** | active-win (cross-platform window focus detection) |
+| **Tracker** | get-windows (cross-platform window focus detection) |
 | **Storage** | Local JSON files — no database required |
 | **AI Insights** | AWS Lambda proxy (GPT-4o-mini in cloud); backend calls Function URL |
 | **Design** | Figma · Dark-mode-first UI |
 
 Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1&t=FPzoA59Dcc1iliIc-1
+
+---
+
+## macOS Signing Notes
+
+- For stable macOS privacy permissions (Accessibility / Screen Recording / Automation), ship a **Developer ID-signed** app.
+- Ad-hoc signing (`TeamIdentifier=not set`) can lead to permissions appearing enabled in System Settings but not being honored at runtime.
+- This project includes an `afterSign` hook (`electron/scripts/after-sign-mac.cjs`) that re-signs `get-windows/main` with your app signing identity.
+- Set `CSC_NAME` to your certificate name when building release artifacts.
+
+Quick verification after build:
+
+```bash
+codesign -dv --verbose=4 /Applications/ChronoLog.app/Contents/MacOS/ChronoLog 2>&1 | rg "Identifier=|TeamIdentifier="
+codesign -dv --verbose=4 /Applications/ChronoLog.app/Contents/Resources/backend/node_modules/get-windows/main 2>&1 | rg "Identifier=|TeamIdentifier="
+```
+
+Both should show a real `TeamIdentifier` (not `not set`).
 
 ---
 
@@ -123,7 +141,7 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 │  │  Polls every     │      │  Fastify API                   │   │
 │  │  ~5 s (default)  │ POST │  ├── routes/                   │   │
 │  │  configurable    │      │  ├── routes/                   │   │
-│  │  active-win  ────┼─────►│  ├── services/                 │   │
+│  │  get-windows ────┼─────►│  ├── services/                 │   │
 │  │                  │      │  └── store/ → data/ (JSON)     │   │
 │  └──────────────────┘      │       ├── activities/          │   │
 │                            │       ├── settings.json        │   │
@@ -185,7 +203,7 @@ idleDetectionEnabled? ── Yes ──► getSystemIdleSeconds() >= threshold?
       │                               No
       │◄──────────────────────────────┘
       │
-active-win() ──► no result (locked screen / UAC)? ──► close session → return
+get-windows() ──► no result (locked screen / UAC)? ──► close session → return
       │
 app in excludedApps? ──► Yes ──► close session → return
       │

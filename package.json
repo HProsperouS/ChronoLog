@@ -104,6 +104,6 @@
     "wait-on": "^7.2.0"
   },
   "dependencies": {
-    "active-win": "^9.0.0"
+    "get-windows": "^9.3.0"
   }
 }

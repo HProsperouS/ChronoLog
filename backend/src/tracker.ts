@@ -8,7 +8,7 @@ const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 const MIN_DURATION_SECONDS = 5;
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const TRACKER_STATE_FILE = path.join(DATA_DIR, 'tracker-state.json');
-const MAX_RECOVERY_GAP_MS = 60_000;
+const MAX_RECOVERY_GAP_MS = 5 * 60_000;
 
 // ─── Config (refreshed from backend every 60 s) ───────────────────────────────
 

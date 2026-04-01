@@ -1,6 +1,6 @@
 {
   "settings": {
-    "trackingEnabled": true,
+    "trackingEnabled": false,
     "idleDetectionEnabled": true,
     "notificationsEnabled": true,
     "launchAtStartup": true,
@@ -10,7 +10,10 @@
     "retentionDays": 90
   },
   "privacy": {
-    "excludedApps": [],
+    "excludedApps": [
+      "GitHub Desktop",
+      "IntelliJ IDEA"
+    ],
     "respectPrivateBrowsing": true
   }
 }

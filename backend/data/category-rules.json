@@ -3896,5 +3896,558 @@
     "appName": "Zoom Workplace",
     "category": "Meetings",
     "isAutomatic": true
+  },
+  {
+    "id": "1775030160035",
+    "appName": "Visual Studio Code",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160039",
+    "appName": "Cursor",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160044",
+    "appName": "IntelliJ IDEA",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160047",
+    "appName": "PyCharm",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160049",
+    "appName": "WebStorm",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160052",
+    "appName": "DataGrip",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160054",
+    "appName": "Sublime Text",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160058",
+    "appName": "Obsidian",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160060",
+    "appName": "JupyterLab",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160062",
+    "appName": "Postman",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160066",
+    "appName": "Docker Desktop",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160068",
+    "appName": "Terminal",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160071",
+    "appName": "Windows Terminal",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160074",
+    "appName": "iTerm2",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160076",
+    "appName": "GitHub Desktop",
+    "category": "Deep Work",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160078",
+    "appName": "Notion",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160082",
+    "appName": "Adobe Acrobat",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160085",
+    "appName": "Microsoft Word",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160088",
+    "appName": "Microsoft PowerPoint",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160092",
+    "appName": "Microsoft OneNote",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160096",
+    "appName": "Microsoft Excel",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160101",
+    "appName": "Google Docs",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160104",
+    "appName": "Google Sheets",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160108",
+    "appName": "Zotero",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160111",
+    "appName": "Mendeley Desktop",
+    "category": "Study",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160114",
+    "appName": "Slack",
+    "category": "Communication",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160118",
+    "appName": "Discord",
+    "category": "Communication",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160120",
+    "appName": "Microsoft Outlook",
+    "category": "Communication",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160122",
+    "appName": "Mail",
+    "category": "Communication",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160125",
+    "appName": "Telegram",
+    "category": "Communication",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160130",
+    "appName": "Zoom",
+    "category": "Meetings",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160131",
+    "appName": "Microsoft Teams",
+    "category": "Meetings",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160137",
+    "appName": "Google Meet",
+    "category": "Meetings",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160142",
+    "appName": "Webex",
+    "category": "Meetings",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160145",
+    "appName": "File Explorer",
+    "category": "Admin",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160148",
+    "appName": "Finder",
+    "category": "Admin",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160154",
+    "appName": "Settings",
+    "category": "Admin",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160157",
+    "appName": "Control Panel",
+    "category": "Admin",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160159",
+    "appName": "Task Manager",
+    "category": "Admin",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160163",
+    "appName": "Steam",
+    "category": "Gaming",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160168",
+    "appName": "Spotify",
+    "category": "Entertainment",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160170",
+    "appName": "YouTube",
+    "category": "Entertainment",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160173",
+    "appName": "ChronoLog",
+    "category": "ChronoLog",
+    "isAutomatic": true,
+    "keywords": [],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160176",
+    "appName": "Firefox",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom.us",
+      "teams.microsoft.com",
+      "webex"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160178",
+    "appName": "Firefox",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160182",
+    "appName": "Firefox",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "elearn"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160188",
+    "appName": "Firefox",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "documentation",
+      "docs",
+      "stackoverflow",
+      "github",
+      "jira",
+      "figma",
+      "confluence"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160192",
+    "appName": "Firefox",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "spotify",
+      "twitch",
+      "disneyplus",
+      "youtube",
+      "reddit",
+      "instagram"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160194",
+    "appName": "Google Chrome",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "zoom.us",
+      "teams.microsoft.com",
+      "webex"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160198",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160201",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "elearn"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160204",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "documentation",
+      "docs",
+      "stackoverflow",
+      "github",
+      "jira",
+      "figma",
+      "confluence"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "1775030160208",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "spotify",
+      "twitch",
+      "disneyplus",
+      "youtube",
+      "reddit",
+      "instagram"
+    ],
+    "matchMode": "any",
+    "conditions": []
   }
 ]

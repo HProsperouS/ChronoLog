@@ -474,29 +474,62 @@ export function Dashboard() {
 
         {/* Top Applications */}
         <div className="bg-[#13131a] border border-white/5 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Top Applications</h2>
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-white">Top Applications</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Based on {new Date(`${pieDate}T12:00:00`).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+            </div>
+          </div>
+
           <div className="space-y-3">
-            {daily.topApps.map((app, i) => {
-              const percentage = daily.totalTime > 0 ? (app.duration / daily.totalTime) * 100 : 0;
-              return (
-                <div key={i} className="group">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(app.category) }} />
-                      <span className="text-sm font-medium text-white">{app.appName}</span>
-                      <span className="text-xs text-gray-500">{app.category}</span>
+            {pieDaily.topApps.length > 0 ? (
+              pieDaily.topApps.map((app, i) => {
+                const percentage = pieDaily.totalTime > 0 ? (app.duration / pieDaily.totalTime) * 100 : 0;
+
+                return (
+                  <div key={i} className="group">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: getCategoryColor(app.category) }}
+                        />
+                        <span className="text-sm font-medium text-white truncate">{app.appName}</span>
+                        <span className="text-xs text-gray-500 shrink-0">{app.category}</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-400 shrink-0">
+                        {formatDuration(app.duration)}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-400">{formatDuration(app.duration)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-white/5 rounded-full h-1.5 overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${percentage}%`, backgroundColor: getCategoryColor(app.category) }} />
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-white/5 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor: getCategoryColor(app.category),
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-600 w-10 text-right">
+                        {percentage.toFixed(0)}%
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-600 w-10 text-right">{percentage.toFixed(0)}%</span>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-sm text-gray-500">No application data found for this date</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

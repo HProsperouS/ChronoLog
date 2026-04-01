@@ -88,7 +88,7 @@ The Activity screen also runs a **60-second** check for the local calendar date 
 |---|---|
 | **Desktop shell** | Electron 35 (main process + system tray) |
 | **Frontend** | React 18 · Vite · TailwindCSS v4 · shadcn/ui · Recharts |
-| **Backend** | Node.js · Fastify 4 · TypeScript |
+| **Backend** | Node.js · Fastify 5 · TypeScript |
 | **Tracker** | get-windows (cross-platform window focus detection) |
 | **Storage** | Local JSON files — no database required |
 | **AI Insights** | AWS Lambda proxy (GPT-4o-mini in cloud); backend calls Function URL |
@@ -102,8 +102,8 @@ Figma: https://www.figma.com/design/A0ckoTrM9lhRRZXZQryYya/ChronoLog?node-id=0-1
 
 - For stable macOS privacy permissions (Accessibility / Screen Recording / Automation), ship a **Developer ID-signed** app.
 - Ad-hoc signing (`TeamIdentifier=not set`) can lead to permissions appearing enabled in System Settings but not being honored at runtime.
-- This project includes an `afterSign` hook (`electron/scripts/after-sign-mac.cjs`) that re-signs `get-windows/main` with your app signing identity.
 - Set `CSC_NAME` to your certificate name when building release artifacts.
+- The repository currently does **not** include a custom `afterSign` helper, so if you add one for release signing, also ensure nested binaries (for example `get-windows`) are signed consistently.
 
 Quick verification after build:
 
@@ -228,7 +228,7 @@ Sessions shorter than **5 seconds** are silently discarded to filter out acciden
 The tracker decides whether the current poll belongs to the **same session** as the previous one:
 
 - **Non-browser apps** (Cursor, Notion, Figma, etc.): same session if `appName` **and** `windowTitle` are unchanged. A new document or project in the same app creates a new session.
-- **Browser apps** (Chrome, Safari, Firefox, Arc, Brave, Edge, Opera): same session if `appName` **and** URL **hostname** are unchanged. This means navigating between videos on YouTube or pages within GitHub does **not** split the session — only switching to a different website does.
+- **Browser apps** (Chrome, Safari, Firefox, Arc, Brave, Edge, Opera): same session if `appName`, normalized `url`, and `windowTitle` are unchanged. URL normalization removes hash fragments, common `utm_*` params, and non-root trailing slashes before comparison.
 
 Within a session, `windowTitle` and `url` are updated live on every poll. This ensures that when the session is eventually written, it captures the **most recent** title — keeping category auto-detection accurate even if content changed mid-session (e.g. switching from a tutorial to a music video on YouTube).
 
@@ -250,7 +250,7 @@ ChronoLog now uses **event-boundary writes** (no forced time slicing):
 To reduce accidental tiny sessions from restart/jitter edges, the backend merges adjacent activities on write when:
 
 - category is the same
-- session key is the same (browser by hostname, non-browser by app + title)
+- session key is the same (browser by normalized URL + title, non-browser by app + title)
 - the time gap is very small (<= 15 seconds)
 
 This keeps context-switch metrics closer to real user behavior.
@@ -275,8 +275,10 @@ When idle is detected, the session end time is **back-dated** to when idle actua
 If `respectPrivateBrowsing` is enabled (default: on), the tracker detects private windows by checking for keywords in the window title:
 
 - `incognito` → Chrome
-- `private` → Firefox, Safari
+- `private` / `navigation privée` → Firefox, Safari
 - `InPrivate` → Edge
+
+It also treats `about:blank` and `chrome-extension://...` as non-recordable URLs.
 
 In private mode: the **app activity is still recorded** (total screen time stays accurate), but the **URL is stripped** (no visited sites are stored).
 
@@ -303,7 +305,7 @@ Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`, 
 
 ```json
 {
-  "id":          "a1b2c3d4",
+  "id":          1234,
   "appName":     "Google Chrome",
   "windowTitle": "JavaScript Tutorial - YouTube",
   "url":         "https://www.youtube.com/watch?v=abc123",
@@ -321,14 +323,17 @@ Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`, 
 
 ### Context switches
 
-A **context switch** is counted when the user's **productive state flips** between:
+A **context switch** (`contextSwitches`) is counted when consecutive sessions change category (`prev.category !== curr.category`) across the full timeline.
 
-- **Productive**: `Work` or `Study`
-- **Non-productive**: any other category
+ChronoLog also computes a second metric: **productivity switches** (`productivitySwitches`), which counts only productive ↔ non-productive transitions.
 
-We walk the activity timeline **in full session order** and count each boundary where productive ↔ non-productive changes (bidirectional).
+For productivity switches, category productivity type comes from `categories.json`:
 
-To avoid over-counting tiny “blips” (e.g. a quick <1-minute interruption that immediately returns to the same state), the stats logic merges away very short segments when the surrounding segments have the same productive/non-productive status (matching the Activity page “Productive ↔ Non-Productive only” view).
+- `productive`
+- `non_productive`
+- `neutral` (ignored as a bridge, does not itself count as a switch)
+
+To avoid over-counting tiny “blips”, very short (<1 min) segments are merged away when surrounding segments share the same productive/non-productive state (matching the Activity page “Productive ↔ Non-Productive only” view).
 
 ---
 
@@ -338,22 +343,22 @@ The Focus Score combines three dimensions to reflect both **how much** and **how
 
 | Dimension | Weight | Max 100% when |
 |---|---|---|
-| **Productive time ratio** | 50% | All tracked time is Work or Study |
-| **Longest focus block** | 25% | Longest continuous Work/Study block ≥ 90 minutes |
-| **Context-switch penalty** | 25% | 0 productive↔non-productive switches; 10+ switches = 0 |
+| **Productive time ratio** | 50% | All tracked time is in `productive` categories |
+| **Longest focus block** | 25% | Longest continuous `productive` block ≥ 90 minutes |
+| **Switch penalty** | 25% | 0 productivity switches; 10+ switches = 0 |
 
 **Formula:**
 ```
 score = (productiveTime / totalTime) × 50
       + min(longestFocusBlockMins / 90, 1) × 25
-      + max(0, 1 − contextSwitches / 10) × 25
+      + max(0, 1 − productivitySwitches / 10) × 25
 ```
 
-**Longest focus block** merges consecutive Work/Study activities that are within 5 minutes of each other — so minor write jitter does not fragment a long focus session.
+**Longest focus block** merges consecutive productive activities that are within 5 minutes of each other — so minor write jitter does not fragment a long focus session.
 
 **Examples:**
-- 3h Work, 2 context switches, longest block 90 min → ~95
-- 30 min Work, 8 context switches, longest block 15 min → ~30
+- 3h productive time, 2 productivity switches, longest block 90 min → ~95
+- 30 min productive time, 8 productivity switches, longest block 15 min → ~30
 
 ---
 
@@ -377,10 +382,10 @@ Notifications respect the `notificationsEnabled` toggle in Settings — they can
 **Scientific basis:**
 
 - **90-minute break threshold** — Based on the ultradian rhythm cycle, focus and retention drop significantly after 90 continuous minutes of work. Information studied in a fatigued state is substantially less likely to be recalled later.
-- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog counts productive ↔ non-productive switches (Work/Study vs everything else), with short (<1-minute) blips merged to avoid noise. 8 remains a strict but fair limit for deep study work.
-- **Productive ratio threshold (30%)** — Studies of university students show that productive screen time (Work + Study) typically falls between 30–50% of total screen time. A warning fires when a student falls below this average range, indicating a genuinely off day rather than a normal one.
+- **Context switch threshold (8)** — Research from the University of California, Irvine found that repeated task-switching causes measurable increases in stress and frustration. ChronoLog uses the daily `contextSwitches` metric (category-to-category switches) for this warning.
+- **Productive ratio threshold (30%)** — A warning fires when productive time (all categories marked `productive`) drops below a practical baseline.
 
-> **Note:** Notifications are currently implemented via the browser Web Notification API (`frontend/src/hooks/useNotifications.ts`). When Electron is integrated, this will be replaced with Electron's native notification system for a cleaner desktop experience.
+> **Implementation note:** In Electron, notifications are sent through the main process (`window.electronAPI.showNotification`) and use native OS notifications. In browser-only mode, it falls back to the Web Notification API.
 
 ---
 
@@ -440,19 +445,23 @@ ChronoLog/
         │   └── index.ts         # Shared interfaces: Activity, CategoryRule, Settings…
         ├── routes/
         │   ├── activities.ts    # Activities + app listing + app icons
+        │   ├── category-list.ts # Category CRUD (name/color/productivity type)
         │   ├── category-rules.ts
         │   ├── stats.ts
         │   ├── settings.ts      # Settings, privacy, data management, export
         │   └── insights.ts
         ├── services/
         │   ├── activity.service.ts   # Activity CRUD, app scanning, icon extraction
+        │   ├── category-list.service.ts # Category list CRUD
         │   ├── category.service.ts   # Category rules, auto-categorisation
         │   ├── stats.service.ts      # Focus score, context switches, top apps
         │   ├── settings.service.ts   # Settings, privacy, data retention, export
         │   ├── ai.service.ts         # Calls insights Lambda; reads/writes insights.json
-        │   └── app-catalog.ts        # 230+ app → category mapping for first-launch seeding
+        │   ├── app-catalog.ts        # Installed-app signatures + browser rule blueprints
+        │   └── app-scanner.ts        # Cross-platform installed app discovery
         └── store/
             ├── activity.store.ts       # Reads/writes activities/YYYY-MM-DD.json
+            ├── categories.store.ts     # Reads/writes categories.json (seeds defaults)
             ├── settings.store.ts       # Reads/writes settings.json (seeds defaults)
             ├── category-rules.store.ts # Reads/writes category-rules.json (auto-seeds)
             └── config.store.ts         # Reads/writes insights.json
@@ -554,7 +563,7 @@ npm run dev:desktop
 
 This builds the frontend once, then starts Electron only. Electron will start backend + tracker internally and load `frontend/dist` directly.
 
-> **First launch:** `settings.json` and `category-rules.json` are auto-created in `backend/data/`. Category rules are seeded by scanning your installed applications against a built-in catalog of 230+ apps.
+> **First launch:** `settings.json`, `categories.json`, and `category-rules.json` are auto-created in `backend/data/`. Category rules are seeded by scanning installed applications and applying built-in app signatures plus browser rule blueprints.
 
 ---
 
@@ -566,8 +575,9 @@ npm run build
 
 # Package into a distributable installer
 npm run dist        # current platform
-npm run dist:mac    # macOS .dmg (arm64 + x64)
+npm run dist:mac    # macOS .dmg (arm64)
 npm run dist:win    # Windows NSIS installer
+npm run dist:linux  # Linux AppImage
 ```
 
 Output is placed in `dist-electron/`.
@@ -634,9 +644,20 @@ In production, the user's data is stored in the OS-standard location:
 | `PATCH` | `/api/settings` | Update tracker settings |
 | `GET` | `/api/settings/privacy` | Get privacy preferences + excluded apps |
 | `PATCH` | `/api/settings/privacy` | Update privacy preferences |
-| `GET` | `/api/settings/data-size` | Get size of stored data |
-| `DELETE` | `/api/settings/data` | Delete data older than N days |
-| `GET` | `/api/settings/export` | Export all data as JSON |
+| `GET` | `/api/settings/data-summary` | Get storage summary (`totalBytes`, first/last day, day count) |
+| `POST` | `/api/settings/data/clear-old` | Delete activity files older than `olderThanDays` |
+| `DELETE` | `/api/settings/data/all` | Delete all local ChronoLog data files |
+| `GET` | `/api/settings/data/export` | Export settings/rules/activities/insights JSON payload |
+| `POST` | `/api/settings/data/import-activities` | Import activities grouped by date |
+
+### Categories
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/categories` | List category definitions (name/color/productivity type) |
+| `POST` | `/api/categories` | Create a category |
+| `PATCH` | `/api/categories` | Update category color/productivity type |
+| `DELETE` | `/api/categories` | Delete a category (fails if still used by rules) |
 
 ### Insights
 
@@ -645,14 +666,20 @@ In production, the user's data is stored in the OS-standard location:
 | `GET` | `/api/insights?date=YYYY-MM-DD` | Get AI insights for a day |
 | `POST` | `/api/insights/generate` | Generate new AI insights (manual trigger, daily limit applies) |
 | `GET` | `/api/insights/quota?date=YYYY-MM-DD` | Get today’s insights-generate quota (`used`, `remaining`, `limit`, `canGenerate`, cooldown info) |
+| `GET` | `/api/insights/weekly?weekStart=YYYY-MM-DD` | Get weekly insights for a Monday-start week |
+| `POST` | `/api/insights/weekly/generate` | Generate weekly insights (manual trigger, weekly limit applies) |
+| `GET` | `/api/insights/weekly/quota?weekStart=YYYY-MM-DD` | Get weekly generate quota/cooldown |
 
 ### AI Insights generation policy
 
 - Generation is **manual-first** (user clicks **Generate insights** in the Insights page).
 - Daily generation cap is currently **3 times per day** per local calendar date.
 - A **2-hour cooldown** is enforced between successful generations.
+- Weekly insights cap is currently **2 times per week** (week key = Monday `YYYY-MM-DD`).
+- Weekly generation cooldown is **6 hours** between successful weekly runs.
 - If over limit, backend returns **HTTP 429** with quota details.
 - Insights page reads `/api/insights/quota` and disables generate actions when quota is exhausted or cooldown is active.
+- Backend also starts a weekly auto-generation scheduler (`Sunday 23:59`, using the backend process timezone), which attempts to generate weekly insights for the current week.
 
 ### Hosted AI proxy (AWS)
 

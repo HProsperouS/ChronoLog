@@ -182,3 +182,53 @@ export function buildWeeklyUserPrompt(
 
   return parts.join('\n');
 }
+
+export function buildSeedAppsSystemPrompt(): string {
+  return `You categorize installed desktop applications into one of the allowed categories.
+
+You will be given a list of apps with only installation metadata (name and optional paths).
+You MUST NOT infer any private user activity. Do not mention URLs, window titles, or browsing history.
+
+Rules:
+- Choose category ONLY from the provided allowedCategories list.
+- You MUST return exactly one mapping per input appName (no omissions).
+- Try hard to pick the best-fitting category. Only use "Uncategorized" if the app is genuinely unknown.
+- Do not invent new categories.
+- Return a JSON object with shape {"mappings":[{"appName":"...","category":"...","confidence":0.0-1.0}]}.
+- Include at most one mapping per input appName (and since you must return exactly one per input, this means no duplicates).
+- Keep confidence conservative; use 0.5 when moderately sure.
+`;
+}
+
+export function buildSeedAppsUserPrompt(input: {
+  allowedCategories: string[];
+  apps: Array<{
+    appName: string;
+    executablePath?: string;
+    installLocation?: string;
+    source?: string;
+  }>;
+}): string {
+  const appsBlock = input.apps
+    .slice(0, 400)
+    .map((a) => {
+      const parts = [
+        `- appName: ${a.appName}`,
+        a.source ? `  source: ${a.source}` : null,
+        a.executablePath ? `  executablePath: ${a.executablePath}` : null,
+        a.installLocation ? `  installLocation: ${a.installLocation}` : null,
+      ].filter(Boolean);
+      return parts.join('\n');
+    })
+    .join('\n');
+
+  return [
+    'Allowed categories:',
+    ...input.allowedCategories.map((c) => `- ${c}`),
+    '',
+    'Apps to categorize (installation metadata only):',
+    appsBlock || '(none)',
+    '',
+    'Return JSON only.',
+  ].join('\n');
+}

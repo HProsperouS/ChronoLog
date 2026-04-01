@@ -48,8 +48,29 @@ export interface InsightContent {
   icon: string;
 }
 
+export interface SeedAppInput {
+  appName: string;
+  executablePath?: string;
+  installLocation?: string;
+  source?: string;
+}
+
+export interface SeedAppsRequestBody {
+  mode: 'seedApps';
+  apps: SeedAppInput[];
+  allowedCategories: Category[];
+}
+
+export interface SeedAppsResponseBody {
+  mappings: Array<{
+    appName: string;
+    category: Category;
+    confidence?: number;
+  }>;
+}
+
 export interface GenerateRequestBody {
-  mode?: 'daily' | 'weekly';
+  mode?: 'daily' | 'weekly' | 'seedApps';
   date?: string;
   weekStart?: string;
   weekEnd?: string;

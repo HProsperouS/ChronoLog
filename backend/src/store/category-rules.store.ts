@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { CategoryRule, RuleCondition } from '../types';
 import { scanInstalledApps } from '../services/app-scanner';
+import * as AiService from '../services/ai.service';
 import {
   resolveInstalledApp,
   BROWSER_STUDY_KEYWORDS,
@@ -14,6 +15,19 @@ import {
 
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), 'data');
 const RULES_FILE = path.join(DATA_DIR, 'category-rules.json');
+const AI_SEED_MARKER_FILE = path.join(DATA_DIR, 'category-rules.ai-seeded');
+
+const DEFAULT_ALLOWED_CATEGORIES = [
+  'Deep Work',
+  'Study',
+  'Communication',
+  'Meetings',
+  'Admin',
+  'Entertainment',
+  'Gaming',
+  'Uncategorized',
+  'ChronoLog',
+];
 
 function ensureDir(): void {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -174,13 +188,109 @@ function generateInitialRules(): CategoryRule[] {
   return dedupeRules(rules);
 }
 
+async function maybeAugmentRulesWithAi(installedApps: ReturnType<typeof scanInstalledApps>): Promise<void> {
+  try {
+    ensureDir();
+    if (fs.existsSync(AI_SEED_MARKER_FILE)) return;
+    if (!fs.existsSync(RULES_FILE)) return;
+
+    // Only run when Lambda settings are present.
+    if (!process.env.INSIGHTS_FUNCTION_URL || !process.env.INSIGHTS_PROXY_SECRET) {
+      console.warn('[category-rules] AI seed skipped: missing INSIGHTS_FUNCTION_URL / INSIGHTS_PROXY_SECRET');
+      return;
+    }
+
+    const unresolved = installedApps.filter((app) => {
+      const resolved = resolveInstalledApp(app);
+      // Skip browsers (handled by browser rule set).
+      if (resolved?.isBrowser) return false;
+      // If we already have a built-in category, no need for AI.
+      if (resolved?.category) return false;
+      // Otherwise, ask AI for a default category.
+      return true;
+    });
+
+    if (unresolved.length === 0) {
+      fs.writeFileSync(AI_SEED_MARKER_FILE, new Date().toISOString(), 'utf8');
+      return;
+    }
+
+    console.log(`[category-rules] AI seeding default categories for ${unresolved.length} app(s)…`);
+
+    const candidateByLower = new Map(
+      unresolved
+        .map((a) => a.discoveredName.trim())
+        .filter(Boolean)
+        .map((name) => [name.toLowerCase(), name] as const),
+    );
+    const mappings = await AiService.seedAppCategories({
+      apps: unresolved,
+      allowedCategories: DEFAULT_ALLOWED_CATEGORIES,
+    });
+
+    if (mappings.length === 0) {
+      fs.writeFileSync(AI_SEED_MARKER_FILE, new Date().toISOString(), 'utf8');
+      return;
+    }
+
+    const rules = JSON.parse(fs.readFileSync(RULES_FILE, 'utf8')) as CategoryRule[];
+    const existingAuto = new Set(
+      rules
+        .filter((r) => r.isAutomatic)
+        .map((r) => r.appName.trim().toLowerCase()),
+    );
+
+    let maxId = 0;
+    for (const r of rules) {
+      const n = Number(r.id);
+      if (Number.isFinite(n)) maxId = Math.max(maxId, n);
+    }
+    let nextId = maxId > 0 ? maxId + 1 : Date.now();
+
+    let wrote = 0;
+    for (const m of mappings) {
+      const appName = m.appName.trim();
+      if (!appName) continue;
+      const canonicalAppName = candidateByLower.get(appName.toLowerCase());
+      if (!canonicalAppName) continue;
+      if (m.category === 'Uncategorized') continue;
+      const key = canonicalAppName.toLowerCase();
+      if (existingAuto.has(key)) continue;
+
+      rules.push({
+        id: String(nextId++),
+        appName: canonicalAppName,
+        category: m.category,
+        isAutomatic: true,
+      });
+      existingAuto.add(key);
+      wrote += 1;
+    }
+
+    atomicWrite(RULES_FILE, dedupeRules(rules));
+    fs.writeFileSync(AI_SEED_MARKER_FILE, new Date().toISOString(), 'utf8');
+    console.log(`[category-rules] AI seed wrote ${wrote} automatic rule(s)`);
+  } catch (err) {
+    // Never block first-run: silently skip AI augmentation on failures.
+    console.warn('[category-rules] AI seed skipped:', err instanceof Error ? err.message : String(err));
+  }
+}
+
 export function readRules(): CategoryRule[] {
   ensureDir();
 
   if (!fs.existsSync(RULES_FILE)) {
+    const installedApps = scanInstalledApps();
     const rules = generateInitialRules();
     atomicWrite(RULES_FILE, rules);
+    void maybeAugmentRulesWithAi(installedApps);
     return rules;
+  }
+
+  // If rules exist but AI marker doesn't, we may be upgrading from an older version.
+  // Run once in the background to fill gaps (marker prevents repeats).
+  if (!fs.existsSync(AI_SEED_MARKER_FILE)) {
+    void maybeAugmentRulesWithAi(scanInstalledApps());
   }
 
   return JSON.parse(fs.readFileSync(RULES_FILE, 'utf8')) as CategoryRule[];

@@ -3,6 +3,7 @@ import { readRange } from '../store/activity.store';
 import * as StatsService from './stats.service';
 import type { Insight, SessionTimelineEntry } from '../types';
 import { CronJob } from 'cron';
+import type { InstalledApp } from './app-scanner';
 
 /** Local calendar step for YYYY-MM-DD (matches frontend `addDaysYmd`; avoids UTC `toISOString` day shifts). */
 function addDaysYmd(ymd: string, deltaDays: number): string {
@@ -74,6 +75,81 @@ function getProxySecret(): string {
   const secret = process.env.INSIGHTS_PROXY_SECRET?.trim();
   if (!secret) throw new Error('INSIGHTS_PROXY_SECRET is not set (same value as CDK ProxySecret)');
   return secret;
+}
+
+export type SeedAppCategoryMapping = {
+  appName: string;
+  category: string;
+  confidence?: number;
+};
+
+export async function seedAppCategories(input: {
+  apps: InstalledApp[];
+  allowedCategories: string[];
+}): Promise<SeedAppCategoryMapping[]> {
+  const url = getInsightsUrl();
+  const secret = getProxySecret();
+
+  const payload = {
+    mode: 'seedApps',
+    allowedCategories: input.allowedCategories,
+    apps: input.apps.map((a) => ({
+      appName: a.discoveredName,
+      executablePath: a.executablePath,
+      installLocation: a.installLocation,
+      source: a.source,
+    })),
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${secret}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const rawText = await res.text();
+  let body: unknown;
+  try {
+    body = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    throw new Error(`Insights proxy returned non-JSON (${res.status})`);
+  }
+
+  if (!res.ok) {
+    const msg =
+      body && typeof body === 'object' && 'error' in body && typeof (body as { error: unknown }).error === 'string'
+        ? (body as { error: string }).error
+        : rawText.slice(0, 200);
+    throw new Error(`Insights proxy ${res.status}: ${msg}`);
+  }
+
+  if (!body || typeof body !== 'object' || !('mappings' in body)) {
+    throw new Error('Insights proxy response missing "mappings" array');
+  }
+
+  const items = (body as { mappings: unknown }).mappings;
+  if (!Array.isArray(items)) throw new Error('Insights proxy "mappings" is not an array');
+
+  const allowed = new Set(input.allowedCategories);
+  const out: SeedAppCategoryMapping[] = [];
+
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    const o = item as Record<string, unknown>;
+    const appName = typeof o.appName === 'string' ? o.appName.trim() : '';
+    const category = typeof o.category === 'string' ? o.category.trim() : '';
+    if (!appName || !category || !allowed.has(category)) continue;
+    const confidence =
+      typeof o.confidence === 'number' && Number.isFinite(o.confidence)
+        ? Math.max(0, Math.min(1, o.confidence))
+        : undefined;
+    out.push({ appName, category, confidence });
+  }
+
+  return out;
 }
 
 function buildSessionTimeline(date: string): SessionTimelineEntry[] {

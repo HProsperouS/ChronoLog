@@ -6,6 +6,7 @@ import * as api from '../api';
 import { categoryColors } from '../constants';
 import { dateStr, todayStr, formatDuration } from '../utils';
 import type { Activity, CategoryDefinition, ProductivityType } from '../types';
+import { getContextSwitchCount } from '../lib/contextSwitches';
 
 function colorFromCategoryName(name: string): string {
   let hash = 0;
@@ -316,7 +317,13 @@ export function ActivityTimeline() {
     return markers;
   })();
 
-  const contextSwitchCount = contextSwitchMarkers.length;
+  const contextSwitchCount = getContextSwitchCount({
+    activities,
+    categoryDefinitions,
+    startHour: windowStartHour,
+    endHour: windowEndHour,
+    mode: contextSwitchMode,
+  });
 
   const windowHours = endHour - startHour;
 
@@ -571,7 +578,7 @@ export function ActivityTimeline() {
               {contextSwitchMarkers.map((marker) => (
                 <div
                   key={`switch-${marker.id}`}
-                  className="absolute -top-1 -bottom-1 bg-slate-200/100 pointer-events-none z-20 rounded-full shadow-[0_0_6px_rgba(103,232,249,0.45)]"
+                  className="absolute -top-1 -bottom-1 bg-white pointer-events-none z-20 rounded-full"
                   style={{
                     left: `${marker.left}%`,
                     transform: 'translateX(-50%)',

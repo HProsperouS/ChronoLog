@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as api from '../api';
 import { todayStr } from '../utils';
+import { getContextSwitchCount } from '../lib/contextSwitches';
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
 const CONTEXT_SWITCH_THRESHOLD  = 8;   // switches before warning
@@ -24,6 +25,11 @@ const COOLDOWN_MS = 15 * 60 * 1000;  // 15 minute cooldown per notification type
 // // // ─── Cooldown tracking (avoid spamming the same notification) ─────────────────
 // const lastFired: Record<string, number> = {};
 // const COOLDOWN_MS = 5 * 1000;
+
+
+
+
+
 
 
 function canFire(key: string): boolean {
@@ -66,15 +72,30 @@ async function runChecks() {
         // console.log('❌ Notifications disabled in settings');
         return;
     }
-     
-    const stats = await api.getDailyStats(todayStr());
+    
+    const [stats, activities, categoryDefinitions] = await Promise.all([
+      api.getDailyStats(todayStr()),
+      api.getActivities(todayStr()),
+      api.getCategories(),
+    ]);
+
+    const notificationContextSwitches = getContextSwitchCount({
+      activities,
+      categoryDefinitions,
+      startHour: 0,
+      endHour: 24,
+      mode: 'all',
+    });
     // console.log('Stats:', stats);
 
     // 1. Too many context switches
-    if (stats.contextSwitches >= CONTEXT_SWITCH_THRESHOLD && canFire('contextSwitches')) {
+    if (
+      notificationContextSwitches >= CONTEXT_SWITCH_THRESHOLD &&
+      canFire('contextSwitches')
+    ) {
       notify(
         '🔀 Focus Fragmentation Detected',
-        `You've switched context ${stats.contextSwitches} times today. Try staying on one task at a time!`,
+        `You've switched context ${notificationContextSwitches} times today. Try staying on one task at a time!`,
       );
     }
 
@@ -104,7 +125,9 @@ async function runChecks() {
     }
 
     // 5. Unproductive day (low productive time ratio)
-    const productiveMins = stats.categoryTotals.Work + stats.categoryTotals.Study;
+    const productiveMins =
+      (stats.categoryTotals['Deep Work'] ?? 0) +
+      (stats.categoryTotals.Study ?? 0);
     const productiveRatio = stats.totalTime > 0 ? productiveMins / stats.totalTime : 0;
     if (stats.totalTime > 60 && productiveRatio < MIN_PRODUCTIVE_RATIO && canFire('unproductive')) {
       notify(

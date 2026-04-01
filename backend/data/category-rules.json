@@ -3898,7 +3898,7 @@
     "isAutomatic": true
   },
   {
-    "id": "1775030160035",
+    "id": "1775035250838",
     "appName": "Visual Studio Code",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3907,7 +3907,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160039",
+    "id": "1775035250841",
     "appName": "Cursor",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3916,7 +3916,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160044",
+    "id": "1775035250845",
     "appName": "IntelliJ IDEA",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3925,7 +3925,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160047",
+    "id": "1775035250850",
     "appName": "PyCharm",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3934,7 +3934,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160049",
+    "id": "1775035250853",
     "appName": "WebStorm",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3943,7 +3943,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160052",
+    "id": "1775035250855",
     "appName": "DataGrip",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3952,7 +3952,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160054",
+    "id": "1775035250858",
     "appName": "Sublime Text",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3961,7 +3961,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160058",
+    "id": "1775035250861",
     "appName": "Obsidian",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3970,7 +3970,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160060",
+    "id": "1775035250864",
     "appName": "JupyterLab",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3979,7 +3979,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160062",
+    "id": "1775035250868",
     "appName": "Postman",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3988,7 +3988,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160066",
+    "id": "1775035250871",
     "appName": "Docker Desktop",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3997,7 +3997,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160068",
+    "id": "1775035250873",
     "appName": "Terminal",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4006,7 +4006,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160071",
+    "id": "1775035250878",
     "appName": "Windows Terminal",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4015,7 +4015,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160074",
+    "id": "1775035250880",
     "appName": "iTerm2",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4024,7 +4024,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160076",
+    "id": "1775035250883",
     "appName": "GitHub Desktop",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4033,7 +4033,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160078",
+    "id": "1775035250886",
     "appName": "Notion",
     "category": "Study",
     "isAutomatic": true,
@@ -4042,7 +4042,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160082",
+    "id": "1775035250888",
     "appName": "Adobe Acrobat",
     "category": "Study",
     "isAutomatic": true,
@@ -4051,7 +4051,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160085",
+    "id": "1775035250890",
     "appName": "Microsoft Word",
     "category": "Study",
     "isAutomatic": true,
@@ -4060,7 +4060,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160088",
+    "id": "1775035250894",
     "appName": "Microsoft PowerPoint",
     "category": "Study",
     "isAutomatic": true,
@@ -4069,7 +4069,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160092",
+    "id": "1775035250898",
     "appName": "Microsoft OneNote",
     "category": "Study",
     "isAutomatic": true,
@@ -4078,7 +4078,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160096",
+    "id": "1775035250902",
     "appName": "Microsoft Excel",
     "category": "Study",
     "isAutomatic": true,
@@ -4087,7 +4087,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160101",
+    "id": "1775035250904",
     "appName": "Google Docs",
     "category": "Study",
     "isAutomatic": true,
@@ -4096,7 +4096,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160104",
+    "id": "1775035250906",
     "appName": "Google Sheets",
     "category": "Study",
     "isAutomatic": true,
@@ -4105,7 +4105,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160108",
+    "id": "1775035250909",
     "appName": "Zotero",
     "category": "Study",
     "isAutomatic": true,
@@ -4114,7 +4114,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160111",
+    "id": "1775035250912",
     "appName": "Mendeley Desktop",
     "category": "Study",
     "isAutomatic": true,
@@ -4123,7 +4123,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160114",
+    "id": "1775035250915",
     "appName": "Slack",
     "category": "Communication",
     "isAutomatic": true,
@@ -4132,7 +4132,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160118",
+    "id": "1775035250917",
     "appName": "Discord",
     "category": "Communication",
     "isAutomatic": true,
@@ -4141,7 +4141,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160120",
+    "id": "1775035250921",
     "appName": "Microsoft Outlook",
     "category": "Communication",
     "isAutomatic": true,
@@ -4150,7 +4150,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160122",
+    "id": "1775035250923",
     "appName": "Mail",
     "category": "Communication",
     "isAutomatic": true,
@@ -4159,7 +4159,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160125",
+    "id": "1775035250927",
     "appName": "Telegram",
     "category": "Communication",
     "isAutomatic": true,
@@ -4168,7 +4168,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160130",
+    "id": "1775035250930",
     "appName": "Zoom",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4177,7 +4177,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160131",
+    "id": "1775035250934",
     "appName": "Microsoft Teams",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4186,7 +4186,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160137",
+    "id": "1775035250937",
     "appName": "Google Meet",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4195,7 +4195,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160142",
+    "id": "1775035250942",
     "appName": "Webex",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4204,7 +4204,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160145",
+    "id": "1775035250946",
     "appName": "File Explorer",
     "category": "Admin",
     "isAutomatic": true,
@@ -4213,7 +4213,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160148",
+    "id": "1775035250948",
     "appName": "Finder",
     "category": "Admin",
     "isAutomatic": true,
@@ -4222,7 +4222,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160154",
+    "id": "1775035250950",
     "appName": "Settings",
     "category": "Admin",
     "isAutomatic": true,
@@ -4231,7 +4231,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160157",
+    "id": "1775035250954",
     "appName": "Control Panel",
     "category": "Admin",
     "isAutomatic": true,
@@ -4240,7 +4240,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160159",
+    "id": "1775035250957",
     "appName": "Task Manager",
     "category": "Admin",
     "isAutomatic": true,
@@ -4249,7 +4249,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160163",
+    "id": "1775035250959",
     "appName": "Steam",
     "category": "Gaming",
     "isAutomatic": true,
@@ -4258,7 +4258,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160168",
+    "id": "1775035250964",
     "appName": "Spotify",
     "category": "Entertainment",
     "isAutomatic": true,
@@ -4267,7 +4267,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160170",
+    "id": "1775035250966",
     "appName": "YouTube",
     "category": "Entertainment",
     "isAutomatic": true,
@@ -4276,7 +4276,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160173",
+    "id": "1775035250970",
     "appName": "ChronoLog",
     "category": "ChronoLog",
     "isAutomatic": true,
@@ -4285,7 +4285,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160176",
+    "id": "1775035250972",
     "appName": "Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -4299,7 +4299,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160178",
+    "id": "1775035250974",
     "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -4311,7 +4311,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160182",
+    "id": "1775035250977",
     "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -4332,7 +4332,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160188",
+    "id": "1775035250979",
     "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -4351,7 +4351,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160192",
+    "id": "1775035250984",
     "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -4368,7 +4368,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160194",
+    "id": "1775035250986",
     "appName": "Google Chrome",
     "category": "Meetings",
     "isAutomatic": false,
@@ -4382,7 +4382,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160198",
+    "id": "1775035250990",
     "appName": "Google Chrome",
     "category": "Gaming",
     "isAutomatic": false,
@@ -4394,7 +4394,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160201",
+    "id": "1775035250993",
     "appName": "Google Chrome",
     "category": "Study",
     "isAutomatic": false,
@@ -4415,7 +4415,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160204",
+    "id": "1775035250995",
     "appName": "Google Chrome",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -4434,7 +4434,7 @@
     "conditions": []
   },
   {
-    "id": "1775030160208",
+    "id": "1775035251000",
     "appName": "Google Chrome",
     "category": "Entertainment",
     "isAutomatic": false,

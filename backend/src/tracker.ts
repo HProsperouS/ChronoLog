@@ -17,7 +17,7 @@ interface TrackerConfig {
   idleDetectionEnabled:   boolean;
   idleThresholdMinutes:   number;
   pollIntervalMs:         number;
-  excludedApps:           Set<string>; // lower-cased
+  excludedApps:           Set<string>; // normalized app identifiers
   respectPrivateBrowsing: boolean;
 }
 
@@ -31,6 +31,15 @@ let config: TrackerConfig = {
 };
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function normalizeAppId(value?: string): string {
+  return (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\.app$/i, '')
+    .replace(/\.exe$/i, '')
+    .replace(/\s+/g, ' ');
+}
 
 type ActiveWindowResult = {
   title?: string | null;
@@ -143,12 +152,25 @@ async function fetchConfig(): Promise<void> {
     }
 
     if (pRes.ok) {
-      const privacy = (await pRes.json()) as {
-        excludedApps:           string[];
-        respectPrivateBrowsing: boolean;
+      const payload = (await pRes.json()) as {
+        privacy?: {
+          excludedApps?: string[];
+          respectPrivateBrowsing?: boolean;
+        };
+        excludedApps?: string[];
+        respectPrivateBrowsing?: boolean;
       };
-      config.excludedApps           = new Set((privacy.excludedApps ?? []).map(a => a.toLowerCase()));
-      config.respectPrivateBrowsing = privacy.respectPrivateBrowsing ?? true;
+
+      // Current API shape is { privacy: {...} }.
+      // Keep backward compatibility with older flat payloads.
+      const privacy = payload.privacy ?? payload;
+      const excludedApps = Array.isArray(privacy.excludedApps) ? privacy.excludedApps : [];
+
+      config.excludedApps = new Set(excludedApps.map(normalizeAppId).filter(Boolean));
+      config.respectPrivateBrowsing =
+        typeof privacy.respectPrivateBrowsing === 'boolean'
+          ? privacy.respectPrivateBrowsing
+          : true;
     }
   } catch {
     // Backend not ready yet — keep current config
@@ -442,7 +464,7 @@ if (/firefox|chrome|edge|arc/i.test(appName)) {
 }
 
   // 4. Excluded apps
-  if (config.excludedApps.has(appName.toLowerCase())) {
+  if (config.excludedApps.has(normalizeAppId(appName))) {
     if (current) {
       await postActivity(current, new Date());
       current = null;

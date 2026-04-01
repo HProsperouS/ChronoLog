@@ -305,7 +305,7 @@ Each recorded session is appended to `backend/data/activities/YYYY-MM-DD.json`, 
 
 ```json
 {
-  "id":          "a1b2c3d4",
+  "id":          1234,
   "appName":     "Google Chrome",
   "windowTitle": "JavaScript Tutorial - YouTube",
   "url":         "https://www.youtube.com/watch?v=abc123",
@@ -679,7 +679,7 @@ In production, the user's data is stored in the OS-standard location:
 - Weekly generation cooldown is **6 hours** between successful weekly runs.
 - If over limit, backend returns **HTTP 429** with quota details.
 - Insights page reads `/api/insights/quota` and disables generate actions when quota is exhausted or cooldown is active.
-- Backend also starts a weekly auto-generation scheduler (`Sunday 23:59 UTC`), which attempts to generate weekly insights for the current week.
+- Backend also starts a weekly auto-generation scheduler (`Sunday 23:59`, using the backend process timezone), which attempts to generate weekly insights for the current week.
 
 ### Hosted AI proxy (AWS)
 

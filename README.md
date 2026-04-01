@@ -563,7 +563,7 @@ npm run dev:desktop
 
 This builds the frontend once, then starts Electron only. Electron will start backend + tracker internally and load `frontend/dist` directly.
 
-> **First launch:** `settings.json`, `categories.json`, and `category-rules.json` are auto-created in `backend/data/`. Category rules are seeded by scanning installed applications and applying built-in app signatures plus browser rule blueprints.
+> **First launch:** `settings.json`, `categories.json`, and `category-rules.json` are auto-created in `backend/data/`. Category rules are seeded by scanning installed applications and applying built-in app signatures plus browser rule blueprints. If the Insights Lambda is configured, ChronoLog will also run a one-time AI pass to suggest default categories for uncategorized (non-browser) apps and write additional **automatic** rules.
 
 ---
 
@@ -684,6 +684,15 @@ In production, the user's data is stored in the OS-standard location:
 ### Hosted AI proxy (AWS)
 
 Deploy **`infra/`** (CDK) for the Lambda + Function URL, then set **`INSIGHTS_FUNCTION_URL`** and **`INSIGHTS_PROXY_SECRET`** in `backend/.env`. Prompts live in **`infra/lambda/insights/prompt.ts`** — see **`infra/README.md`**.
+
+#### AI category rule seeding (first-run)
+
+ChronoLog can use the same hosted Lambda to seed default categories for apps that are not covered by built-in signatures:
+
+- **When it runs**: on first run, and also on subsequent runs if the marker file is missing.
+- **What it sends**: installed app metadata only (`appName`, optional `executablePath` / `installLocation`, and source). No window titles or URLs are sent.
+- **What it writes**: additional app-level `isAutomatic: true` rules into `category-rules.json` (non-browser apps only). It will not overwrite existing automatic rules for the same app.
+- **Marker file**: after a successful run, ChronoLog writes `backend/data/category-rules.ai-seeded` (prevents rerunning). Delete this file to re-run seeding.
 
 ---
 

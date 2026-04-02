@@ -590,7 +590,7 @@ async function start(): Promise<void> {
   await poll();
   reschedulePoller();
   // Refresh config from backend every 60 seconds
-  setInterval(() => void fetchConfig(), 60_000);
+  setInterval(() => void fetchConfig(), 2_000);
 }
 
 void start();

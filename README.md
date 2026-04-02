@@ -725,6 +725,20 @@ Assumptions used:
 
 \* Lambda figures above are **before** account-level free tier. Effective Lambda spend may be lower at small scale.
 
+**Total monthly cost by MAU (power-user scenarios)**
+- Weekly frequency fixed at `1/week` (`4.33/month`).
+- Lambda totals below **include account-level free tier** (`1M requests + 400k GB-seconds / month`).
+
+| MAU | Low (1 Daily/day) | Mid (2 Daily/day) | High (3 Daily/day) |
+|---:|---:|---:|---:|
+| 1,000 | `$17.05` | `$32.36` | `$47.66` |
+| 10,000 | `$170.55` | `$327.86` | `$485.98` |
+| 100,000 | `$1,757.92` | `$3,339.72` | `$4,921.52` |
+
+Breakdown examples (AI + Lambda):
+- `10,000 MAU`, Mid: `AI $323.55 + Lambda $4.31 = $327.86 / month`.
+- `100,000 MAU`, High: `AI $4,765.50 + Lambda $156.02 = $4,921.52 / month`.
+
 Notes:
 - These are planning estimates for budgeting/presentation, not billing guarantees.
 - Real spend depends on actual token usage, runtime, retries, and CloudWatch log volume.

@@ -681,6 +681,54 @@ In production, the user's data is stored in the OS-standard location:
 - Insights page reads `/api/insights/quota` and disables generate actions when quota is exhausted or cooldown is active.
 - Backend also starts a weekly auto-generation scheduler (`Sunday 23:59`, using the backend process timezone), which attempts to generate weekly insights for the current week.
 
+### AI/Lambda Cost Model (Singapore, ap-southeast-1)
+
+This section provides a practical cost estimate for the hosted AI proxy in Singapore.
+
+Assumptions used:
+- Region: `ap-southeast-1` (AWS Lambda in Singapore).
+- Lambda config: `256 MB` memory (`infra/lib/insights-stack.ts`), avg runtime assumed `~4s` per request.
+- Model: `gpt-4o-mini` (`infra/lambda/insights/handler.ts`).
+- Daily insight usage tiers below assume power users and this daily range:
+  - Low: `1 daily insight/day` (`30/month`)
+  - Mid: `2 daily insights/day` (`60/month`)
+  - High: `3 daily insights/day` (`90/month`, current cap)
+- Weekly insight frequency for this estimate: **once per week** (`52/12 = 4.33 times/month`).
+
+**Lambda cost (Singapore)**
+- Requests: `$0.20 / 1M` requests.
+- Duration (x86, tier 1): `$0.0000166667 / GB-second`.
+- Free tier (account-level): `1M requests + 400,000 GB-seconds / month`.
+- Estimated Lambda cost per insight call (before free tier), at `256 MB` and `~4s`:  
+  `0.256 * 4 * 0.0000166667 + 0.20/1,000,000 = ~$0.00001727`.
+
+**AI cost (gpt-4o-mini, estimate basis)**
+- Estimated Daily Insight AI cost per call: `~$0.00051`.
+- Estimated Weekly Insight AI cost per call: `~$0.000405`.
+
+**Weekly Insight cost (once per week)**
+- Monthly frequency: `4.33` weekly calls/user/month.
+- AI component: `4.33 * 0.000405 = ~$0.001755 / user / month`.
+- Lambda component (before free tier): `4.33 * 0.00001727 = ~$0.0000748 / user / month`.
+- Total weekly-insight-only cost: `~$0.00183 / user / month`.
+
+**Power user monthly cost range (per user)**
+- Formula:  
+  `Monthly cost = (DailyCalls * DailyAICost) + (WeeklyCalls * WeeklyAICost) + (TotalCalls * LambdaPerCall)`
+- Using `WeeklyCalls = 4.33/month` and the assumptions above:
+
+| Power-user profile | Daily calls/month | Weekly calls/month | AI cost / user / month | Lambda cost / user / month* | Total / user / month* |
+|---|---:|---:|---:|---:|---:|
+| Low | 30 | 4.33 | `$0.017055` | `$0.000593` | `$0.017648` |
+| Mid | 60 | 4.33 | `$0.032355` | `$0.001111` | `$0.033466` |
+| High | 90 | 4.33 | `$0.047655` | `$0.001629` | `$0.049284` |
+
+\* Lambda figures above are **before** account-level free tier. Effective Lambda spend may be lower at small scale.
+
+Notes:
+- These are planning estimates for budgeting/presentation, not billing guarantees.
+- Real spend depends on actual token usage, runtime, retries, and CloudWatch log volume.
+
 ### Hosted AI proxy (AWS)
 
 Deploy **`infra/`** (CDK) for the Lambda + Function URL, then set **`INSIGHTS_FUNCTION_URL`** and **`INSIGHTS_PROXY_SECRET`** in `backend/.env`. Prompts live in **`infra/lambda/insights/prompt.ts`** — see **`infra/README.md`**.

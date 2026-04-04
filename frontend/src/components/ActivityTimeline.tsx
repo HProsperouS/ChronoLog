@@ -575,17 +575,19 @@ export function ActivityTimeline() {
                 </div>
               ))}
 
-              {contextSwitchMarkers.map((marker) => (
-                <div
-                  key={`switch-${marker.id}`}
-                  className="absolute -top-1 -bottom-1 bg-white pointer-events-none z-20 rounded-full"
-                  style={{
-                    left: `${marker.left}%`,
-                    transform: 'translateX(-50%)',
-                    width: `${contextMarkerWidth}px`,
-                  }}
-                />
-              ))}
+            {contextSwitchMarkers.map((marker) => (
+              <div
+                key={`switch-${marker.id}`}
+                className="absolute -top-1 -bottom-1 pointer-events-none z-30"
+                style={{
+                  left: `${marker.left}%`,
+                  transform: 'translateX(-50%)',
+                  width: `${contextMarkerWidth}px`,
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,1), 0 0 10px rgba(255,255,255,0.95)',
+                }}
+              />
+            ))}
             </div>
           </div>
 

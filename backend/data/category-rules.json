@@ -7,55 +7,7 @@
   },
   {
     "id": "2",
-    "appName": "Battle.net",
-    "category": "Gaming",
-    "isAutomatic": true
-  },
-  {
-    "id": "4",
-    "appName": "Bitwarden",
-    "category": "Admin",
-    "isAutomatic": true
-  },
-  {
-    "id": "6",
-    "appName": "Control Panel",
-    "category": "Admin",
-    "isAutomatic": true
-  },
-  {
-    "id": "7",
-    "appName": "Discord",
-    "category": "Communication",
-    "isAutomatic": true
-  },
-  {
-    "id": "8",
-    "appName": "Docker",
-    "category": "Deep Work",
-    "isAutomatic": true
-  },
-  {
-    "id": "9",
-    "appName": "Epic Games Launcher",
-    "category": "Gaming",
-    "isAutomatic": true
-  },
-  {
-    "id": "10",
-    "appName": "Excel",
-    "category": "Study",
-    "isAutomatic": true
-  },
-  {
-    "id": "11",
-    "appName": "File Explorer",
-    "category": "Admin",
-    "isAutomatic": true
-  },
-  {
-    "id": "12",
-    "appName": "Firefox",
+    "appName": "Arc",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [
@@ -70,8 +22,8 @@
     "conditions": []
   },
   {
-    "id": "13",
-    "appName": "Firefox",
+    "id": "3",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [
@@ -89,8 +41,8 @@
     "conditions": []
   },
   {
-    "id": "14",
-    "appName": "Firefox",
+    "id": "4",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [
@@ -113,8 +65,8 @@
     "conditions": []
   },
   {
-    "id": "15",
-    "appName": "Firefox",
+    "id": "5",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [
@@ -150,8 +102,8 @@
     "conditions": []
   },
   {
-    "id": "16",
-    "appName": "Firefox",
+    "id": "6",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [
@@ -177,8 +129,8 @@
     "conditions": []
   },
   {
-    "id": "17",
-    "appName": "Firefox",
+    "id": "7",
+    "appName": "Arc",
     "category": "Communication",
     "isAutomatic": false,
     "keywords": [],
@@ -197,8 +149,8 @@
     ]
   },
   {
-    "id": "18",
-    "appName": "Firefox",
+    "id": "8",
+    "appName": "Arc",
     "category": "Communication",
     "isAutomatic": false,
     "keywords": [],
@@ -217,8 +169,8 @@
     ]
   },
   {
-    "id": "19",
-    "appName": "Firefox",
+    "id": "9",
+    "appName": "Arc",
     "category": "Communication",
     "isAutomatic": false,
     "keywords": [],
@@ -237,8 +189,8 @@
     ]
   },
   {
-    "id": "20",
-    "appName": "Firefox",
+    "id": "10",
+    "appName": "Arc",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [],
@@ -257,8 +209,8 @@
     ]
   },
   {
-    "id": "21",
-    "appName": "Firefox",
+    "id": "11",
+    "appName": "Arc",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [],
@@ -277,8 +229,8 @@
     ]
   },
   {
-    "id": "22",
-    "appName": "Firefox",
+    "id": "12",
+    "appName": "Arc",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [],
@@ -297,8 +249,8 @@
     ]
   },
   {
-    "id": "23",
-    "appName": "Firefox",
+    "id": "13",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -317,8 +269,8 @@
     ]
   },
   {
-    "id": "24",
-    "appName": "Firefox",
+    "id": "14",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -337,8 +289,8 @@
     ]
   },
   {
-    "id": "25",
-    "appName": "Firefox",
+    "id": "15",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -357,8 +309,8 @@
     ]
   },
   {
-    "id": "26",
-    "appName": "Firefox",
+    "id": "16",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -377,8 +329,8 @@
     ]
   },
   {
-    "id": "27",
-    "appName": "Firefox",
+    "id": "17",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -397,8 +349,8 @@
     ]
   },
   {
-    "id": "28",
-    "appName": "Firefox",
+    "id": "18",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -417,8 +369,8 @@
     ]
   },
   {
-    "id": "29",
-    "appName": "Firefox",
+    "id": "19",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -437,8 +389,8 @@
     ]
   },
   {
-    "id": "30",
-    "appName": "Firefox",
+    "id": "20",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -457,8 +409,8 @@
     ]
   },
   {
-    "id": "31",
-    "appName": "Firefox",
+    "id": "21",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -477,8 +429,8 @@
     ]
   },
   {
-    "id": "32",
-    "appName": "Firefox",
+    "id": "22",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -497,8 +449,8 @@
     ]
   },
   {
-    "id": "33",
-    "appName": "Firefox",
+    "id": "23",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -517,8 +469,8 @@
     ]
   },
   {
-    "id": "34",
-    "appName": "Firefox",
+    "id": "24",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -537,8 +489,8 @@
     ]
   },
   {
-    "id": "35",
-    "appName": "Firefox",
+    "id": "25",
+    "appName": "Arc",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -557,8 +509,8 @@
     ]
   },
   {
-    "id": "36",
-    "appName": "Firefox",
+    "id": "26",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -577,8 +529,8 @@
     ]
   },
   {
-    "id": "37",
-    "appName": "Firefox",
+    "id": "27",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -597,8 +549,8 @@
     ]
   },
   {
-    "id": "38",
-    "appName": "Firefox",
+    "id": "28",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -617,8 +569,8 @@
     ]
   },
   {
-    "id": "39",
-    "appName": "Firefox",
+    "id": "29",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -637,8 +589,8 @@
     ]
   },
   {
-    "id": "40",
-    "appName": "Firefox",
+    "id": "30",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -657,8 +609,8 @@
     ]
   },
   {
-    "id": "41",
-    "appName": "Firefox",
+    "id": "31",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -677,8 +629,8 @@
     ]
   },
   {
-    "id": "42",
-    "appName": "Firefox",
+    "id": "32",
+    "appName": "Arc",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -697,8 +649,8 @@
     ]
   },
   {
-    "id": "43",
-    "appName": "Firefox",
+    "id": "33",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -717,8 +669,8 @@
     ]
   },
   {
-    "id": "44",
-    "appName": "Firefox",
+    "id": "34",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -737,8 +689,8 @@
     ]
   },
   {
-    "id": "45",
-    "appName": "Firefox",
+    "id": "35",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -757,8 +709,8 @@
     ]
   },
   {
-    "id": "46",
-    "appName": "Firefox",
+    "id": "36",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -777,8 +729,8 @@
     ]
   },
   {
-    "id": "47",
-    "appName": "Firefox",
+    "id": "37",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -797,8 +749,8 @@
     ]
   },
   {
-    "id": "48",
-    "appName": "Firefox",
+    "id": "38",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -817,8 +769,8 @@
     ]
   },
   {
-    "id": "49",
-    "appName": "Firefox",
+    "id": "39",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -837,8 +789,8 @@
     ]
   },
   {
-    "id": "50",
-    "appName": "Firefox",
+    "id": "40",
+    "appName": "Arc",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -857,8 +809,8 @@
     ]
   },
   {
-    "id": "51",
-    "appName": "Firefox",
+    "id": "41",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -877,8 +829,8 @@
     ]
   },
   {
-    "id": "52",
-    "appName": "Firefox",
+    "id": "42",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -897,8 +849,8 @@
     ]
   },
   {
-    "id": "53",
-    "appName": "Firefox",
+    "id": "43",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -917,8 +869,8 @@
     ]
   },
   {
-    "id": "54",
-    "appName": "Firefox",
+    "id": "44",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -937,8 +889,8 @@
     ]
   },
   {
-    "id": "55",
-    "appName": "Firefox",
+    "id": "45",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -957,8 +909,8 @@
     ]
   },
   {
-    "id": "56",
-    "appName": "Firefox",
+    "id": "46",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -977,8 +929,8 @@
     ]
   },
   {
-    "id": "57",
-    "appName": "Firefox",
+    "id": "47",
+    "appName": "Arc",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -997,8 +949,68 @@
     ]
   },
   {
+    "id": "48",
+    "appName": "Battle.net",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
+    "id": "50",
+    "appName": "Bitwarden",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "52",
+    "appName": "Command Prompt",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "53",
+    "appName": "Control Panel",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "54",
+    "appName": "DBeaver",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "55",
+    "appName": "Discord",
+    "category": "Communication",
+    "isAutomatic": true
+  },
+  {
+    "id": "56",
+    "appName": "Docker",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "57",
+    "appName": "Epic Games Launcher",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
     "id": "58",
-    "appName": "Google Chrome",
+    "appName": "Excel",
+    "category": "Study",
+    "isAutomatic": true
+  },
+  {
+    "id": "59",
+    "appName": "File Explorer",
+    "category": "Admin",
+    "isAutomatic": true
+  },
+  {
+    "id": "60",
+    "appName": "Firefox",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [
@@ -1013,8 +1025,8 @@
     "conditions": []
   },
   {
-    "id": "59",
-    "appName": "Google Chrome",
+    "id": "61",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [
@@ -1032,8 +1044,8 @@
     "conditions": []
   },
   {
-    "id": "60",
-    "appName": "Google Chrome",
+    "id": "62",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [
@@ -1056,8 +1068,8 @@
     "conditions": []
   },
   {
-    "id": "61",
-    "appName": "Google Chrome",
+    "id": "63",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [
@@ -1093,8 +1105,8 @@
     "conditions": []
   },
   {
-    "id": "62",
-    "appName": "Google Chrome",
+    "id": "64",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [
@@ -1120,8 +1132,8 @@
     "conditions": []
   },
   {
-    "id": "63",
-    "appName": "Google Chrome",
+    "id": "65",
+    "appName": "Firefox",
     "category": "Communication",
     "isAutomatic": false,
     "keywords": [],
@@ -1131,46 +1143,6 @@
         "field": "windowTitle",
         "operator": "contains",
         "value": "gmail"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "inbox"
-      }
-    ]
-  },
-  {
-    "id": "64",
-    "appName": "Google Chrome",
-    "category": "Communication",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "outlook"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "inbox"
-      }
-    ]
-  },
-  {
-    "id": "65",
-    "appName": "Google Chrome",
-    "category": "Communication",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "mail"
       },
       {
         "field": "windowTitle",
@@ -1181,7 +1153,47 @@
   },
   {
     "id": "66",
-    "appName": "Google Chrome",
+    "appName": "Firefox",
+    "category": "Communication",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "outlook"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "inbox"
+      }
+    ]
+  },
+  {
+    "id": "67",
+    "appName": "Firefox",
+    "category": "Communication",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "mail"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "inbox"
+      }
+    ]
+  },
+  {
+    "id": "68",
+    "appName": "Firefox",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [],
@@ -1191,46 +1203,6 @@
         "field": "windowTitle",
         "operator": "contains",
         "value": "google meet"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "meeting"
-      }
-    ]
-  },
-  {
-    "id": "67",
-    "appName": "Google Chrome",
-    "category": "Meetings",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "zoom"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "meeting"
-      }
-    ]
-  },
-  {
-    "id": "68",
-    "appName": "Google Chrome",
-    "category": "Meetings",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "teams"
       },
       {
         "field": "windowTitle",
@@ -1241,7 +1213,47 @@
   },
   {
     "id": "69",
-    "appName": "Google Chrome",
+    "appName": "Firefox",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "zoom"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "meeting"
+      }
+    ]
+  },
+  {
+    "id": "70",
+    "appName": "Firefox",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "teams"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "meeting"
+      }
+    ]
+  },
+  {
+    "id": "71",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1260,8 +1272,8 @@
     ]
   },
   {
-    "id": "70",
-    "appName": "Google Chrome",
+    "id": "72",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1280,8 +1292,8 @@
     ]
   },
   {
-    "id": "71",
-    "appName": "Google Chrome",
+    "id": "73",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1300,48 +1312,8 @@
     ]
   },
   {
-    "id": "72",
-    "appName": "Google Chrome",
-    "category": "Deep Work",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "github"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "github"
-      }
-    ]
-  },
-  {
-    "id": "73",
-    "appName": "Google Chrome",
-    "category": "Deep Work",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "stackoverflow"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "stackoverflow"
-      }
-    ]
-  },
-  {
     "id": "74",
-    "appName": "Google Chrome",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1350,18 +1322,58 @@
       {
         "field": "windowTitle",
         "operator": "contains",
-        "value": "chatgpt"
+        "value": "github"
       },
       {
         "field": "windowTitle",
         "operator": "contains",
-        "value": "chatgpt"
+        "value": "github"
       }
     ]
   },
   {
     "id": "75",
-    "appName": "Google Chrome",
+    "appName": "Firefox",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "stackoverflow"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "stackoverflow"
+      }
+    ]
+  },
+  {
+    "id": "76",
+    "appName": "Firefox",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "chatgpt"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "chatgpt"
+      }
+    ]
+  },
+  {
+    "id": "77",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1380,8 +1392,8 @@
     ]
   },
   {
-    "id": "76",
-    "appName": "Google Chrome",
+    "id": "78",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -1400,8 +1412,8 @@
     ]
   },
   {
-    "id": "77",
-    "appName": "Google Chrome",
+    "id": "79",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -1420,8 +1432,8 @@
     ]
   },
   {
-    "id": "78",
-    "appName": "Google Chrome",
+    "id": "80",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -1440,8 +1452,8 @@
     ]
   },
   {
-    "id": "79",
-    "appName": "Google Chrome",
+    "id": "81",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -1460,8 +1472,8 @@
     ]
   },
   {
-    "id": "80",
-    "appName": "Google Chrome",
+    "id": "82",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -1480,8 +1492,8 @@
     ]
   },
   {
-    "id": "81",
-    "appName": "Google Chrome",
+    "id": "83",
+    "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
     "keywords": [],
@@ -1500,8 +1512,8 @@
     ]
   },
   {
-    "id": "82",
-    "appName": "Google Chrome",
+    "id": "84",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1520,8 +1532,8 @@
     ]
   },
   {
-    "id": "83",
-    "appName": "Google Chrome",
+    "id": "85",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1540,8 +1552,8 @@
     ]
   },
   {
-    "id": "84",
-    "appName": "Google Chrome",
+    "id": "86",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1560,8 +1572,8 @@
     ]
   },
   {
-    "id": "85",
-    "appName": "Google Chrome",
+    "id": "87",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1580,8 +1592,8 @@
     ]
   },
   {
-    "id": "86",
-    "appName": "Google Chrome",
+    "id": "88",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1600,8 +1612,8 @@
     ]
   },
   {
-    "id": "87",
-    "appName": "Google Chrome",
+    "id": "89",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1620,8 +1632,8 @@
     ]
   },
   {
-    "id": "88",
-    "appName": "Google Chrome",
+    "id": "90",
+    "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
     "keywords": [],
@@ -1640,8 +1652,8 @@
     ]
   },
   {
-    "id": "89",
-    "appName": "Google Chrome",
+    "id": "91",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -1660,8 +1672,8 @@
     ]
   },
   {
-    "id": "90",
-    "appName": "Google Chrome",
+    "id": "92",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -1680,8 +1692,8 @@
     ]
   },
   {
-    "id": "91",
-    "appName": "Google Chrome",
+    "id": "93",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -1700,8 +1712,8 @@
     ]
   },
   {
-    "id": "92",
-    "appName": "Google Chrome",
+    "id": "94",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -1720,8 +1732,8 @@
     ]
   },
   {
-    "id": "93",
-    "appName": "Google Chrome",
+    "id": "95",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -1740,8 +1752,8 @@
     ]
   },
   {
-    "id": "94",
-    "appName": "Google Chrome",
+    "id": "96",
+    "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
     "keywords": [],
@@ -1760,48 +1772,48 @@
     ]
   },
   {
-    "id": "95",
-    "appName": "Google Chrome",
-    "category": "Entertainment",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "netflix"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "netflix"
-      }
-    ]
-  },
-  {
-    "id": "96",
-    "appName": "Google Chrome",
-    "category": "Entertainment",
-    "isAutomatic": false,
-    "keywords": [],
-    "matchMode": "all",
-    "conditions": [
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "spotify"
-      },
-      {
-        "field": "windowTitle",
-        "operator": "contains",
-        "value": "spotify"
-      }
-    ]
-  },
-  {
     "id": "97",
-    "appName": "Google Chrome",
+    "appName": "Firefox",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "netflix"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "netflix"
+      }
+    ]
+  },
+  {
+    "id": "98",
+    "appName": "Firefox",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "spotify"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "spotify"
+      }
+    ]
+  },
+  {
+    "id": "99",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1820,8 +1832,8 @@
     ]
   },
   {
-    "id": "98",
-    "appName": "Google Chrome",
+    "id": "100",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1840,8 +1852,8 @@
     ]
   },
   {
-    "id": "99",
-    "appName": "Google Chrome",
+    "id": "101",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1860,8 +1872,8 @@
     ]
   },
   {
-    "id": "100",
-    "appName": "Google Chrome",
+    "id": "102",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1880,8 +1892,8 @@
     ]
   },
   {
-    "id": "101",
-    "appName": "Google Chrome",
+    "id": "103",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1900,8 +1912,8 @@
     ]
   },
   {
-    "id": "102",
-    "appName": "Google Chrome",
+    "id": "104",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1920,8 +1932,8 @@
     ]
   },
   {
-    "id": "103",
-    "appName": "Google Chrome",
+    "id": "105",
+    "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
     "keywords": [],
@@ -1940,8 +1952,14 @@
     ]
   },
   {
-    "id": "104",
-    "appName": "Microsoft Edge",
+    "id": "106",
+    "appName": "Git Bash",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "107",
+    "appName": "Google Chrome",
     "category": "Meetings",
     "isAutomatic": false,
     "keywords": [
@@ -1951,92 +1969,1035 @@
       "teams.microsoft.com",
       "microsoft teams",
       "webex"
-    ],
-    "matchMode": "any",
-    "conditions": []
-  },
-  {
-    "id": "105",
-    "appName": "Microsoft Edge",
-    "category": "Gaming",
-    "isAutomatic": false,
-    "keywords": [
-      "store.steampowered.com",
-      "steam",
-      "epic games",
-      "battle.net",
-      "riot games",
-      "valorant",
-      "league of legends",
-      "genshin",
-      "honkai"
-    ],
-    "matchMode": "any",
-    "conditions": []
-  },
-  {
-    "id": "106",
-    "appName": "Microsoft Edge",
-    "category": "Study",
-    "isAutomatic": false,
-    "keywords": [
-      "lecture",
-      "course",
-      "tutorial",
-      "revision",
-      "slides",
-      "assignment",
-      "notes",
-      "canvas",
-      "lms",
-      "moodle",
-      "coursera",
-      "edx",
-      "udemy",
-      "khan academy"
-    ],
-    "matchMode": "any",
-    "conditions": []
-  },
-  {
-    "id": "107",
-    "appName": "Microsoft Edge",
-    "category": "Deep Work",
-    "isAutomatic": false,
-    "keywords": [
-      "chatgpt",
-      "openai",
-      "github",
-      "gitlab",
-      "bitbucket",
-      "stackoverflow",
-      "stackoverflow.com",
-      "docs",
-      "documentation",
-      "mdn",
-      "localhost",
-      "127.0.0.1",
-      "jira",
-      "confluence",
-      "linear",
-      "notion",
-      "figma",
-      "vercel",
-      "netlify",
-      "aws",
-      "azure",
-      "gcp",
-      "console.cloud",
-      "google docs",
-      "google sheets",
-      "google slides",
-      "calendar.google"
     ],
     "matchMode": "any",
     "conditions": []
   },
   {
     "id": "108",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net",
+      "riot games",
+      "valorant",
+      "league of legends",
+      "genshin",
+      "honkai"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "109",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy",
+      "khan academy"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "110",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "111",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [
+      "netflix",
+      "hulu",
+      "disneyplus",
+      "disney+",
+      "twitch",
+      "kick.com",
+      "reddit",
+      "twitter",
+      "x.com",
+      "instagram",
+      "tiktok",
+      "facebook",
+      "fb.com",
+      "9gag",
+      "imgur",
+      "bilibili",
+      "spotify"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "112",
+    "appName": "Google Chrome",
+    "category": "Communication",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "gmail"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "inbox"
+      }
+    ]
+  },
+  {
+    "id": "113",
+    "appName": "Google Chrome",
+    "category": "Communication",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "outlook"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "inbox"
+      }
+    ]
+  },
+  {
+    "id": "114",
+    "appName": "Google Chrome",
+    "category": "Communication",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "mail"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "inbox"
+      }
+    ]
+  },
+  {
+    "id": "115",
+    "appName": "Google Chrome",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "google meet"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "meeting"
+      }
+    ]
+  },
+  {
+    "id": "116",
+    "appName": "Google Chrome",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "zoom"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "meeting"
+      }
+    ]
+  },
+  {
+    "id": "117",
+    "appName": "Google Chrome",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "teams"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "meeting"
+      }
+    ]
+  },
+  {
+    "id": "118",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "google docs"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "docs"
+      }
+    ]
+  },
+  {
+    "id": "119",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "google sheets"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "sheets"
+      }
+    ]
+  },
+  {
+    "id": "120",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "google slides"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "slides"
+      }
+    ]
+  },
+  {
+    "id": "121",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "github"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "github"
+      }
+    ]
+  },
+  {
+    "id": "122",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "stackoverflow"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "stackoverflow"
+      }
+    ]
+  },
+  {
+    "id": "123",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "chatgpt"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "chatgpt"
+      }
+    ]
+  },
+  {
+    "id": "124",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "openai"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "chatgpt"
+      }
+    ]
+  },
+  {
+    "id": "125",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "tutorial"
+      }
+    ]
+  },
+  {
+    "id": "126",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "lecture"
+      }
+    ]
+  },
+  {
+    "id": "127",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "course"
+      }
+    ]
+  },
+  {
+    "id": "128",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "revision"
+      }
+    ]
+  },
+  {
+    "id": "129",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "assignment"
+      }
+    ]
+  },
+  {
+    "id": "130",
+    "appName": "Google Chrome",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "notes"
+      }
+    ]
+  },
+  {
+    "id": "131",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "wireshark"
+      }
+    ]
+  },
+  {
+    "id": "132",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "python"
+      }
+    ]
+  },
+  {
+    "id": "133",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "javascript"
+      }
+    ]
+  },
+  {
+    "id": "134",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "typescript"
+      }
+    ]
+  },
+  {
+    "id": "135",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "react"
+      }
+    ]
+  },
+  {
+    "id": "136",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "docker"
+      }
+    ]
+  },
+  {
+    "id": "137",
+    "appName": "Google Chrome",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "networking"
+      }
+    ]
+  },
+  {
+    "id": "138",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "music"
+      }
+    ]
+  },
+  {
+    "id": "139",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "official video"
+      }
+    ]
+  },
+  {
+    "id": "140",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "trailer"
+      }
+    ]
+  },
+  {
+    "id": "141",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "episode"
+      }
+    ]
+  },
+  {
+    "id": "142",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "reaction"
+      }
+    ]
+  },
+  {
+    "id": "143",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "highlights"
+      }
+    ]
+  },
+  {
+    "id": "144",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "netflix"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "netflix"
+      }
+    ]
+  },
+  {
+    "id": "145",
+    "appName": "Google Chrome",
+    "category": "Entertainment",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "spotify"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "spotify"
+      }
+    ]
+  },
+  {
+    "id": "146",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "gameplay"
+      }
+    ]
+  },
+  {
+    "id": "147",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "walkthrough"
+      }
+    ]
+  },
+  {
+    "id": "148",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "boss fight"
+      }
+    ]
+  },
+  {
+    "id": "149",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "valorant"
+      }
+    ]
+  },
+  {
+    "id": "150",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "league of legends"
+      }
+    ]
+  },
+  {
+    "id": "151",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "genshin"
+      }
+    ]
+  },
+  {
+    "id": "152",
+    "appName": "Google Chrome",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [],
+    "matchMode": "all",
+    "conditions": [
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "youtube"
+      },
+      {
+        "field": "windowTitle",
+        "operator": "contains",
+        "value": "honkai"
+      }
+    ]
+  },
+  {
+    "id": "153",
+    "appName": "Microsoft Edge",
+    "category": "Meetings",
+    "isAutomatic": false,
+    "keywords": [
+      "meet.google.com",
+      "google meet",
+      "zoom",
+      "teams.microsoft.com",
+      "microsoft teams",
+      "webex"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "154",
+    "appName": "Microsoft Edge",
+    "category": "Gaming",
+    "isAutomatic": false,
+    "keywords": [
+      "store.steampowered.com",
+      "steam",
+      "epic games",
+      "battle.net",
+      "riot games",
+      "valorant",
+      "league of legends",
+      "genshin",
+      "honkai"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "155",
+    "appName": "Microsoft Edge",
+    "category": "Study",
+    "isAutomatic": false,
+    "keywords": [
+      "lecture",
+      "course",
+      "tutorial",
+      "revision",
+      "slides",
+      "assignment",
+      "notes",
+      "canvas",
+      "lms",
+      "moodle",
+      "coursera",
+      "edx",
+      "udemy",
+      "khan academy"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "156",
+    "appName": "Microsoft Edge",
+    "category": "Deep Work",
+    "isAutomatic": false,
+    "keywords": [
+      "chatgpt",
+      "openai",
+      "github",
+      "gitlab",
+      "bitbucket",
+      "stackoverflow",
+      "stackoverflow.com",
+      "docs",
+      "documentation",
+      "mdn",
+      "localhost",
+      "127.0.0.1",
+      "jira",
+      "confluence",
+      "linear",
+      "notion",
+      "figma",
+      "vercel",
+      "netlify",
+      "aws",
+      "azure",
+      "gcp",
+      "console.cloud",
+      "google docs",
+      "google sheets",
+      "google slides",
+      "calendar.google"
+    ],
+    "matchMode": "any",
+    "conditions": []
+  },
+  {
+    "id": "157",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2063,7 +3024,7 @@
     "conditions": []
   },
   {
-    "id": "109",
+    "id": "158",
     "appName": "Microsoft Edge",
     "category": "Communication",
     "isAutomatic": false,
@@ -2083,7 +3044,7 @@
     ]
   },
   {
-    "id": "110",
+    "id": "159",
     "appName": "Microsoft Edge",
     "category": "Communication",
     "isAutomatic": false,
@@ -2103,7 +3064,7 @@
     ]
   },
   {
-    "id": "111",
+    "id": "160",
     "appName": "Microsoft Edge",
     "category": "Communication",
     "isAutomatic": false,
@@ -2123,7 +3084,7 @@
     ]
   },
   {
-    "id": "112",
+    "id": "161",
     "appName": "Microsoft Edge",
     "category": "Meetings",
     "isAutomatic": false,
@@ -2143,7 +3104,7 @@
     ]
   },
   {
-    "id": "113",
+    "id": "162",
     "appName": "Microsoft Edge",
     "category": "Meetings",
     "isAutomatic": false,
@@ -2163,7 +3124,7 @@
     ]
   },
   {
-    "id": "114",
+    "id": "163",
     "appName": "Microsoft Edge",
     "category": "Meetings",
     "isAutomatic": false,
@@ -2183,7 +3144,7 @@
     ]
   },
   {
-    "id": "115",
+    "id": "164",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2203,7 +3164,7 @@
     ]
   },
   {
-    "id": "116",
+    "id": "165",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2223,7 +3184,7 @@
     ]
   },
   {
-    "id": "117",
+    "id": "166",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2243,7 +3204,7 @@
     ]
   },
   {
-    "id": "118",
+    "id": "167",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2263,7 +3224,7 @@
     ]
   },
   {
-    "id": "119",
+    "id": "168",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2283,7 +3244,7 @@
     ]
   },
   {
-    "id": "120",
+    "id": "169",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2303,7 +3264,7 @@
     ]
   },
   {
-    "id": "121",
+    "id": "170",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2323,7 +3284,7 @@
     ]
   },
   {
-    "id": "122",
+    "id": "171",
     "appName": "Microsoft Edge",
     "category": "Study",
     "isAutomatic": false,
@@ -2343,7 +3304,7 @@
     ]
   },
   {
-    "id": "123",
+    "id": "172",
     "appName": "Microsoft Edge",
     "category": "Study",
     "isAutomatic": false,
@@ -2363,7 +3324,7 @@
     ]
   },
   {
-    "id": "124",
+    "id": "173",
     "appName": "Microsoft Edge",
     "category": "Study",
     "isAutomatic": false,
@@ -2383,7 +3344,7 @@
     ]
   },
   {
-    "id": "125",
+    "id": "174",
     "appName": "Microsoft Edge",
     "category": "Study",
     "isAutomatic": false,
@@ -2403,7 +3364,7 @@
     ]
   },
   {
-    "id": "126",
+    "id": "175",
     "appName": "Microsoft Edge",
     "category": "Study",
     "isAutomatic": false,
@@ -2423,7 +3384,7 @@
     ]
   },
   {
-    "id": "127",
+    "id": "176",
     "appName": "Microsoft Edge",
     "category": "Study",
     "isAutomatic": false,
@@ -2443,7 +3404,7 @@
     ]
   },
   {
-    "id": "128",
+    "id": "177",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2463,7 +3424,7 @@
     ]
   },
   {
-    "id": "129",
+    "id": "178",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2483,7 +3444,7 @@
     ]
   },
   {
-    "id": "130",
+    "id": "179",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2503,7 +3464,7 @@
     ]
   },
   {
-    "id": "131",
+    "id": "180",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2523,7 +3484,7 @@
     ]
   },
   {
-    "id": "132",
+    "id": "181",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2543,7 +3504,7 @@
     ]
   },
   {
-    "id": "133",
+    "id": "182",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2563,7 +3524,7 @@
     ]
   },
   {
-    "id": "134",
+    "id": "183",
     "appName": "Microsoft Edge",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2583,7 +3544,7 @@
     ]
   },
   {
-    "id": "135",
+    "id": "184",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2603,7 +3564,7 @@
     ]
   },
   {
-    "id": "136",
+    "id": "185",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2623,7 +3584,7 @@
     ]
   },
   {
-    "id": "137",
+    "id": "186",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2643,7 +3604,7 @@
     ]
   },
   {
-    "id": "138",
+    "id": "187",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2663,7 +3624,7 @@
     ]
   },
   {
-    "id": "139",
+    "id": "188",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2683,7 +3644,7 @@
     ]
   },
   {
-    "id": "140",
+    "id": "189",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2703,7 +3664,7 @@
     ]
   },
   {
-    "id": "141",
+    "id": "190",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2723,7 +3684,7 @@
     ]
   },
   {
-    "id": "142",
+    "id": "191",
     "appName": "Microsoft Edge",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -2743,7 +3704,7 @@
     ]
   },
   {
-    "id": "143",
+    "id": "192",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2763,7 +3724,7 @@
     ]
   },
   {
-    "id": "144",
+    "id": "193",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2783,7 +3744,7 @@
     ]
   },
   {
-    "id": "145",
+    "id": "194",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2803,7 +3764,7 @@
     ]
   },
   {
-    "id": "146",
+    "id": "195",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2823,7 +3784,7 @@
     ]
   },
   {
-    "id": "147",
+    "id": "196",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2843,7 +3804,7 @@
     ]
   },
   {
-    "id": "148",
+    "id": "197",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2863,7 +3824,7 @@
     ]
   },
   {
-    "id": "149",
+    "id": "198",
     "appName": "Microsoft Edge",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2883,7 +3844,7 @@
     ]
   },
   {
-    "id": "150",
+    "id": "199",
     "appName": "Mozilla Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -2899,7 +3860,7 @@
     "conditions": []
   },
   {
-    "id": "151",
+    "id": "200",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -2918,7 +3879,7 @@
     "conditions": []
   },
   {
-    "id": "152",
+    "id": "201",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -2942,7 +3903,7 @@
     "conditions": []
   },
   {
-    "id": "153",
+    "id": "202",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -2979,7 +3940,7 @@
     "conditions": []
   },
   {
-    "id": "154",
+    "id": "203",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3006,7 +3967,7 @@
     "conditions": []
   },
   {
-    "id": "155",
+    "id": "204",
     "appName": "Mozilla Firefox",
     "category": "Communication",
     "isAutomatic": false,
@@ -3026,7 +3987,7 @@
     ]
   },
   {
-    "id": "156",
+    "id": "205",
     "appName": "Mozilla Firefox",
     "category": "Communication",
     "isAutomatic": false,
@@ -3046,7 +4007,7 @@
     ]
   },
   {
-    "id": "157",
+    "id": "206",
     "appName": "Mozilla Firefox",
     "category": "Communication",
     "isAutomatic": false,
@@ -3066,7 +4027,7 @@
     ]
   },
   {
-    "id": "158",
+    "id": "207",
     "appName": "Mozilla Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -3086,7 +4047,7 @@
     ]
   },
   {
-    "id": "159",
+    "id": "208",
     "appName": "Mozilla Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -3106,7 +4067,7 @@
     ]
   },
   {
-    "id": "160",
+    "id": "209",
     "appName": "Mozilla Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -3126,7 +4087,7 @@
     ]
   },
   {
-    "id": "161",
+    "id": "210",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3146,7 +4107,7 @@
     ]
   },
   {
-    "id": "162",
+    "id": "211",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3166,7 +4127,7 @@
     ]
   },
   {
-    "id": "163",
+    "id": "212",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3186,7 +4147,7 @@
     ]
   },
   {
-    "id": "164",
+    "id": "213",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3206,7 +4167,7 @@
     ]
   },
   {
-    "id": "165",
+    "id": "214",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3226,7 +4187,7 @@
     ]
   },
   {
-    "id": "166",
+    "id": "215",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3246,7 +4207,7 @@
     ]
   },
   {
-    "id": "167",
+    "id": "216",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3266,7 +4227,7 @@
     ]
   },
   {
-    "id": "168",
+    "id": "217",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -3286,7 +4247,7 @@
     ]
   },
   {
-    "id": "169",
+    "id": "218",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -3306,7 +4267,7 @@
     ]
   },
   {
-    "id": "170",
+    "id": "219",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -3326,7 +4287,7 @@
     ]
   },
   {
-    "id": "171",
+    "id": "220",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -3346,7 +4307,7 @@
     ]
   },
   {
-    "id": "172",
+    "id": "221",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -3366,7 +4327,7 @@
     ]
   },
   {
-    "id": "173",
+    "id": "222",
     "appName": "Mozilla Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -3386,7 +4347,7 @@
     ]
   },
   {
-    "id": "174",
+    "id": "223",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3406,7 +4367,7 @@
     ]
   },
   {
-    "id": "175",
+    "id": "224",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3426,7 +4387,7 @@
     ]
   },
   {
-    "id": "176",
+    "id": "225",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3446,7 +4407,7 @@
     ]
   },
   {
-    "id": "177",
+    "id": "226",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3466,7 +4427,7 @@
     ]
   },
   {
-    "id": "178",
+    "id": "227",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3486,7 +4447,7 @@
     ]
   },
   {
-    "id": "179",
+    "id": "228",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3506,7 +4467,7 @@
     ]
   },
   {
-    "id": "180",
+    "id": "229",
     "appName": "Mozilla Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -3526,7 +4487,7 @@
     ]
   },
   {
-    "id": "181",
+    "id": "230",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3546,7 +4507,7 @@
     ]
   },
   {
-    "id": "182",
+    "id": "231",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3566,7 +4527,7 @@
     ]
   },
   {
-    "id": "183",
+    "id": "232",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3586,7 +4547,7 @@
     ]
   },
   {
-    "id": "184",
+    "id": "233",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3606,7 +4567,7 @@
     ]
   },
   {
-    "id": "185",
+    "id": "234",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3626,7 +4587,7 @@
     ]
   },
   {
-    "id": "186",
+    "id": "235",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3646,7 +4607,7 @@
     ]
   },
   {
-    "id": "187",
+    "id": "236",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3666,7 +4627,7 @@
     ]
   },
   {
-    "id": "188",
+    "id": "237",
     "appName": "Mozilla Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -3686,7 +4647,7 @@
     ]
   },
   {
-    "id": "189",
+    "id": "238",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3706,7 +4667,7 @@
     ]
   },
   {
-    "id": "190",
+    "id": "239",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3726,7 +4687,7 @@
     ]
   },
   {
-    "id": "191",
+    "id": "240",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3746,7 +4707,7 @@
     ]
   },
   {
-    "id": "192",
+    "id": "241",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3766,7 +4727,7 @@
     ]
   },
   {
-    "id": "193",
+    "id": "242",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3786,7 +4747,7 @@
     ]
   },
   {
-    "id": "194",
+    "id": "243",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3806,7 +4767,7 @@
     ]
   },
   {
-    "id": "195",
+    "id": "244",
     "appName": "Mozilla Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -3826,79 +4787,97 @@
     ]
   },
   {
-    "id": "196",
+    "id": "245",
     "appName": "Notepad++",
     "category": "Deep Work",
     "isAutomatic": true
   },
   {
-    "id": "198",
+    "id": "247",
     "appName": "Notion",
     "category": "Study",
     "isAutomatic": true
   },
   {
-    "id": "200",
+    "id": "249",
     "appName": "Obsidian",
     "category": "Study",
     "isAutomatic": true
   },
   {
-    "id": "202",
+    "id": "251",
     "appName": "OneNote",
     "category": "Study",
     "isAutomatic": true
   },
   {
-    "id": "203",
+    "id": "252",
     "appName": "PowerPoint",
     "category": "Study",
     "isAutomatic": true
   },
   {
-    "id": "204",
+    "id": "253",
+    "appName": "Riot Client",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
+    "id": "254",
     "appName": "Steam",
     "category": "Gaming",
     "isAutomatic": true
   },
   {
-    "id": "206",
+    "id": "256",
     "appName": "Task Manager",
     "category": "Admin",
     "isAutomatic": true
   },
   {
-    "id": "207",
+    "id": "257",
     "appName": "Telegram",
     "category": "Communication",
     "isAutomatic": true
   },
   {
-    "id": "208",
+    "id": "258",
+    "appName": "VALORANT",
+    "category": "Gaming",
+    "isAutomatic": true
+  },
+  {
+    "id": "259",
     "appName": "Visual Studio Code",
     "category": "Deep Work",
     "isAutomatic": true
   },
   {
-    "id": "209",
+    "id": "260",
+    "appName": "Windows PowerShell",
+    "category": "Deep Work",
+    "isAutomatic": true
+  },
+  {
+    "id": "261",
     "appName": "Wireshark",
     "category": "Deep Work",
     "isAutomatic": true
   },
   {
-    "id": "211",
+    "id": "263",
     "appName": "Word",
     "category": "Study",
     "isAutomatic": true
   },
   {
-    "id": "212",
+    "id": "264",
     "appName": "Zoom Workplace",
     "category": "Meetings",
     "isAutomatic": true
   },
   {
-    "id": "1775035250838",
+    "id": "1775295226321",
     "appName": "Visual Studio Code",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3907,7 +4886,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250841",
+    "id": "1775295226325",
     "appName": "Cursor",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3916,7 +4895,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250845",
+    "id": "1775295226334",
     "appName": "IntelliJ IDEA",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3925,7 +4904,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250850",
+    "id": "1775295226339",
     "appName": "PyCharm",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3934,7 +4913,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250853",
+    "id": "1775295226344",
     "appName": "WebStorm",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3943,7 +4922,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250855",
+    "id": "1775295226347",
     "appName": "DataGrip",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3952,7 +4931,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250858",
+    "id": "1775295226352",
     "appName": "Sublime Text",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3961,7 +4940,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250861",
+    "id": "1775295226355",
     "appName": "Obsidian",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3970,7 +4949,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250864",
+    "id": "1775295226361",
     "appName": "JupyterLab",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3979,7 +4958,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250868",
+    "id": "1775295226364",
     "appName": "Postman",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3988,7 +4967,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250871",
+    "id": "1775295226368",
     "appName": "Docker Desktop",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -3997,7 +4976,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250873",
+    "id": "1775295226371",
     "appName": "Terminal",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4006,7 +4985,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250878",
+    "id": "1775295226374",
     "appName": "Windows Terminal",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4015,7 +4994,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250880",
+    "id": "1775295226378",
     "appName": "iTerm2",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4024,7 +5003,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250883",
+    "id": "1775295226381",
     "appName": "GitHub Desktop",
     "category": "Deep Work",
     "isAutomatic": true,
@@ -4033,7 +5012,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250886",
+    "id": "1775295226384",
     "appName": "Notion",
     "category": "Study",
     "isAutomatic": true,
@@ -4042,7 +5021,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250888",
+    "id": "1775295226386",
     "appName": "Adobe Acrobat",
     "category": "Study",
     "isAutomatic": true,
@@ -4051,7 +5030,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250890",
+    "id": "1775295226390",
     "appName": "Microsoft Word",
     "category": "Study",
     "isAutomatic": true,
@@ -4060,7 +5039,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250894",
+    "id": "1775295226394",
     "appName": "Microsoft PowerPoint",
     "category": "Study",
     "isAutomatic": true,
@@ -4069,7 +5048,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250898",
+    "id": "1775295226396",
     "appName": "Microsoft OneNote",
     "category": "Study",
     "isAutomatic": true,
@@ -4078,7 +5057,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250902",
+    "id": "1775295226400",
     "appName": "Microsoft Excel",
     "category": "Study",
     "isAutomatic": true,
@@ -4087,7 +5066,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250904",
+    "id": "1775295226402",
     "appName": "Google Docs",
     "category": "Study",
     "isAutomatic": true,
@@ -4096,7 +5075,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250906",
+    "id": "1775295226406",
     "appName": "Google Sheets",
     "category": "Study",
     "isAutomatic": true,
@@ -4105,7 +5084,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250909",
+    "id": "1775295226410",
     "appName": "Zotero",
     "category": "Study",
     "isAutomatic": true,
@@ -4114,7 +5093,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250912",
+    "id": "1775295226414",
     "appName": "Mendeley Desktop",
     "category": "Study",
     "isAutomatic": true,
@@ -4123,7 +5102,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250915",
+    "id": "1775295226416",
     "appName": "Slack",
     "category": "Communication",
     "isAutomatic": true,
@@ -4132,7 +5111,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250917",
+    "id": "1775295226420",
     "appName": "Discord",
     "category": "Communication",
     "isAutomatic": true,
@@ -4141,7 +5120,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250921",
+    "id": "1775295226423",
     "appName": "Microsoft Outlook",
     "category": "Communication",
     "isAutomatic": true,
@@ -4150,7 +5129,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250923",
+    "id": "1775295226428",
     "appName": "Mail",
     "category": "Communication",
     "isAutomatic": true,
@@ -4159,7 +5138,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250927",
+    "id": "1775295226432",
     "appName": "Telegram",
     "category": "Communication",
     "isAutomatic": true,
@@ -4168,7 +5147,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250930",
+    "id": "1775295226435",
     "appName": "Zoom",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4177,7 +5156,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250934",
+    "id": "1775295226440",
     "appName": "Microsoft Teams",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4186,7 +5165,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250937",
+    "id": "1775295226443",
     "appName": "Google Meet",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4195,7 +5174,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250942",
+    "id": "1775295226448",
     "appName": "Webex",
     "category": "Meetings",
     "isAutomatic": true,
@@ -4204,7 +5183,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250946",
+    "id": "1775295226451",
     "appName": "File Explorer",
     "category": "Admin",
     "isAutomatic": true,
@@ -4213,7 +5192,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250948",
+    "id": "1775295226455",
     "appName": "Finder",
     "category": "Admin",
     "isAutomatic": true,
@@ -4222,7 +5201,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250950",
+    "id": "1775295226458",
     "appName": "Settings",
     "category": "Admin",
     "isAutomatic": true,
@@ -4231,16 +5210,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250954",
-    "appName": "Control Panel",
-    "category": "Admin",
-    "isAutomatic": true,
-    "keywords": [],
-    "matchMode": "any",
-    "conditions": []
-  },
-  {
-    "id": "1775035250957",
+    "id": "1775295226468",
     "appName": "Task Manager",
     "category": "Admin",
     "isAutomatic": true,
@@ -4249,7 +5219,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250959",
+    "id": "1775295226470",
     "appName": "Steam",
     "category": "Gaming",
     "isAutomatic": true,
@@ -4258,7 +5228,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250964",
+    "id": "1775295226479",
     "appName": "Spotify",
     "category": "Entertainment",
     "isAutomatic": true,
@@ -4267,7 +5237,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250966",
+    "id": "1775295226486",
     "appName": "YouTube",
     "category": "Entertainment",
     "isAutomatic": true,
@@ -4276,7 +5246,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250970",
+    "id": "1775295226489",
     "appName": "ChronoLog",
     "category": "ChronoLog",
     "isAutomatic": true,
@@ -4285,7 +5255,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250972",
+    "id": "1775295226494",
     "appName": "Firefox",
     "category": "Meetings",
     "isAutomatic": false,
@@ -4299,7 +5269,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250974",
+    "id": "1775295226497",
     "appName": "Firefox",
     "category": "Gaming",
     "isAutomatic": false,
@@ -4311,7 +5281,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250977",
+    "id": "1775295226502",
     "appName": "Firefox",
     "category": "Study",
     "isAutomatic": false,
@@ -4332,7 +5302,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250979",
+    "id": "1775295226506",
     "appName": "Firefox",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -4351,7 +5321,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250984",
+    "id": "1775295226510",
     "appName": "Firefox",
     "category": "Entertainment",
     "isAutomatic": false,
@@ -4368,7 +5338,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250986",
+    "id": "1775295226514",
     "appName": "Google Chrome",
     "category": "Meetings",
     "isAutomatic": false,
@@ -4382,7 +5352,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250990",
+    "id": "1775295226519",
     "appName": "Google Chrome",
     "category": "Gaming",
     "isAutomatic": false,
@@ -4394,7 +5364,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250993",
+    "id": "1775295226522",
     "appName": "Google Chrome",
     "category": "Study",
     "isAutomatic": false,
@@ -4415,7 +5385,7 @@
     "conditions": []
   },
   {
-    "id": "1775035250995",
+    "id": "1775295226525",
     "appName": "Google Chrome",
     "category": "Deep Work",
     "isAutomatic": false,
@@ -4434,7 +5404,7 @@
     "conditions": []
   },
   {
-    "id": "1775035251000",
+    "id": "1775295226529",
     "appName": "Google Chrome",
     "category": "Entertainment",
     "isAutomatic": false,

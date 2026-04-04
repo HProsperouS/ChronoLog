@@ -93,29 +93,17 @@ export function Dashboard() {
 
     const sortedCategories = Array.from(totals.entries())
       .filter(([, minutes]) => minutes > 0)
-      .sort((a, b) => {
-        const aBuiltInIndex = BUILT_IN_CATEGORY_ORDER.indexOf(a[0] as (typeof BUILT_IN_CATEGORY_ORDER)[number]);
-        const bBuiltInIndex = BUILT_IN_CATEGORY_ORDER.indexOf(b[0] as (typeof BUILT_IN_CATEGORY_ORDER)[number]);
+      .sort((a, b) => b[1] - a[1]);
 
-        const aIsBuiltIn = aBuiltInIndex !== -1;
-        const bIsBuiltIn = bBuiltInIndex !== -1;
+        const MAX_VISIBLE_CATEGORIES = 6;
+        const visibleCategories = sortedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(([category]) => category);
+        const hiddenCategories = sortedCategories.slice(MAX_VISIBLE_CATEGORIES).map(([category]) => category);
 
-        if (aIsBuiltIn && bIsBuiltIn) return aBuiltInIndex - bBuiltInIndex;
-        if (aIsBuiltIn) return -1;
-        if (bIsBuiltIn) return 1;
-
-        return b[1] - a[1];
-      });
-
-    const MAX_VISIBLE_CATEGORIES = 6;
-    const visibleCategories = sortedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(([category]) => category);
-    const hiddenCategories = sortedCategories.slice(MAX_VISIBLE_CATEGORIES).map(([category]) => category);
-
-    return {
-      visibleCategories,
-      hiddenCategories,
-    };
-  }, [weekly]);
+        return {
+          visibleCategories,
+          hiddenCategories,
+        };
+      }, [weekly]);
 
   const renderPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
